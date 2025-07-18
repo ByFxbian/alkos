@@ -1,26 +1,15 @@
 import Link from 'next/link';
 import BarberCard from '@/components/BarberCard';
+import { prisma } from '@/lib/prisma';
+import { Role } from '@/generated/prisma';
+import TikTokCarousel from '@/components/TikTokCarousel';
 
-const teamMembers = [
-  {
-    name: 'Alen',
-    role: 'Barber',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png', // Beispielbild
-  },
-  {
-    name: 'Max',
-    role: 'Lehrling',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png', // Beispielbild
-  },
-  {
-    name: 'Felix',
-    role: 'Lehrling',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png', // Beispielbild
-  },
-];
+export default async function Home() {
+  const barbers = await prisma.user.findMany({
+    where: { role: Role.FRISEUR },
+    take: 3,
+  });
 
-
-export default function Home() {
   return (
     <main>
       <section className="min-h-screen flex items-center justify-center -mt-16">
@@ -46,15 +35,29 @@ export default function Home() {
           <h2 className='text-4xl font-bold text-center mb-12'>
             Lerne unser Team kennen
           </h2>
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
-            {teamMembers.map((member) => (
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center'>
+            {barbers.map((barber) => (
               <BarberCard
-                key={member.name}
-                name={member.name}
-                role={member.role}
-                imageUrl={member.imageUrl}
+                key={barber.id}
+                name={barber.name || 'Barber'}
+                role={barber.role}
+                imageUrl={'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
               />
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="tiktok" className="py-20 bg-neutral-950">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-bold text-center mb-12">
+            Unsere Arbeit in Action
+          </h2>
+          <TikTokCarousel />
+          <div className="text-center mt-12">
+            <Link href="/gallerie" className="text-amber-400 font-semibold hover:underline">
+              Klicke hier um mehr zu sehen &rarr;
+            </Link>
           </div>
         </div>
       </section>

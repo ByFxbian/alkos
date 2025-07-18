@@ -13,10 +13,11 @@ import { useRouter } from 'next/navigation';
 type BookingFormProps = {
   barbers: User[];
   services: Service[];
+  hasFreeAppointment: boolean;
 };
 
 
-export default function BookingForm({ barbers, services }: BookingFormProps) {
+export default function BookingForm({ barbers, services, hasFreeAppointment  }: BookingFormProps) {
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedBarber, setSelectedBarber] = useState<User | null>(null);
@@ -29,6 +30,8 @@ export default function BookingForm({ barbers, services }: BookingFormProps) {
   const router = useRouter();
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
 
+  const [useFreeAppointment, setUseFreeAppointment] = useState(false);
+
   const handleBooking = async () => {
     if (!selectedService || !selectedBarber || !selectedSlot) {
       alert("Bitte wähle alle Optionen aus.");
@@ -36,7 +39,12 @@ export default function BookingForm({ barbers, services }: BookingFormProps) {
     }
 
     if (!session) {
-      router.push('/login'); // Nicht eingeloggt? -> zum Login
+      router.push('/login');
+      return;
+    }
+
+    if (!session.user.emailVerified) {
+      alert('Bitte bestätige zuerst deine E-Mail-Adresse, bevor du einen Termin buchst.');
       return;
     }
 
@@ -47,12 +55,12 @@ export default function BookingForm({ barbers, services }: BookingFormProps) {
         serviceId: selectedService.id,
         barberId: selectedBarber.id,
         startTime: selectedSlot,
+        useFreeAppointment: useFreeAppointment,
       }),
     });
 
     if (res.ok) {
       alert('Dein Termin wurde erfolgreich gebucht!');
-      // Optional: Seite neu laden oder zu einer "Meine Termine"-Seite weiterleiten
       window.location.reload(); 
     } else {
       alert('Fehler bei der Buchung.');
@@ -105,7 +113,10 @@ export default function BookingForm({ barbers, services }: BookingFormProps) {
           <div className="space-y-2">
             {services.map(service => (
               <button key={service.id} onClick={() => { setSelectedService(service); setStep(2); }} className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${selectedService?.id === service.id ? 'bg-amber-400 text-black border-amber-400' : 'border-neutral-700 hover:border-amber-400'}`}>
-                <p className="font-bold">{service.name}</p>
+                <div className="flex justify-between items-center">
+                  <p className="font-bold">{service.name}</p>
+                  <p className="font-semibold">{service.price.toFixed(2)} €</p>
+                </div>
                 <p>{service.duration} Minuten</p>
               </button>
             ))}
@@ -141,6 +152,21 @@ export default function BookingForm({ barbers, services }: BookingFormProps) {
                     {format(new Date(slot), 'HH:mm')}
                   </button>
                 ))}
+
+                {hasFreeAppointment && (
+                  <div className="mt-6 border-t border-neutral-700 pt-6">
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input 
+                        type="checkbox"
+                        checked={useFreeAppointment}
+                        onChange={(e) => setUseFreeAppointment(e.target.checked)}
+                        className="h-5 w-5 rounded bg-neutral-700 border-neutral-600 text-amber-500 focus:ring-amber-500"
+                      />
+                      <span className="font-bold text-green-400">Gratis-Termin einlösen</span>
+                    </label>
+                  </div>
+                )}
+
                 {selectedSlot && (
                   <div className="mt-6 text-center lg:col-span-3">
                     <button onClick={handleBooking} className="bg-green-600 text-white font-bold px-8 py-3 rounded-full hover:bg-green-500">

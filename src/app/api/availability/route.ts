@@ -1,11 +1,12 @@
+/* eslint-disable prefer-const */
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
 const schema = z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    barberId: z.string().cuid(),
-    serviceId: z.string().cuid(),
+    barberId: z.cuid(),
+    serviceId: z.cuid(),
 });
 
 export async function GET(req: Request) {
@@ -18,16 +19,36 @@ export async function GET(req: Request) {
     const { date, barberId, serviceId } = validation.data;
 
     try {
+        const requestedDate = new Date(date);
+        const dayOfWeek = requestedDate.getDay();
+
+        const barberAvailability = await prisma.availability.findFirst({
+            where: {
+                barberId: barberId,
+                dayOfWeek: dayOfWeek,
+            },
+        });
+
+        if (!barberAvailability) {
+            return NextResponse.json([]);
+        }
+
         const service = await prisma.service.findUnique({
             where: { id: serviceId },
         });
-        if(!service) {
+        if (!service) {
             return NextResponse.json({ error: 'Service not found' }, { status: 404 });
         }
         const serviceDuration = service.duration;
 
-        const dayStart = new Date(`${date}T08:00:00`);
-        const dayEnd = new Date(`${date}T20:00:00`);
+        const [startHour, startMinute] = barberAvailability.startTime.split(':').map(Number);
+        const [endHour, endMinute] = barberAvailability.endTime.split(':').map(Number);
+
+        const dayStart = new Date(date);
+        dayStart.setHours(startHour, startMinute, 0, 0);
+
+        const dayEnd = new Date(date);
+        dayEnd.setHours(endHour, endMinute, 0, 0);
 
         const bookedAppointments = await prisma.appointment.findMany({
             where: {
@@ -40,14 +61,13 @@ export async function GET(req: Request) {
         });
 
         const allPossibleSlots = [];
-        // eslint-disable-next-line prefer-const
         let currentTime = new Date(dayStart);
         while (currentTime < dayEnd) {
             allPossibleSlots.push(new Date(currentTime));
-            currentTime.setMinutes(currentTime.getMinutes() + 30);
+            currentTime.setMinutes(currentTime.getMinutes() + 30); 
         }
         
-        const availableSlots = allPossibleSlots.filter(slotStartTime => {
+         const availableSlots = allPossibleSlots.filter(slotStartTime => {
             if (slotStartTime < new Date()) {
                 return false;
             }

@@ -19,6 +19,7 @@ export async function POST(req: Request) {
         name,
         password: hashedPassword,
         instagram,
+        emailVerified: null,
       },
     });
 

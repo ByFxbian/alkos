@@ -1,16 +1,31 @@
 import { PrismaClient, Role } from "@/generated/prisma";
 const prisma = new PrismaClient();
+import bcrypt from 'bcrypt';
 
 async function main() {
     console.log(`Start seeding ...`);
 
+    await prisma.appointment.deleteMany();
+    await prisma.availability.deleteMany();
     await prisma.user.deleteMany({ where: { role: 'FRISEUR' }});
     await prisma.service.deleteMany();
 
-    const barber1 = await prisma.user.create({
+    const password = await bcrypt.hash('password123', 10);
+
+  const admin = await prisma.user.create({
+    data: {
+      email: 'sopa.fabian@gmx.net',
+      name: 'Fabian Admin',
+      password: password,
+      role: Role.ADMIN,
+    },
+  });
+
+  const barber1 = await prisma.user.create({
     data: {
       email: 'alen@alkos.at',
       name: 'Alen Alkos',
+      password: password,
       role: Role.FRISEUR,
     },
   });
@@ -19,6 +34,7 @@ async function main() {
     data: {
       email: 'max@mustermann.at',
       name: 'Max Mustermann',
+      password: password,
       role: Role.FRISEUR,
     },
   });

@@ -1,15 +1,23 @@
 import { prisma } from "@/lib/prisma";
-import BookingForm from "./BookingForm";
+import BookingForm from "../../components/BookingForm";
 import { Role } from "@/generated/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../api/auth/[...nextauth]/route";
 
 export default async function TerminePage() {
-    const barbers = await prisma.user.findMany({
-        where: { role: Role.FRISEUR },
-    });
+    const session = await getServerSession(authOptions);
 
-    const services = await prisma.service.findMany();
+    const [barbers, services, currentUser] = await Promise.all([
+        prisma.user.findMany({ where: { role: Role.FRISEUR } }),
+        prisma.service.findMany(),
+        session ? prisma.user.findUnique({ where: { id: session.user.id }}) : null,
+    ]);
 
     return (
-        <BookingForm barbers={barbers} services={services} />
+        <BookingForm 
+          barbers={barbers} 
+          services={services} 
+          hasFreeAppointment={currentUser?.hasFreeAppointment || false} 
+        />
     );
 }

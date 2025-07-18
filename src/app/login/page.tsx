@@ -7,11 +7,13 @@ import Link from 'next/link';
 export default function LoginPage() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
     
     const result = await signIn('credentials', {
       redirect: false,
@@ -19,8 +21,11 @@ export default function LoginPage() {
       password: formData.password,
     });
 
+    setIsLoading(false);
+
     if (result?.ok) {
-      router.push('/termine');
+      router.push('/'); 
+      router.refresh();
     } else {
       setError('E-Mail oder Passwort ungültig.');
     }
@@ -36,7 +41,13 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
             <input type="email" name="email" placeholder="E-Mail" onChange={handleChange} required className="w-full p-2 bg-neutral-800 rounded"/>
             <input type="password" name="password" placeholder="Passwort" onChange={handleChange} required className="w-full p-2 bg-neutral-800 rounded"/>
-            <button type="submit" className="w-full bg-amber-400 text-black font-bold p-2 rounded">Einloggen</button>
+            <button 
+              type="submit" 
+              disabled={isLoading}
+              className="w-full bg-amber-400 text-black font-bold p-2 rounded disabled:bg-neutral-600"
+            >
+              {isLoading ? 'Logge ein...' : 'Einloggen'}
+            </button>
             {error && <p className="text-red-500">{error}</p>}
         </form>
         <p className="mt-4 text-center">

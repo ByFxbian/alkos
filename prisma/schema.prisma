@@ -18,22 +18,49 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
+  emailVerified DateTime?
   instagram String?  @unique
   password  String?
   name      String?
+  imageUrl  String?
+  bio       String?
   role      Role     @default(KUNDE)
+
+  completedAppointments   Int       @default(0)
+  hasFreeAppointment      Boolean   @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   appointmentsAsCustomer Appointment[] @relation("CustomerAppointments")
 
   appointmentsAsBarber   Appointment[] @relation("BarberAppointments")
+
+  availabilities Availability[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 enum Role {
   KUNDE
   FRISEUR
   ADMIN
+}
+
+model Availability {
+  id        String   @id @default(cuid())
+  dayOfWeek Int      // 0=Sonntag, 1=Montag, 2=Dienstag, etc.
+  startTime String   // "HH:mm", z.B. "09:00"
+  endTime   String   // "HH:mm", z.B. "18:00"
+
+  barberId  String
+  barber    User     @relation(fields: [barberId], references: [id])
 }
 
 model Service {
@@ -47,6 +74,7 @@ model Service {
 
 model Appointment {
   id        String   @id @default(cuid())
+  isFree    Boolean  @default(false)
   startTime DateTime
   endTime   DateTime
   createdAt DateTime @default(now())

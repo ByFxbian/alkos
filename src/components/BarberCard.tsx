@@ -4,23 +4,24 @@ type BarberCardProps = {
     name: string;
     role: string;
     imageUrl: string;
+    bio?: string | null;
 };
 
-export default function BarberCard({ name, role, imageUrl }: BarberCardProps) {
+export default function BarberCard({ name, role, imageUrl, bio }: BarberCardProps) {
     return (
-        <div className="bg-neutral-900 rounded-lg overflow-hidden group text-center">
+        <div className="bg-neutral-900 rounded-lg overflow-hidden group text-center transition-transform duration-300 ease-in-out hover:scale-105">
             <div className="relative w-full h-80">
                 <Image
                     src={imageUrl}
                     alt={`Foto von ${name}`}
                     fill
                     style={{ objectFit: "cover" }}
-                    className="group-hover:scale-110 transition-transform duration-500 ease-in-out"
                 />
             </div>
             <div className="p-5">
                 <h3 className="text-xl font-bold">{name}</h3>
                 <p className="text-amber-400">{role}</p>
+                {bio && <p className="text-neutral-300 mt-2 text-sm">{bio}</p>}
             </div>
         </div>
     );
