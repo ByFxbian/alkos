@@ -44,14 +44,14 @@ export default function LoginPage() {
             <button 
               type="submit" 
               disabled={isLoading}
-              className="w-full bg-amber-400 text-black font-bold p-2 rounded disabled:bg-neutral-600"
+              className="w-full bg-gold-500 text-black font-bold p-2 rounded disabled:bg-neutral-600"
             >
               {isLoading ? 'Logge ein...' : 'Einloggen'}
             </button>
             {error && <p className="text-red-500">{error}</p>}
         </form>
         <p className="mt-4 text-center">
-            Noch kein Konto? <Link href="/register" className="text-amber-400 hover:underline">Jetzt registrieren</Link>
+            Noch kein Konto? <Link href="/register" className="text-gold-500 hover:underline">Jetzt registrieren</Link>
         </p>
     </div>
   );

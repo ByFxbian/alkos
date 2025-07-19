@@ -42,7 +42,7 @@ export default function BarberSchedule({ appointments, isAdmin }: BarberSchedule
     return (
         <div className="space-y-4">
             {appointments.map((app) => (
-                <div key={app.id} className="bg-neutral-900 p-4 rounded-lg border-l-4 items-center justify-between border-amber-500">
+                <div key={app.id} className="bg-neutral-900 p-4 rounded-lg border-l-4 items-center justify-between border-gold-500">
                     <div className="flex items-center space-x-4">
                         <Image
                         src={app.customer.imageUrl || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}

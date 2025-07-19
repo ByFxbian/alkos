@@ -13,16 +13,18 @@ export async function PATCH(req: Request) {
 
   try {
     const body = await req.json();
-    const { name, instagram, password, imageUrl } = body;
+    const { name, instagram, password, imageUrl, bio } = body;
     const updateData: { 
         name: string; 
         instagram: string; 
         imageUrl: string;
+        bio: string;
         password?: string 
     } = {
         name,
         instagram,
         imageUrl,
+        bio,
     };
 
     if (password) {

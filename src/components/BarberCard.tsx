@@ -20,7 +20,7 @@ export default function BarberCard({ name, role, imageUrl, bio }: BarberCardProp
             </div>
             <div className="p-5">
                 <h3 className="text-xl font-bold">{name}</h3>
-                <p className="text-amber-400">{role}</p>
+                <p className="text-gold-500">{role}</p>
                 {bio && <p className="text-neutral-300 mt-2 text-sm">{bio}</p>}
             </div>
         </div>

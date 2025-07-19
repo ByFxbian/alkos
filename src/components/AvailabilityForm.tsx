@@ -87,7 +87,7 @@ export default function AvailabilityForm({ currentAvailabilities }: Availability
                   id={`active-${day.id}`}
                   checked={daySchedule.isActive}
                   onChange={(e) => handleIsActiveChange(day.id, e.target.checked)}
-                  className="h-5 w-5 rounded bg-neutral-700 border-neutral-600 text-amber-500 focus:ring-amber-500"
+                  className="h-5 w-5 rounded bg-neutral-700 border-neutral-600 text-gold-500 focus:ring-gold-500"
                 />
                 <label htmlFor={`active-${day.id}`} className="ml-3 text-lg font-medium">{day.name}</label>
               </div>
@@ -115,7 +115,7 @@ export default function AvailabilityForm({ currentAvailabilities }: Availability
         <button
           type="submit"
           disabled={isLoading}
-          className="bg-amber-500 text-black font-bold px-6 py-2 rounded-md hover:bg-amber-400 disabled:bg-neutral-600 transition-colors"
+          className="bg-gold-500 text-black font-bold px-6 py-2 rounded-md hover:bg-gold-500 disabled:bg-neutral-600 transition-colors"
         >
           {isLoading ? 'Speichert...' : 'Speichern'}
         </button>

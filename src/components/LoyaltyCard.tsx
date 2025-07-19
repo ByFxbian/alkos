@@ -26,7 +26,7 @@ export default function LoyaltyCard({ completedAppointments, hasFreeAppointment 
         {stamps.map((_, index) => (
           <div key={index} className={`w-full aspect-square rounded-full flex items-center justify-center
             ${index < completedAppointments 
-              ? 'bg-amber-500' 
+              ? 'bg-gold-500' 
               : 'bg-neutral-800 border-2 border-neutral-700'
             }`}
           >

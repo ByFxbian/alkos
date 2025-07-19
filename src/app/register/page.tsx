@@ -37,7 +37,7 @@ export default function RegisterPage() {
             <input type="email" name="email" placeholder="E-Mail" onChange={handleChange} required className="w-full p-2 bg-neutral-800 rounded"/>
             <input type="text" name="instagram" placeholder="Instagram" onChange={handleChange} className="w-full p-2 bg-neutral-800 rounded"/>
             <input type="password" name="password" placeholder="Passwort" onChange={handleChange} required className="w-full p-2 bg-neutral-800 rounded"/>
-            <button type="submit" className="w-full bg-amber-400 text-black font-bold p-2 rounded">Konto erstellen</button>
+            <button type="submit" className="w-full bg-gold-500 text-black font-bold p-2 rounded">Konto erstellen</button>
             {error && <p className="text-red-500">{error}</p>}
         </form>
     </div>

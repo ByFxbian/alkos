@@ -48,7 +48,7 @@ export default function AppointmentList({ appointments }: AppointmentListProps) 
                     <div>
                         <p className="font-bold text-lg">{app.service.name}</p>
                         <p className="text-neutral-300">bei {app.barber.name}</p>
-                        <p className="text-amber-400 mt-1">
+                        <p className="text-gold-500 mt-1">
                             {format(new Date(app.startTime), 'EEEE, dd. MMMM yyyy \'um\' HH:mm \'Uhr\'', { locale: de })}
                         </p>
                     </div>

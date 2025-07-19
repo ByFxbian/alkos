@@ -1,8 +1,21 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Playfair_Display, Roboto } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { Providers } from './providers';
+import Footer from "@/components/Footer";
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  weight: ['400', '700'],
+});
+
+const roboto = Roboto({
+  subsets: ["latin"],
+  variable: "--font-roboto",
+  weight: ['400', '500', '700'],
+});
 
 export const metadata: Metadata = {
   title: "Alkos Barber",
@@ -17,11 +30,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de">
-      <body className={inter.className} >
+    <html lang="de" className={`${playfair.variable} ${roboto.variable}`}>
+      <body>
         <Providers>
-          <Navbar />
-          {children}
+          <div className="flex flex-col min-h-screen">
+            <Navbar />
+            <main className="flex-grow">
+              {children}
+            </main>
+          </div>
+          <Footer />
         </Providers>
       </body>
     </html>

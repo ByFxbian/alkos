@@ -11,6 +11,7 @@ type UserData = {
   email: string;
   instagram: string;
   imageUrl: string;
+  bio: string;
   emailVerified: Date | null;
 };
 
@@ -23,6 +24,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
     name: user.name,
     instagram: user.instagram,
     imageUrl: user.imageUrl,
+    bio: user.bio,
     password: '',
     confirmPassword: '',
   });
@@ -70,7 +72,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
     setIsLoading(false);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -93,6 +95,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
         name: formData.name,
         instagram: formData.instagram,
         //imageUrl: formData.imageUrl,
+        bio: formData.bio,
         password: formData.password || null, 
       }),
     });
@@ -185,6 +188,19 @@ export default function SettingsForm({ user }: SettingsFormProps) {
                 <label htmlFor="instagram" className="block text-sm font-medium text-neutral-400">Instagram</label>
                 <input type="text" id="instagram" name="instagram" value={formData.instagram} onChange={handleChange} className="mt-1 w-full p-2 bg-neutral-800 rounded border border-neutral-700"/>
             </div>
+
+            <div>
+                <label htmlFor="bio" className="block text-sm font-medium text-neutral-400">Über mich (Bio)</label>
+                <textarea
+                    id="bio"
+                    name="bio"
+                    rows={3}
+                    value={formData.bio}
+                    onChange={handleChange}
+                    className="mt-1 w-full p-2 bg-neutral-800 rounded border border-neutral-700"
+                    placeholder="Erzähle etwas über dich, deine Spezialitäten oder deine Philosophie."
+                />
+            </div>
             
             <div className="border-t border-neutral-700 pt-6">
                 <p className="font-semibold mb-2">Passwort ändern</p>
@@ -199,7 +215,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
             {message && <p className="text-green-500 text-sm">{message}</p>}
 
             <div className="text-right">
-                <button type="submit" disabled={isLoading} className="bg-amber-500 text-black font-bold px-6 py-2 rounded-md hover:bg-amber-400 disabled:bg-neutral-600">
+                <button type="submit" disabled={isLoading} className="bg-gold-500 text-black font-bold px-6 py-2 rounded-md hover:bg-gold-500 disabled:bg-neutral-600">
                     {isLoading ? 'Speichert...' : 'Änderungen speichern'}
                 </button>
             </div>

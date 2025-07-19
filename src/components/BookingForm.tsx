@@ -109,10 +109,10 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {/* SCHRITT 1: DIENSTLEISTUNG */}
         <div>
-          <h2 className="text-2xl font-semibold mb-4 text-amber-400">Art</h2>
+          <h2 className="text-2xl font-semibold mb-4 text-gold-500">Art</h2>
           <div className="space-y-2">
             {services.map(service => (
-              <button key={service.id} onClick={() => { setSelectedService(service); setStep(2); }} className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${selectedService?.id === service.id ? 'bg-amber-400 text-black border-amber-400' : 'border-neutral-700 hover:border-amber-400'}`}>
+              <button key={service.id} onClick={() => { setSelectedService(service); setStep(2); }} className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${selectedService?.id === service.id ? 'bg-gold-500 text-black border-gold-500' : 'border-neutral-700 hover:border-gold-500'}`}>
                 <div className="flex justify-between items-center">
                   <p className="font-bold">{service.name}</p>
                   <p className="font-semibold">{service.price.toFixed(2)} €</p>
@@ -125,10 +125,10 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
 
         {/* SCHRITT 2: FRISEUR */}
         <div className={step >= 2 ? '' : 'opacity-50'}>
-          <h2 className="text-2xl font-semibold mb-4 text-amber-400">Barber</h2>
+          <h2 className="text-2xl font-semibold mb-4 text-gold-500">Barber</h2>
           <div className="space-y-2">
             {barbers.map(barber => (
-              <button key={barber.id} onClick={() => { setSelectedBarber(barber); setStep(3); }} disabled={step < 2} className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${selectedBarber?.id === barber.id ? 'bg-amber-400 text-black border-amber-400' : 'border-neutral-700 hover:border-amber-400'}`}>
+              <button key={barber.id} onClick={() => { setSelectedBarber(barber); setStep(3); }} disabled={step < 2} className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${selectedBarber?.id === barber.id ? 'bg-gold-500 text-black border-gold-500' : 'border-neutral-700 hover:border-gold-500'}`}>
                 <p className="font-bold">{barber.name}</p>
               </button>
             ))}
@@ -137,22 +137,26 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
 
         {/* SCHRITT 3: DATUM & UHRZEIT */}
         <div className={step >= 3 ? '' : 'opacity-50'}>
-          <h2 className="text-2xl font-semibold mb-4 text-amber-400">Datum & Uhrzeit</h2>
+          <h2 className="text-2xl font-semibold mb-4 text-gold-500">Datum & Uhrzeit</h2>
           <DayPicker mode="single" selected={selectedDate} onSelect={setSelectedDate} locale={de} fromDate={new Date()} disabled={step < 3} className="flex justify-center" />
           <div className="mt-4">
             {isLoading && <p>Lade freie Termine...</p>}
             {!isLoading && availableSlots.length > 0 && (
-              <div className="grid grid-cols-4 gap-2">
-                {availableSlots.map(slot => (
-                  <button 
-                    key={slot} 
-                    onClick={() => setSelectedSlot(slot)}
-                    className={`p-2 rounded-lg transition-colors ${selectedSlot === slot ? 'bg-green-500 text-white' : 'bg-neutral-800 hover:bg-amber-400 hover:text-black'}`}
-                  >
-                    {format(new Date(slot), 'HH:mm')}
-                  </button>
-                ))}
+              <>
+                {/* Das Grid nur für die Timeslots */}
+                <div className="grid grid-cols-4 gap-2">
+                  {availableSlots.map(slot => (
+                    <button 
+                      key={slot} 
+                      onClick={() => setSelectedSlot(slot)}
+                      className={`p-2 rounded-lg transition-colors ${selectedSlot === slot ? 'bg-green-500 text-white' : 'bg-neutral-800 hover:bg-gold-500 hover:text-black'}`}
+                    >
+                      {format(new Date(slot), 'HH:mm')}
+                    </button>
+                  ))}
+                </div>
 
+                {/* Stempelpass & Bestätigungs-Button werden NACH dem Grid gerendert */}
                 {hasFreeAppointment && (
                   <div className="mt-6 border-t border-neutral-700 pt-6">
                     <label className="flex items-center space-x-3 cursor-pointer">
@@ -160,7 +164,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
                         type="checkbox"
                         checked={useFreeAppointment}
                         onChange={(e) => setUseFreeAppointment(e.target.checked)}
-                        className="h-5 w-5 rounded bg-neutral-700 border-neutral-600 text-amber-500 focus:ring-amber-500"
+                        className="h-5 w-5 rounded bg-neutral-700 border-neutral-600 text-gold-500 focus:ring-gold-500"
                       />
                       <span className="font-bold text-green-400">Gratis-Termin einlösen</span>
                     </label>
@@ -168,13 +172,13 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
                 )}
 
                 {selectedSlot && (
-                  <div className="mt-6 text-center lg:col-span-3">
-                    <button onClick={handleBooking} className="bg-green-600 text-white font-bold px-8 py-3 rounded-full hover:bg-green-500">
+                  <div className="mt-6 text-center">
+                    <button onClick={handleBooking} className="bg-green-600 text-white font-bold px-8 py-3 rounded-full hover:bg-green-500 w-full">
                       Termin um {format(new Date(selectedSlot), 'HH:mm')} Uhr bestätigen
                     </button>
                   </div>
                 )}
-              </div>
+              </>
             )}
             {!isLoading && availableSlots.length === 0 && selectedDate && (
               <p className="text-neutral-400">Für diesen Tag sind leider keine Termine mehr verfügbar.</p>

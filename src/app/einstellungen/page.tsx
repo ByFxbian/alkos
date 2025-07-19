@@ -24,6 +24,7 @@ export default async function EinstellungenPage() {
     email: currentUser.email,
     instagram: currentUser.instagram || '',
     imageUrl: currentUser.imageUrl || '',
+    bio: currentUser.bio || '',
     emailVerified: currentUser.emailVerified,
   };
 
