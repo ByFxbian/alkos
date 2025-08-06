@@ -4,7 +4,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import BarberCard from '@/components/BarberCard';
 import { useState, useEffect } from 'react';
-import { prisma } from '@/lib/prisma';
 import type { User } from '@/generated/prisma';
 import TikTokCarousel from '@/components/TikTokCarousel';
 
