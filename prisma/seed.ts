@@ -7,7 +7,7 @@ async function main() {
 
     await prisma.appointment.deleteMany();
     await prisma.availability.deleteMany();
-    await prisma.user.deleteMany({ where: { role: 'FRISEUR' }});
+    await prisma.user.deleteMany(); 
     await prisma.service.deleteMany();
 
     const password = await bcrypt.hash('password123', 10);
