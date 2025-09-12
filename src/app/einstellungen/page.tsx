@@ -23,7 +23,7 @@ export default async function EinstellungenPage() {
     name: currentUser.name || '',
     email: currentUser.email,
     instagram: currentUser.instagram || '',
-    imageUrl: currentUser.imageUrl || '',
+    image: currentUser.image || '',
     bio: currentUser.bio || '',
     emailVerified: currentUser.emailVerified,
   };

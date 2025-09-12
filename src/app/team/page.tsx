@@ -19,7 +19,7 @@ export default async function TeamPage() {
                         key={barber.id}
                         name={barber.name || 'Barber'}
                         role={barber.role}
-                        imageUrl={'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
+                        image={'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
                         bio={barber.bio}
                     />
                 ))}

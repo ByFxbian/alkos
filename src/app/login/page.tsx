@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { FaApple, FaGoogle } from 'react-icons/fa';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -38,6 +39,30 @@ export default function LoginPage() {
   return (
     <div className="container mx-auto py-12 px-4 max-w-md">
         <h1 className="text-4xl font-bold mb-4">Login</h1>
+
+        <div className="space-y-2">
+          <button 
+            onClick={() => signIn('google', { callbackUrl: '/' })}
+            className="w-full flex items-center justify-center gap-2 bg-white text-black font-bold p-2 rounded hover:bg-neutral-200 transition-colors"
+          >
+            <FaGoogle /> Mit Google anmelden
+          </button>
+          {/* === APPLE BUTTON START === */}
+          <button 
+            onClick={() => signIn('apple', { callbackUrl: '/' })}
+            className="w-full flex items-center justify-center gap-2 bg-black text-white font-bold p-2 rounded border border-white hover:bg-neutral-800 transition-colors"
+          >
+            <FaApple /> Mit Apple anmelden
+          </button>
+          {/* === APPLE BUTTON ENDE === */}
+        </div>
+
+        <div className="flex items-center my-4">
+          <div className="flex grow border-t border-neutral-700"></div>
+          <span className="flex-shrink mx-4 text-neutral-500">ODER</span>
+          <div className="flex-grow border-t border-neutral-700"></div>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
             <input type="email" name="email" placeholder="E-Mail" onChange={handleChange} required className="w-full p-2 bg-neutral-800 rounded"/>
             <input type="password" name="password" placeholder="Passwort" onChange={handleChange} required className="w-full p-2 bg-neutral-800 rounded"/>

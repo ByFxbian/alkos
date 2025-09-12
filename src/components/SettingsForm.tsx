@@ -10,7 +10,7 @@ type UserData = {
   name: string;
   email: string;
   instagram: string;
-  imageUrl: string;
+  image: string;
   bio: string;
   emailVerified: Date | null;
 };
@@ -23,7 +23,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
   const [formData, setFormData] = useState({
     name: user.name,
     instagram: user.instagram,
-    imageUrl: user.imageUrl,
+    image: user.image,
     bio: user.bio,
     password: '',
     confirmPassword: '',
@@ -148,7 +148,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
             )}
             <div className="flex items-center space-x-4">
                 <Image
-                    src={user.imageUrl || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
+                    src={user.image || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
                     alt="Profilbild"
                     width={80}
                     height={80}

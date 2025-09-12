@@ -3,16 +3,16 @@ import Image from "next/image";
 type BarberCardProps = {
     name: string;
     role: string;
-    imageUrl: string;
+    image: string;
     bio?: string | null;
 };
 
-export default function BarberCard({ name, role, imageUrl, bio }: BarberCardProps) {
+export default function BarberCard({ name, role, image, bio }: BarberCardProps) {
     return (
         <div className="bg-neutral-900 rounded-lg overflow-hidden group text-center transition-transform duration-300 ease-in-out hover:scale-105">
             <div className="relative w-full h-80">
                 <Image
-                    src={imageUrl}
+                    src={image}
                     alt={`Foto von ${name}`}
                     fill
                     style={{ objectFit: "cover" }}

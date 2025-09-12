@@ -12,7 +12,7 @@ type FullAppointment = {
   startTime: Date;
   isFree: boolean;
   service: { name: string };
-  customer: { name: string | null; email: string; imageUrl: string | null;};
+  customer: { name: string | null; email: string; image: string | null;};
   barber: { name: string | null };
 };
 
@@ -120,7 +120,7 @@ export default function BarberSchedule({ appointments, isAdmin }: BarberSchedule
                     <div key={app.id} className="bg-neutral-900 p-4 rounded-lg border-l-4 items-center justify-between border-gold-500">
                         <div className="flex items-center space-x-4">
                             <Image
-                            src={app.customer.imageUrl || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
+                            src={app.customer.image || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
                             alt={app.customer.name || 'Kunde'}
                             width={48}
                             height={48}

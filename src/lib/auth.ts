@@ -7,12 +7,22 @@ import bcrypt from "bcrypt";
 import { User } from "@/generated/prisma";
 import { Resend } from 'resend'
 import VerificationEmail from '@/emails/VerificationEmail';
+import GoogleProvider from "next-auth/providers/google";
+import AppleProvider from "next-auth/providers/apple";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const authOptions: AuthOptions = {
     adapter: PrismaAdapter(prisma),
     providers: [
+        AppleProvider({
+            clientId: process.env.APPLE_ID!,
+            clientSecret: process.env.APPLE_SECRET!,
+        }),
+        GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        }),
         EmailProvider({
             server: {},
             from: "contact@alkosbarber.at",
@@ -69,6 +79,7 @@ export const authOptions: AuthOptions = {
             if (dbUser) {
                 token.emailVerified = dbUser.emailVerified;
                 token.name = dbUser.name;
+                token.picture = dbUser.image;
             }
 
             return token;
@@ -78,6 +89,7 @@ export const authOptions: AuthOptions = {
                 session.user.id = token.id as string;
                 session.user.role = token.role as string;
                 session.user.emailVerified = token.emailVerified as Date | null;
+                session.user.image = token.picture as string | null;
             }
             return session;
         },

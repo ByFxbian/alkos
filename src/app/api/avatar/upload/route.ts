@@ -25,7 +25,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   // Speichere die neue URL in der Datenbank des Nutzers
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { imageUrl: blob.url },
+    data: { image: blob.url },
   });
 
   return NextResponse.json(blob);
