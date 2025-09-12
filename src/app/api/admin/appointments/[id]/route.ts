@@ -16,12 +16,6 @@ export async function DELETE(
   }
 
   try {
-    /*const appointment = await prisma.appointment.findUnique({ where: { id: appointmentId } });
-    if (!appointment) {
-      return NextResponse.json({ error: 'Termin nicht gefunden' }, { status: 404 });
-    }
-    
-    await prisma.appointment.delete({ where: { id: appointmentId } });*/
     await prisma.$transaction(async (tx) => {
       await tx.stampToken.deleteMany({
         where: { appointmentId: appointmentId },
