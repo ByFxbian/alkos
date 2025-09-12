@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import AppointmentList from '@/components/AppointmentList';
 import LoyaltyCard from '@/components/LoyaltyCard';
+import Link from 'next/link';
 
 export default async function MeineTerminePage() {
     const session = await getServerSession(authOptions);
@@ -45,6 +46,15 @@ export default async function MeineTerminePage() {
                 completedAppointments={currentUser.completedAppointments} 
                 hasFreeAppointment={currentUser.hasFreeAppointment}
                 />
+            </div>
+
+            <div className='mb-12 text-center'>
+                <Link
+                    href="/redeem-stamp"
+                    className="bg-gold-500 text-black font-bold text-lg px-8 py-3 roudned-full hover:bg-gold-400 transition-transform duration-300 ease-in-out inline-block transform hover:scale-105"
+                >
+                    Stempel-Code scannen
+                </Link>
             </div>
 
             <AppointmentList appointments={appointments} />
