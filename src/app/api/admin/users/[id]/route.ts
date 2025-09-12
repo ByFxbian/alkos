@@ -7,11 +7,10 @@ import { Role } from '@/generated/prisma';
 
 export async function PATCH(
   req: NextRequest,
-  context: { params: unknown }
 ) {
-  const { params } = context as { params: { id: string } };
+  //const { params } = context as { params: { id: string } };
   const session = await getServerSession(authOptions);
-  const targetUserId = params.id;
+  const targetUserId = req.nextUrl.pathname.split('/').pop();
 
   if (!session || session.user.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
@@ -37,12 +36,11 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
-  context: { params: unknown }
+  req: NextRequest,
 ) {
-  const { params } = context as { params: { id: string } };
+  //const { params } = context as { params: { id: string } };
   const session = await getServerSession(authOptions);
-  const targetUserId = params.id;
+  const targetUserId = req.nextUrl.pathname.split('/').pop();
 
   if (!session || session.user.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });

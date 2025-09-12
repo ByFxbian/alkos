@@ -1,13 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(
-  _req: Request,
-  context: { params: unknown }
+  req: NextRequest,
 ) {
-  const { params } = context as { params: { token: string } };
+  //const { params } = context as { params: { token: string } };
+  const token = req.nextUrl.pathname.split('/').pop();
+
+  if (!token) {
+    return NextResponse.json({ error: 'Token fehlt' }, { status: 400 });
+  }
   try {
-    const { token } = params;
     const stampToken = await prisma.stampToken.findUnique({
       where: { token },
       select: { redeemedAt: true },

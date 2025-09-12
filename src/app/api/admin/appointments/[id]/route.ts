@@ -4,12 +4,12 @@ import { authOptions } from '../../../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 
 export async function DELETE(
-  _req: NextRequest,
-  context: { params: unknown }
+  req: NextRequest,
 ) {
-  const { params } = context as { params: { id: string } };
+  //const { params } = context as { params: { id: string } };
   const session = await getServerSession(authOptions);
-  const { id: appointmentId } = params;
+  //const { id: appointmentId } = params;
+  const appointmentId = req.nextUrl.pathname.split('/').pop();
 
   if (!session || session.user.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Zugriff verweigert' }, { status: 403 });

@@ -8,12 +8,11 @@ import CancellationEmail from '@/emails/CancellationEmail';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function DELETE(
-  _req: NextRequest,
-  context: { params: unknown }
+  req: NextRequest,
 ) {
-  const { params } = context as { params: { id: string } };
+  const appointmentId = req.nextUrl.pathname.split('/').pop();
   const session = await getServerSession(authOptions);
-  const { id: appointmentId } = params;
+  //const { id: appointmentId } = params;
 
   if (!session || !session.user) {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
