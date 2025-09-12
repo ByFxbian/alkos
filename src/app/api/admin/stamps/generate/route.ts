@@ -15,6 +15,18 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "Termin-ID Fehlt." }, { status: 400 });
     }
 
+    const existingToken = await prisma.stampToken.findFirst({
+        where: { appointmentId: appointmentId }
+    });
+
+    if (existingToken) {
+
+        if (existingToken.redeemedAt) {
+        return NextResponse.json({ error: 'Dieser Stempel wurde bereits eingelöst.' }, { status: 409 });
+        }
+        return NextResponse.json({ token: existingToken.token });
+    }
+
     const token = randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 

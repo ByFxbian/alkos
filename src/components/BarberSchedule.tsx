@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
 
 type FullAppointment = {
@@ -23,25 +23,55 @@ type BarberScheduleProps = {
 
 function QrCodeModal({ token, onClose }: { token: string; onClose: () => void }) {
     const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
+    const [isRedeemed, setIsRedeemed] = useState(false);
 
-    useState(() => {
+    useEffect(() => {
         const qrUrl = `${window.location.origin}/redeem-stamp?token=${token}`;
-        QRCode.toDataURL(qrUrl, { width: 300 }, (err, url) => {
-            if(!err) setQrCodeDataUrl(url);
+        QRCode.toDataURL(qrUrl, { width: 300, margin: 2 }, (err, url) => {
+        if (!err) setQrCodeDataUrl(url);
         });
-    });
+    }, [token]);
+
+    useEffect(() => {
+        if (!token) return;
+
+        const interval = setInterval(async () => {
+        const res = await fetch(`/api/stamps/status/${token}`);
+        if (res.ok) {
+            const { isRedeemed } = await res.json();
+            if (isRedeemed) {
+            setIsRedeemed(true);
+            clearInterval(interval);
+            setTimeout(onClose, 2000);
+            }
+        }
+        }, 2000); 
+
+        return () => clearInterval(interval);
+    }, [token, onClose]);
 
     return (
-        <div className='fixed inset-0 bg-black/80 flex items-center justify-center z-50' onClick={onClose}>
-            <div className='bg-white p-8 rounded-lg text-center' onClick={(e) => e.stopPropagation()}>
-                <h3 className='text-2xl font-bold text-black mb-4'>Stempel für Kunde</h3>
-                {qrCodeDataUrl ? (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50" onClick={onClose}>
+            <div className="bg-white p-8 rounded-lg text-center flex flex-col items-center" onClick={(e) => e.stopPropagation()}>
+                <h3 className="text-2xl font-bold text-black mb-4">Stempel für Kunde</h3>
+                
+                {isRedeemed ? (
+                    <div className="w-[300px] h-[300px] flex flex-col items-center justify-center bg-green-100 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-green-700 font-bold mt-4">Erfolgreich eingelöst!</p>
+                    </div>
+                ) : qrCodeDataUrl ? (
                     <Image src={qrCodeDataUrl} alt="QR Code" width={300} height={300} />
                 ) : (
-                    <p className='text-black'>QR-Code wird generiert...</p>
+                    <div className="w-[300px] h-[300px] flex items-center justify-center">
+                        <p className="text-black">QR-Code wird generiert...</p>
+                    </div>
                 )}
-                <p className='text-neutral-600 mt-4'>Kunde soll diese Code scannen, um einen Stempel zu erhalten.</p>
-                <button onClick={onClose} className='mt-6 bg-neutral-800 text-white px-6 py-2 rounded-lg'>Schließen</button>
+
+                <p className="text-neutral-600 mt-4 max-w-xs">Kunde soll diesen Code scannen, um einen Stempel zu erhalten.</p>
+                <button onClick={onClose} className="mt-6 bg-neutral-800 text-white px-6 py-2 rounded-lg">Schließen</button>
             </div>
         </div>
     )
