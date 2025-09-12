@@ -8,7 +8,7 @@ import CancellationEmail from '@/emails/CancellationEmail';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   context: { params: { id: string } }
 ) {
   const { params } = context

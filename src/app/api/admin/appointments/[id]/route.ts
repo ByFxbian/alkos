@@ -4,7 +4,7 @@ import { authOptions } from '../../../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 
 export async function DELETE(
-  req: NextRequest,
+  _req: NextRequest,
   context: { params: { id: string } }
 ) {
   const { params } = context;
