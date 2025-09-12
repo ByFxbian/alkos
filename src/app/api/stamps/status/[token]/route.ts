@@ -3,9 +3,9 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   _req: Request,
-  context: { params: { token: string } }
+  context: { params: unknown }
 ) {
-  const { params } = context;
+  const { params } = context as { params: { token: string } };
   try {
     const { token } = params;
     const stampToken = await prisma.stampToken.findUnique({
