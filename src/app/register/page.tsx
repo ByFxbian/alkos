@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', instagram: '' });
@@ -40,6 +41,9 @@ export default function RegisterPage() {
             <button type="submit" className="w-full bg-gold-500 text-black font-bold p-2 rounded">Konto erstellen</button>
             {error && <p className="text-red-500">{error}</p>}
         </form>
+        <p className="mt-4 text-center">
+            Du hast bereits ein Konto? <Link href="/login" className="text-gold-500 hover:underline">Jetzt anmelden</Link>
+        </p>
     </div>
   );
 }
