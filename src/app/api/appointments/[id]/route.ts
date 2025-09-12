@@ -35,7 +35,7 @@ export async function DELETE(
 
     try {
       await resend.emails.send({
-        from: 'Alkos <no-reply@pulsefeed.de>', 
+        from: 'Alkos <contact@alkosbarber.at>', 
         to: appointment.customer.email,
         subject: 'Dein Termin wurde storniert',
         react: CancellationEmail({

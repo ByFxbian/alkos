@@ -59,7 +59,7 @@ export async function POST(req: Request) {
 
     try {
       await resend.emails.send({
-        from: 'Alkos <no-reply@pulsefeed.de>',
+        from: 'Alkos <contact@alkosbarber.at>',
         to: newAppointment.customer.email,
         subject: 'Dein Termin wurde bestätigt!',
         react: ConfirmationEmail({

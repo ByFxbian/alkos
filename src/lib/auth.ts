@@ -15,7 +15,7 @@ export const authOptions: AuthOptions = {
     providers: [
         EmailProvider({
             server: {},
-            from: "Alkos <no-reply@pulsefeed.de>",
+            from: "contact@alkosbarber.at",
             async sendVerificationRequest({ identifier: email, url, provider: { from } }) {
                 try {
                     await resend.emails.send({
