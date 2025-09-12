@@ -7,8 +7,9 @@ import { Role } from '@/generated/prisma';
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  const { params } = context;
   const session = await getServerSession(authOptions);
   const targetUserId = params.id;
 
@@ -37,8 +38,9 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  const { params } = context;
   const session = await getServerSession(authOptions);
   const targetUserId = params.id;
 

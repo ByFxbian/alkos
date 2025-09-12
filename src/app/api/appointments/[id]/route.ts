@@ -9,8 +9,9 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  const { params } = context
   const session = await getServerSession(authOptions);
   const { id: appointmentId } = params;
 
