@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import BookingForm from "../../components/BookingForm";
 import { Role } from "@/generated/prisma";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../api/auth/[...nextauth]/route";
+import { authOptions } from '@/lib/auth';
 
 export default async function TerminePage() {
     const session = await getServerSession(authOptions);

@@ -1,9 +1,9 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 import { Resend } from 'resend';
 import CancellationEmail from '@/emails/CancellationEmail';
+import { authOptions } from '@/lib/auth';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
