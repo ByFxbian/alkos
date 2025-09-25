@@ -23,12 +23,10 @@ export default function Navbar() {
   return (
     <header className="bg-neutral-950/50 backdrop-blur-sm sticky top-0 z-50 border-b border-white/10">
       <nav className="container mx-auto flex items-center justify-between p-4 text-white">
-        {/* Logo */}
         <Link href="/" className="text-xl font-bold text-white hover:text-gold-500 transition-colors">
           Alkos
         </Link>
 
-        {/* Navigation Links */}
         <div className="hidden md:flex items-center space-x-6">
           <Link href="/termine" className="hover:text-gold-500 transition-colors">Termine</Link>
           <Link href="/team" className="hover:text-gold-500 transition-colors">Team</Link>
@@ -53,7 +51,6 @@ export default function Navbar() {
                   {session.user?.name?.charAt(0).toUpperCase()}
                 </button>
                 
-                {/* Dropdown-Menü */}
                 <div className={`absolute right-0 mt-2 w-56 bg-neutral-800 rounded-md shadow-lg py-1 transition-all duration-300 ${isDropdownOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
                   <p className="px-4 py-2 text-sm text-neutral-400 truncate">Hallo, {session.user?.name}</p>
                   <hr className="border-neutral-700" />
@@ -61,7 +58,6 @@ export default function Navbar() {
                   <Link href="/meine-termine" className="block px-4 py-2 text-sm text-white hover:bg-neutral-700">Meine Termine</Link>
                   <Link href="/einstellungen" className="block px-4 py-2 text-sm text-white hover:bg-neutral-700">Einstellungen</Link>
 
-                  {/* Barber & Admin Links */}
                   {(session.user?.role === 'FRISEUR' || session.user?.role === 'ADMIN') && (
                       <Link href="/admin/kalender" className="block px-4 py-2 text-sm text-white hover:bg-neutral-700">Terminkalender</Link>
                   )}
@@ -92,8 +88,7 @@ export default function Navbar() {
           <Link href="/team" className="hover:text-gold-500" onClick={() => setIsMobileMenuOpen(false)}>Team</Link>
           <Link href="/gallerie" className="hover:text-gold-500" onClick={() => setIsMobileMenuOpen(false)}>Gallerie</Link>
           <hr className="w-48 border-neutral-700" />
-          
-          {/* Login/Account-Button für das mobile Menü */}
+
           {status === 'unauthenticated' && (
             <Link href="/login" className="bg-gold-500 text-black font-semibold px-4 py-2 rounded-md" onClick={() => setIsMobileMenuOpen(false)}>
               Login

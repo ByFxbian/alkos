@@ -37,7 +37,6 @@ export default function HomepageClient({ barbers }: HomepageClientProps) {
                 quality={90}
                 priority
                 />
-                {/* Ein leichter schwarzer Schleier über dem Bild für bessere Lesbarkeit */}
                 <div className="absolute inset-0 bg-black/50"></div>
             </div>
 

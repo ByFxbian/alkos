@@ -47,14 +47,12 @@ export default function LoginPage() {
           >
             <FaGoogle /> Mit Google anmelden
           </button>
-          {/* === APPLE BUTTON START === */}
           <button 
             onClick={() => signIn('apple', { callbackUrl: '/' })}
             className="w-full flex items-center justify-center gap-2 bg-black text-white font-bold p-2 rounded border border-white hover:bg-neutral-800 transition-colors"
           >
             <FaApple /> Mit Apple anmelden
           </button>
-          {/* === APPLE BUTTON ENDE === */}
         </div>
 
         <div className="flex items-center my-4">

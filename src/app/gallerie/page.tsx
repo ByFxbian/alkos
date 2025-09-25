@@ -18,8 +18,7 @@ export default function GalleriePage() {
           Ein Einblick in unsere Kunst. Hier siehst du eine Auswahl unserer Arbeiten und die Atmosphäre in unserem Shop.
         </p>
       </div>
-      
-      {/* Responsives Bilder-Grid */}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {galleryImages.map((image, idx) => (
           <div 

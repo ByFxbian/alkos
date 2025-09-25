@@ -132,7 +132,6 @@ export default function BarberSchedule({ appointments, isAdmin }: BarberSchedule
                                 <p className="text-neutral-300">
                                     Kunde: {app.customer.name} ({app.customer.email})
                                 </p>
-                                {/* Zeige den Friseur nur an, wenn der Nutzer Admin ist */}
                                 {isAdmin && (
                                     <p className="text-neutral-400 text-sm">
                                     Bei: {app.barber.name}

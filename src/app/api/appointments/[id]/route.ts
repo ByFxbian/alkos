@@ -19,7 +19,6 @@ export async function DELETE(
   }
 
   try {
-    // 1. Finde den zu löschenden Termin
     const appointment = await prisma.appointment.findUnique({
       where: { id: appointmentId },
       include: {
@@ -28,7 +27,6 @@ export async function DELETE(
       },
     });
 
-    // 2. Sicherheits-Check: Gehört der Termin dem eingeloggten User?
     if (!appointment || (appointment.customerId !== session.user.id && session.user.role !== 'ADMIN')) {
       return NextResponse.json({ error: 'Zugriff verweigert' }, { status: 403 });
     }
@@ -49,7 +47,6 @@ export async function DELETE(
       console.error('Fehler beim Senden der Stornierungs-E-Mail:', emailError);
     }
 
-    // 3. Wenn alles passt, lösche den Termin
     await prisma.appointment.delete({
       where: { id: appointmentId },
     });

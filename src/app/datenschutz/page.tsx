@@ -2,8 +2,7 @@ export default function DatenschutzPage() {
   return (
     <div className="container mx-auto py-12 px-4 max-w-3xl">
       <h1 className="text-4xl font-bold mb-8">Datenschutzerklärung</h1>
-      
-      {/* Die "prose" Klassen sorgen für schönes Text-Styling (Abstände, Schriftgrößen etc.) */}
+
       <div className="prose prose-invert max-w-none">
         <p>Der Schutz Ihrer persönlichen Daten ist uns ein besonderes Anliegen. In diesen Datenschutzinformationen informieren wir Sie über die wichtigsten Aspekte der Datenverarbeitung.</p>
         

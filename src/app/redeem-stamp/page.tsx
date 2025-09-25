@@ -11,11 +11,10 @@ export default function RedeemStampPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   
-  // Dieser State steuert, was wir anzeigen: 'loading', 'scanner', oder 'redeeming'
   const [view, setView] = useState<'loading' | 'scanner' | 'redeeming'>('loading');
 
   const redeemToken = async (tokenValue: string) => {
-    if (message || error) return; // Verhindert doppeltes Ausführen
+    if (message || error) return;
     setMessage('Stempel wird eingelöst...');
     setError('');
     
@@ -37,11 +36,11 @@ export default function RedeemStampPage() {
     }
   };
 
-  // Dieser useEffect läuft GARANTIERT nur auf dem Client, NACHDEM die Seite geladen ist
+
   useEffect(() => {
-    // Wenn der User eingeloggt ist, entscheiden wir, was zu tun ist
+
     if (status === 'authenticated') {
-      // Wir holen den Token direkt aus der Browser-URL, ohne den problematischen Hook
+
       const params = new URLSearchParams(window.location.search);
       const tokenFromUrl = params.get('token');
 
@@ -49,19 +48,17 @@ export default function RedeemStampPage() {
         setView('redeeming');
         redeemToken(tokenFromUrl);
       } else {
-        setView('scanner'); // Kein Token gefunden -> Scanner anzeigen
+        setView('scanner'); 
       }
     }
-    // Wenn der User nicht eingeloggt ist, leiten wir ihn zum Login
+
     else if (status === 'unauthenticated') {
       const params = new URLSearchParams(window.location.search);
       const tokenFromUrl = params.get('token');
       const callbackUrl = `/redeem-stamp${tokenFromUrl ? `?token=${tokenFromUrl}` : ''}`;
       router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
     }
-  }, [status]); // Dieser Effekt wird ausgeführt, sobald der Login-Status bekannt ist
-
-  // === Render-Logik basierend auf dem 'view'-State ===
+  }, [status]);
 
   if (view === 'loading' || status === 'loading') {
     return <p className="text-center mt-20">Lade...</p>;
@@ -93,7 +90,7 @@ export default function RedeemStampPage() {
                     redeemToken(scannedToken);
                   }
                 } catch {
-                  // Ignorieren, wenn es kein gültiger Link ist
+
                 }
               }
             }}
@@ -104,6 +101,5 @@ export default function RedeemStampPage() {
     );
   }
 
-  // Fallback, falls etwas Unerwartetes passiert
   return <p className="text-center mt-20">Ein Fehler ist aufgetreten.</p>;
 }

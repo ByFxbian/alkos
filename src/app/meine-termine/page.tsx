@@ -40,7 +40,6 @@ export default async function MeineTerminePage() {
         <div className="container mx-auto py-12 px-4">
             <h1 className="text-4xl font-bold tracking-tight mb-8">Meine Termine</h1>
 
-            {/* NEUE Sektion für den Stempelpass */}
             <div className="mb-12">
                 <LoyaltyCard 
                 completedAppointments={currentUser.completedAppointments} 

@@ -107,7 +107,6 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
       <style>{css}</style>
       <h1 className="text-4xl font-bold tracking-tight mb-8">Termin buchen</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {/* SCHRITT 1: DIENSTLEISTUNG */}
         <div>
           <h2 className="text-2xl font-semibold mb-4 text-gold-500">Art</h2>
           <div className="space-y-2">
@@ -123,7 +122,6 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
           </div>
         </div>
 
-        {/* SCHRITT 2: FRISEUR */}
         <div className={step >= 2 ? '' : 'opacity-50'}>
           <h2 className="text-2xl font-semibold mb-4 text-gold-500">Barber</h2>
           <div className="space-y-2">
@@ -135,7 +133,6 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
           </div>
         </div>
 
-        {/* SCHRITT 3: DATUM & UHRZEIT */}
         <div className={step >= 3 ? '' : 'opacity-50'}>
           <h2 className="text-2xl font-semibold mb-4 text-gold-500">Datum & Uhrzeit</h2>
           <DayPicker mode="single" selected={selectedDate} onSelect={setSelectedDate} locale={de} fromDate={new Date()} disabled={step < 3} className="flex justify-center" />
@@ -143,7 +140,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
             {isLoading && <p>Lade freie Termine...</p>}
             {!isLoading && availableSlots.length > 0 && (
               <>
-                {/* Das Grid nur für die Timeslots */}
+
                 <div className="grid grid-cols-4 gap-2">
                   {availableSlots.map(slot => (
                     <button 
@@ -156,7 +153,6 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
                   ))}
                 </div>
 
-                {/* Stempelpass & Bestätigungs-Button werden NACH dem Grid gerendert */}
                 {hasFreeAppointment && (
                   <div className="mt-6 border-t border-neutral-700 pt-6">
                     <label className="flex items-center space-x-3 cursor-pointer">

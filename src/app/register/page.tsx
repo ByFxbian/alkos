@@ -33,7 +33,6 @@ export default function RegisterPage() {
     <div className="container mx-auto py-12 px-4 max-w-md">
         <h1 className="text-4xl font-bold mb-4">Registrieren</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Formularfelder für name, email, instagram, password */}
             <input type="text" name="name" placeholder="Name" onChange={handleChange} required className="w-full p-2 bg-neutral-800 rounded"/>
             <input type="email" name="email" placeholder="E-Mail" onChange={handleChange} required className="w-full p-2 bg-neutral-800 rounded"/>
             <input type="text" name="instagram" placeholder="Instagram" onChange={handleChange} className="w-full p-2 bg-neutral-800 rounded"/>

@@ -17,12 +17,12 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Keine Datei gefunden' }, { status: 400 });
   }
 
-  // Lade die Datei zu Vercel Blob hoch
+
   const blob = await put(filename, request.body, {
     access: 'public',
   });
 
-  // Speichere die neue URL in der Datenbank des Nutzers
+
   await prisma.user.update({
     where: { id: session.user.id },
     data: { image: blob.url },

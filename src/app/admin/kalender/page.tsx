@@ -19,11 +19,9 @@ export default async function KalenderAdminPage() {
 
   const appointments = await prisma.appointment.findMany({
     where: {
-      // Wenn der User ein ADMIN ist, lade alle Termine.
-      // Ansonsten lade nur die Termine des eingeloggten Friseurs.
       barberId: session.user.role === 'ADMIN' ? undefined : session.user.id,
       startTime: {
-        gte: new Date(), // Nur zukünftige Termine
+        gte: new Date(),
       },
     },
     include: {
@@ -38,14 +36,12 @@ export default async function KalenderAdminPage() {
 
   return (
     <div className="container mx-auto py-12 px-4">
-      {/* Arbeitszeiten-Formular (bleibt wie es ist) */}
       <h1 className="text-4xl font-bold tracking-tight mb-2">Meine Arbeitszeiten</h1>
       <p className="text-neutral-400 mb-8">
         Lege hier deine wöchentlichen Arbeitszeiten fest.
       </p>
       <AvailabilityForm currentAvailabilities={availabilities} />
-      
-      {/* Neue Sektion für die Terminübersicht */}
+
       <div className="mt-16">
         <h2 className="text-4xl font-bold tracking-tight mb-8">Anstehende Termine</h2>
         <BarberSchedule appointments={appointments} isAdmin={session.user.role === 'ADMIN'} />
