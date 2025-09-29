@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { FaApple, FaGoogle } from 'react-icons/fa';
 
@@ -10,6 +10,14 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const errorFromUrl = searchParams.get('error');
+    if (errorFromUrl === 'OAuthAccountNotLinked') {
+      setError('Diese E-Mail-Adresse ist bereits mit einem anderen Login-Verfahren (z.B. E-Mail/Passwort) registriert. Bitte melde dich auf diesem Weg an.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +47,8 @@ export default function LoginPage() {
   return (
     <div className="container mx-auto py-12 px-4 max-w-md">
         <h1 className="text-4xl font-bold mb-4">Login</h1>
+
+        {error && <p className="text-red-500 bg-red-500/10 p-3 rounded-md mb-4">{error}</p>}
 
         <div className="space-y-2">
           <button 

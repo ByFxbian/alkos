@@ -26,7 +26,7 @@ export default function Footer() {
           <div>
             <h3 className="font-bold text-lg">Kontakt</h3>
             <div className="mt-2 space-y-1 text-sm " style={{ color: 'var(--color-text-muted)' }}>
-              <p>Simmeringer Hauptstraße 11, 1110 Wien</p>
+              <p>Wiedner Gürtel 12, 1040 Wien</p>
               <div className="mt-2 flex justify-center md:justify-start">
                 <a href="https://www.instagram.com/alkosbarbershop" target="_blank" rel="noopener noreferrer" className=" hover:text-gold-500">
                     <FaInstagram size={24} />
