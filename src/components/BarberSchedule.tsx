@@ -109,7 +109,7 @@ export default function BarberSchedule({ appointments, isAdmin }: BarberSchedule
     };
 
     if (appointments.length === 0) {
-        return <p className="text-neutral-400">Keine anstehenden Termine gefunden.</p>;
+        return <p style={{ color: 'var(--color-text-muted)' }}>Keine anstehenden Termine gefunden.</p>;
     }
 
     return (
@@ -117,7 +117,7 @@ export default function BarberSchedule({ appointments, isAdmin }: BarberSchedule
             {showQrModal && <QrCodeModal token={showQrModal} onClose={() => setShowQrModal(null)} />}
             <div className="space-y-4">
                 {appointments.map((app) => (
-                    <div key={app.id} className="bg-neutral-900 p-4 rounded-lg border-l-4 items-center justify-between border-gold-500">
+                    <div key={app.id} className=" p-4 rounded-lg border-l-4 items-center justify-between border-gold-500" style={{ backgroundColor: 'var(--color-surface)' }}>
                         <div className="flex items-center space-x-4">
                             <Image
                             src={app.customer.image || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
@@ -129,11 +129,11 @@ export default function BarberSchedule({ appointments, isAdmin }: BarberSchedule
                             <div>
                                 <p className="font-bold text-lg">{app.service.name}</p>
                                 {app.isFree && <span className="text-xs font-bold uppercase text-green-400 bg-green-950 px-2 py-1 rounded">Stempelpass</span>}
-                                <p className="text-neutral-300">
+                                <p style={{ color: 'var(--color-text-muted)' }}>
                                     Kunde: {app.customer.name} ({app.customer.email})
                                 </p>
                                 {isAdmin && (
-                                    <p className="text-neutral-400 text-sm">
+                                    <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
                                     Bei: {app.barber.name}
                                     </p>
                                 )}
@@ -151,7 +151,7 @@ export default function BarberSchedule({ appointments, isAdmin }: BarberSchedule
                                     <button onClick={() => generateQrCode(app.id)} className='bg-gold-500 text-black font-semibold px-3 py-2 rounded-md text-sm hover:bg-gold-400'>
                                         QR-Code
                                     </button>
-                                    <button onClick={() => handleDelete(app.id)} className="text-neutral-500 hover:text-red-500 transition-colors">
+                                    <button onClick={() => handleDelete(app.id)} className="hover:text-red-500 transition-colors" style={{ color: 'var(--color-text-muted)' }}>
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>

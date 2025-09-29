@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { Providers } from './providers';
 import Footer from "@/components/Footer";
+import { ThemeProvider } from "./theme-provider";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -33,13 +34,15 @@ export default function RootLayout({
     <html lang="de" className={`${playfair.variable} ${roboto.variable}`}>
       <body>
         <Providers>
-          <div className="flex flex-col min-h-screen">
-            <Navbar />
-            <main className="flex-grow">
-              {children}
-            </main>
-          </div>
-          <Footer />
+          <ThemeProvider>
+            <div className="flex flex-col min-h-screen">
+              <Navbar />
+              <main className="flex-grow">
+                {children}
+              </main>
+              <Footer />
+            </div>
+          </ThemeProvider>
         </Providers>
       </body>
     </html>

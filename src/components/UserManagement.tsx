@@ -30,31 +30,33 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
   };
 
   return (
-    <div className="bg-neutral-900 rounded-lg overflow-hidden">
-      <table className="min-w-full divide-y divide-neutral-800">
-        <thead className="bg-neutral-950">
+    <div className="rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--color-surface)' }}>
+      <table className="min-w-full divide-y" style={{ borderColor: 'var(--color-border)' }}>
+        <thead style={{ backgroundColor: 'var(--color-surface-3)'}}>
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Name</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Rolle</th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-neutral-400 uppercase tracking-wider">Aktionen</th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Name</th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Rolle</th>
+            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Aktionen</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-neutral-800">
+        <tbody className="divide-y " style={{ borderColor: 'var(--color-border)' }}>
           {allUsers.map((user) => (
             <tr key={user.id}>
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium text-white">{user.name}</div>
-                <div className="text-sm text-neutral-400">{user.email}</div>
+                <div className="text-sm font-medium">{user.name}</div>
+                <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{user.email}</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <select
                   value={user.role}
                   onChange={(e) => handleRoleChange(user.id, e.target.value as Role)}
                   disabled={user.id === currentUserId}
-                  className="bg-neutral-800 border border-neutral-700 text-white text-sm rounded-lg p-2"
+                  className="text-sm rounded-lg p-2"
+                  style={{ backgroundColor: 'var(--color-surface-3)', border: '1px solid var(--color-border)' }}
                 >
                   <option value="KUNDE">Kunde</option>
-                  <option value="FRISEUR">Friseur</option>
+                  <option value="BARBER">Barber</option>
+                  <option value="HEADOFBARBER">Head Of Barber</option>
                   <option value="ADMIN">Admin</option>
                 </select>
               </td>
@@ -62,7 +64,7 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
                 <button
                   onClick={() => handleDelete(user.id)}
                   disabled={user.id === currentUserId}
-                  className="text-red-500 hover:text-red-400 disabled:text-neutral-600 disabled:cursor-not-allowed"
+                  className="text-red-500 hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Löschen
                 </button>

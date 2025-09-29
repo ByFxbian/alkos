@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 
 export default function RegisterPage() {
@@ -11,6 +12,7 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -18,6 +20,11 @@ export default function RegisterPage() {
     });
 
     if (res.ok) {
+      await signIn('email', {
+        email: formData.email,
+        redirect: false,
+      });
+
       router.push('/verify-request'); 
     } else {
       const data = await res.json();
@@ -33,10 +40,10 @@ export default function RegisterPage() {
     <div className="container mx-auto py-12 px-4 max-w-md">
         <h1 className="text-4xl font-bold mb-4">Registrieren</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-            <input type="text" name="name" placeholder="Name" onChange={handleChange} required className="w-full p-2 bg-neutral-800 rounded"/>
-            <input type="email" name="email" placeholder="E-Mail" onChange={handleChange} required className="w-full p-2 bg-neutral-800 rounded"/>
-            <input type="text" name="instagram" placeholder="Instagram" onChange={handleChange} className="w-full p-2 bg-neutral-800 rounded"/>
-            <input type="password" name="password" placeholder="Passwort" onChange={handleChange} required className="w-full p-2 bg-neutral-800 rounded"/>
+            <input type="text" name="name" placeholder="Name" onChange={handleChange} required className="w-full p-2 rounded" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}/>
+            <input type="email" name="email" placeholder="E-Mail" onChange={handleChange} required className="w-full p-2 rounded" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}/>
+            <input type="text" name="instagram" placeholder="Instagram" onChange={handleChange} className="w-full p-2 rounded" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}/>
+            <input type="password" name="password" placeholder="Passwort" onChange={handleChange} required className="w-full p-2 rounded" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}/>
             <button type="submit" className="w-full bg-gold-500 text-black font-bold p-2 rounded">Konto erstellen</button>
             {error && <p className="text-red-500">{error}</p>}
         </form>

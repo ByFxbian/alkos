@@ -14,7 +14,7 @@ export default function GalleriePage() {
     <div className="container mx-auto py-12 px-4">
       <div className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Gallerie</h1>
-        <p className="mt-4 text-neutral-300 max-w-2xl mx-auto">
+        <p className="mt-4 max-w-2xl mx-auto" style={{ color: 'var(--color-text-muted)' }}>
           Ein Einblick in unsere Kunst. Hier siehst du eine Auswahl unserer Arbeiten und die Atmosphäre in unserem Shop.
         </p>
       </div>

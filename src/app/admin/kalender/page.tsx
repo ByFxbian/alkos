@@ -8,7 +8,7 @@ import BarberSchedule from '@/components/BarberSchedule';
 export default async function KalenderAdminPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session ||!['ADMIN', 'FRISEUR'].includes(session.user.role)) {
+  if (!session ||!['ADMIN', 'BARBER', 'HEADOFBARBER'].includes(session.user.role)) {
     redirect('/login');
   }
 

@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+//import Image from 'next/image';
 import BarberCard from '@/components/BarberCard';
-import { useState, useEffect } from 'react';
+//import { useState, useEffect } from 'react';
 import type { User } from '@/generated/prisma';
 import TikTokCarousel from '@/components/TikTokCarousel';
 
@@ -12,9 +12,9 @@ type HomepageClientProps = {
 };
 
 export default function HomepageClient({ barbers }: HomepageClientProps) {
-    const [opacity, setOpacity] = useState(1);
+    //const [opacity, setOpacity] = useState(1);
 
-    useEffect(() => {
+    /*useEffect(() => {
         const handleScroll = () => {
             const scrollY = window.scrollY;
             const fadeOutDistance = 500;
@@ -25,10 +25,9 @@ export default function HomepageClient({ barbers }: HomepageClientProps) {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
-  
+  */
     return (
-        <>
-            <div className="fixed top-0 left-0 w-full h-screen -z-10" style={{ opacity }}>
+            /*<div className="fixed top-0 left-0 w-full h-screen -z-10" style={{ opacity }}>
                 <Image
                 src="/barber-bg.png"
                 alt="Hintergrund eines Barbershops"
@@ -39,14 +38,14 @@ export default function HomepageClient({ barbers }: HomepageClientProps) {
                 />
                 <div className="absolute inset-0 bg-black/50"></div>
             </div>
-
+*/
             <main>
-                <section className="min-h-screen flex items-center justify-center -mt-16 bg-black/20 rounded-xl border border-white/10"> {/* backdrop-blur-sm */}
+                <section className="min-h-screen flex items-center justify-center -mt-16 rounded-xl"> {/* backdrop-blur-sm */}
                     <div className="container mx-auto text-center px-4">
                         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight">
-                            Willkommen bei Alkos Barber
+                            Willkommen bei ALKOS
                         </h1>
-                        <p className="mt-4 text-lg md:text-xl text-neutral-300 max-w-2xl mx-auto">
+                        <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto" style={{ color: 'var(--color-text-muted)' }}>
                             Hier kommt irgendein Text rein aber ich weiß noch nicht was
                         </p>
                         <div className="mt-8">
@@ -59,7 +58,7 @@ export default function HomepageClient({ barbers }: HomepageClientProps) {
                     </div>
                 </section>
 
-                <section id='team' className='py-20 bg-black'>
+                <section id='team' className='py-20' style={{ backgroundColor: 'var(--color-surface-2)' }}>
                     <div className='container mx-auto px-4'>
                         <h2 className='text-4xl font-bold text-center mb-12'>
                             Lerne unser Team kennen
@@ -70,14 +69,14 @@ export default function HomepageClient({ barbers }: HomepageClientProps) {
                                 key={barber.id}
                                 name={barber.name || 'Barber'}
                                 role={barber.role}
-                                image={'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
+                                image={barber.image || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
                             />
                             ))}
                         </div>
                     </div>
                 </section>
 
-                <section id="tiktok" className="py-20 bg-neutral-950">
+                <section id="tiktok" className="py-20" style={{ backgroundColor: 'var(--color-surface-3)' }}>
                     <div className="container mx-auto px-4">
                         <h2 className="text-4xl font-bold text-center mb-12">
                             Unsere Arbeit in Action
@@ -91,6 +90,5 @@ export default function HomepageClient({ barbers }: HomepageClientProps) {
                     </div>
                 </section>
             </main>
-        </>
     );
 }

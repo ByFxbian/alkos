@@ -4,7 +4,7 @@ import HomepageClient from '@/components/HomepageClient';
 
 export default async function Home() {
   const barbers = await prisma.user.findMany({
-    where: { role: Role.FRISEUR },
+    where: { role: Role.BARBER || Role.HEADOFBARBER },
     take: 3,
   });
 

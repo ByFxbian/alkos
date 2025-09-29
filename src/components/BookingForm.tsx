@@ -91,15 +91,15 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
     .rdp {
       --rdp-cell-size: 45px;
       --rdp-caption-font-size: 1.25rem;
-      --rdp-background-color: #1c1c1c;
-      --rdp-accent-color: #f59e0b;
-      --rdp-color: #ffffff;
+      --rdp-background-color: var(--color-surface-3);
+      --rdp-accent-color: var(--color-gold-500);
+      --rdp-color: var(--color-text);
       margin: 1em 0;
-      border: 1px solid #333;
+      border: 1px solid var(--color-border);
       border-radius: 8px;
     }
-    .rdp-head_cell { color: #a1a1aa; }
-    .rdp-button:hover:not([disabled]):not(.rdp-day_selected) { background-color: #333; }
+    .rdp-head_cell { color: var(--color-text-muted); }
+    .rdp-button:hover:not([disabled]):not(.rdp-day_selected) { background-color: var(--color-surface); }
   `;
 
     return (
@@ -111,7 +111,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
           <h2 className="text-2xl font-semibold mb-4 text-gold-500">Art</h2>
           <div className="space-y-2">
             {services.map(service => (
-              <button key={service.id} onClick={() => { setSelectedService(service); setStep(2); }} className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${selectedService?.id === service.id ? 'bg-gold-500 text-black border-gold-500' : 'border-neutral-700 hover:border-gold-500'}`}>
+              <button key={service.id} onClick={() => { setSelectedService(service); setStep(2); }} className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${selectedService?.id === service.id ? 'bg-gold-500 text-black border-gold-500' : ' hover:border-gold-500'}`} style={{ borderColor: selectedService?.id !== service.id ? 'var(--color-border)' : '' }}>
                 <div className="flex justify-between items-center">
                   <p className="font-bold">{service.name}</p>
                   <p className="font-semibold">{service.price.toFixed(2)} €</p>
@@ -126,7 +126,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
           <h2 className="text-2xl font-semibold mb-4 text-gold-500">Barber</h2>
           <div className="space-y-2">
             {barbers.map(barber => (
-              <button key={barber.id} onClick={() => { setSelectedBarber(barber); setStep(3); }} disabled={step < 2} className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${selectedBarber?.id === barber.id ? 'bg-gold-500 text-black border-gold-500' : 'border-neutral-700 hover:border-gold-500'}`}>
+              <button key={barber.id} onClick={() => { setSelectedBarber(barber); setStep(3); }} disabled={step < 2} className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${selectedBarber?.id === barber.id ? 'bg-gold-500 text-black border-gold-500' : ' hover:border-gold-500'}`} style={{ borderColor: selectedBarber?.id !== barber.id ? 'var(--color-border)' : '' }}>
                 <p className="font-bold">{barber.name}</p>
               </button>
             ))}
@@ -146,7 +146,8 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
                     <button 
                       key={slot} 
                       onClick={() => setSelectedSlot(slot)}
-                      className={`p-2 rounded-lg transition-colors ${selectedSlot === slot ? 'bg-green-500 text-white' : 'bg-neutral-800 hover:bg-gold-500 hover:text-black'}`}
+                      className={`p-2 rounded-lg transition-colors ${selectedSlot === slot ? 'bg-green-500 text-white' : 'hover:bg-gold-500 hover:text-black'}`}
+                      style={{ backgroundColor: selectedSlot !== slot ? 'var(--color-surface)' : '' }}
                     >
                       {format(new Date(slot), 'HH:mm')}
                     </button>
@@ -160,7 +161,8 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
                         type="checkbox"
                         checked={useFreeAppointment}
                         onChange={(e) => setUseFreeAppointment(e.target.checked)}
-                        className="h-5 w-5 rounded bg-neutral-700 border-neutral-600 text-gold-500 focus:ring-gold-500"
+                        className="h-5 w-5 rounded text-gold-500 focus:ring-gold-500"
+                        style={{ backgroundColor: 'var(--color-background)', borderColor: 'var(--color-border)' }}
                       />
                       <span className="font-bold text-green-400">Gratis-Termin einlösen</span>
                     </label>
@@ -177,7 +179,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
               </>
             )}
             {!isLoading && availableSlots.length === 0 && selectedDate && (
-              <p className="text-neutral-400">Für diesen Tag sind leider keine Termine mehr verfügbar.</p>
+              <p style={{ color: 'var(--color-text-muted)' }}>Für diesen Tag sind leider keine Termine mehr verfügbar.</p>
             )}
           </div>
         </div>

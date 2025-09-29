@@ -49,25 +49,30 @@ export default function LoginPage() {
           </button>
           <button 
             onClick={() => signIn('apple', { callbackUrl: '/' })}
-            className="w-full flex items-center justify-center gap-2 bg-black text-white font-bold p-2 rounded border border-white hover:bg-neutral-800 transition-colors"
+            className="w-full flex items-center justify-center gap-2 font-bold p-2 rounded border e hover:opacity-80 transition-colors"
+            style={{ 
+              backgroundColor: 'var(--color-text)', 
+              color: 'var(--color-background)',
+              borderColor: 'var(--color-text)'
+            }}
           >
             <FaApple /> Mit Apple anmelden
           </button>
         </div>
 
         <div className="flex items-center my-4">
-          <div className="flex grow border-t border-neutral-700"></div>
-          <span className="flex-shrink mx-4 text-neutral-500">ODER</span>
-          <div className="flex-grow border-t border-neutral-700"></div>
+          <div className="flex grow border-t " style={{ borderColor: 'var(--color-border)' }}></div>
+          <span className="flex-shrink mx-4 " style={{ color: 'var(--color-text-muted)' }}>ODER</span>
+          <div className="flex-grow border-t " style={{ borderColor: 'var(--color-border)' }}></div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-            <input type="email" name="email" placeholder="E-Mail" onChange={handleChange} required className="w-full p-2 bg-neutral-800 rounded"/>
-            <input type="password" name="password" placeholder="Passwort" onChange={handleChange} required className="w-full p-2 bg-neutral-800 rounded"/>
+            <input type="email" name="email" placeholder="E-Mail" onChange={handleChange} required className="w-full p-2  rounded" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}/>
+            <input type="password" name="password" placeholder="Passwort" onChange={handleChange} required className="w-full p-2 rounded" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}/>
             <button 
               type="submit" 
               disabled={isLoading}
-              className="w-full bg-gold-500 text-black font-bold p-2 rounded disabled:bg-neutral-600"
+              className="w-full bg-gold-500 text-black font-bold p-2 rounded disabled:opacity-50"
             >
               {isLoading ? 'Logge ein...' : 'Einloggen'}
             </button>

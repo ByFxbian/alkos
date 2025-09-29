@@ -131,7 +131,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
 
   return (
     <>
-        <form onSubmit={handleSubmit} className="max-w-lg mx-auto bg-neutral-900 p-8 rounded-lg space-y-6">
+        <form onSubmit={handleSubmit} className="max-w-lg mx-auto p-8 rounded-lg space-y-6" style={{ backgroundColor: 'var(--color-surface)'}}>
             {!user.emailVerified && (
                 <div className="bg-yellow-900/50 border border-yellow-700 text-yellow-300 p-4 rounded-lg text-center">
                     <p className="font-bold mb-2">Dein Konto ist nicht verifiziert.</p>
@@ -164,50 +164,52 @@ export default function SettingsForm({ user }: SettingsFormProps) {
                     />
                     <button
                         type="button"
-                        className="bg-neutral-700 px-4 py-2 rounded-md text-sm font-semibold hover:bg-neutral-600"
+                        className="px-4 py-2 rounded-md text-sm font-semibold"
+                        style={{ backgroundColor: 'var(--color-surface-3)'}}
                         onClick={() => inputFileRef.current?.click()}
                     >
                         Bild ändern
                     </button>
-                    <p className="text-xs text-neutral-500 mt-1">PNG, JPG (max. 4MB)</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>PNG, JPG (max. 4MB)</p>
                 </div>
             </div>
 
 
             <div>
-                <label htmlFor="email" className="block text-sm font-medium text-neutral-400">E-Mail</label>
-                <input type="email" id="email" value={user.email} disabled className="mt-1 w-full p-2 bg-neutral-800 rounded border border-neutral-700 cursor-not-allowed"/>
+                <label htmlFor="email" className="block text-sm font-medium " style={{ color: 'var(--color-text-muted)' }}>E-Mail</label>
+                <input type="email" id="email" value={user.email} disabled className="mt-1 w-full p-2 rounded border cursor-not-allowed" style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}/>
             </div>
             
             <div>
-                <label htmlFor="name" className="block text-sm font-medium text-neutral-400">Name</label>
-                <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required className="mt-1 w-full p-2 bg-neutral-800 rounded border border-neutral-700"/>
+                <label htmlFor="name" className="block text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>Name</label>
+                <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required className="mt-1 w-full p-2 rounded border" style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}/>
             </div>
 
             <div>
-                <label htmlFor="instagram" className="block text-sm font-medium text-neutral-400">Instagram</label>
-                <input type="text" id="instagram" name="instagram" value={formData.instagram} onChange={handleChange} className="mt-1 w-full p-2 bg-neutral-800 rounded border border-neutral-700"/>
+                <label htmlFor="instagram" className="block text-sm font-medium " style={{ color: 'var(--color-text-muted)' }}>Instagram</label>
+                <input type="text" id="instagram" name="instagram" value={formData.instagram} onChange={handleChange} className="mt-1 w-full p-2 rounded border " style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}/>
             </div>
 
             <div>
-                <label htmlFor="bio" className="block text-sm font-medium text-neutral-400">Über mich (Bio)</label>
+                <label htmlFor="bio" className="block text-sm font-medium " style={{ color: 'var(--color-text-muted)' }}>Über mich (Bio)</label>
                 <textarea
                     id="bio"
                     name="bio"
                     rows={3}
                     value={formData.bio}
                     onChange={handleChange}
-                    className="mt-1 w-full p-2 bg-neutral-800 rounded border border-neutral-700"
+                    className="mt-1 w-full p-2 rounded border "
+                    style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}
                     placeholder="Erzähle etwas über dich, deine Spezialitäten oder deine Philosophie."
                 />
             </div>
             
-            <div className="border-t border-neutral-700 pt-6">
+            <div className="border-t pt-6" style={{ borderColor: 'var(--color-border)' }}>
                 <p className="font-semibold mb-2">Passwort ändern</p>
                 <p className="text-sm text-neutral-500 mb-4">Fülle die folgenden Felder nur aus, wenn du dein Passwort ändern möchtest.</p>
                 <div className="space-y-4">
-                    <input type="password" name="password" placeholder="Neues Passwort" value={formData.password} onChange={handleChange} className="w-full p-2 bg-neutral-800 rounded border border-neutral-700"/>
-                    <input type="password" name="confirmPassword" placeholder="Neues Passwort bestätigen" value={formData.confirmPassword} onChange={handleChange} className="w-full p-2 bg-neutral-800 rounded border border-neutral-700"/>
+                    <input type="password" name="password" placeholder="Neues Passwort" value={formData.password} onChange={handleChange} className="w-full p-2 rounded border " style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}/>
+                    <input type="password" name="confirmPassword" placeholder="Neues Passwort bestätigen" value={formData.confirmPassword} onChange={handleChange} className="w-full p-2 rounded border " style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}/>
                 </div>
             </div>
         
@@ -215,7 +217,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
             {message && <p className="text-green-500 text-sm">{message}</p>}
 
             <div className="text-right">
-                <button type="submit" disabled={isLoading} className="bg-gold-500 text-black font-bold px-6 py-2 rounded-md hover:bg-gold-500 disabled:bg-neutral-600">
+                <button type="submit" disabled={isLoading} className="bg-gold-500 text-black font-bold px-6 py-2 rounded-md hover:bg-gold-400 disabled:opacity-50">
                     {isLoading ? 'Speichert...' : 'Änderungen speichern'}
                 </button>
             </div>
@@ -223,7 +225,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
             <div className="border-t border-red-800/50 pt-6 mt-6">
                 <p className="font-semibold text-red-500">Gefahrenzone</p>
                 <div className="flex justify-between items-center mt-2">
-                    <p className="text-sm text-neutral-400">Konto dauerhaft löschen.</p>
+                    <p className="text-sm " style={{ color: 'var(--color-text-muted)' }}>Konto dauerhaft löschen.</p>
                     <button
                     type="button"
                     onClick={() => setIsDeleteModalOpen(true)}

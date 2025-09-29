@@ -7,11 +7,36 @@
 
   --color-gold-400: #fde047;
   --color-gold-500: #facc15;
+
+  --color-background: theme(colors.white);
+  --color-text: theme(colors.black);
+  --color-surface: theme(colors.neutral.100); /* Für Hintergründe von Karten etc. */
+  --color-text-muted: theme(colors.neutral.500);
+  --color-border: theme(colors.neutral.200);
+
+   --color-surface-rgb: 244 244 245;
+   --color-surface-2: theme(colors.white);
+  --color-surface-3: theme(colors.neutral.50);
 }
 
 @layer base {
+  .dark {
+    --color-background: theme(colors.black);
+    --color-text: theme(colors.white);
+    --color-surface: theme(colors.neutral.900);
+    --color-text-muted: theme(colors.neutral.400);
+    --color-border: theme(colors.white / 0.1);
+
+    --color-surface-rgb: 38 38 38;
+    --color-surface-2: theme(colors.black);
+    --color-surface-3: theme(colors.neutral.950);
+  }
+
   body {
-    @apply bg-black text-white font-sans;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    @apply font-sans; 
+    /*@apply bg-black text-white font-sans;*/
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif;

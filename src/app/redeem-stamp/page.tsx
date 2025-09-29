@@ -77,8 +77,8 @@ export default function RedeemStampPage() {
     return (
       <div className="container mx-auto py-12 px-4 max-w-md text-center">
         <h1 className="text-3xl font-bold mb-4">QR-Code scannen</h1>
-        <p className="text-neutral-400 mb-6">Halte deine Kamera vor den QR-Code, den du von deinem Barber erhalten hast.</p>
-        <div className="w-full max-w-sm mx-auto rounded-lg overflow-hidden border-2 border-neutral-700">
+        <p className="mb-6" style={{ color: 'var(--color-text-muted)' }}>Halte deine Kamera vor den QR-Code, den du von deinem Barber erhalten hast.</p>
+        <div className="w-full max-w-sm mx-auto rounded-lg overflow-hidden border-2 " style={{ borderColor: 'var(--color-border)' }}>
           <Scanner
             onScan={(detectedCodes) => {
               if (detectedCodes.length > 0) {

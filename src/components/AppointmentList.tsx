@@ -38,16 +38,16 @@ export default function AppointmentList({ appointments }: AppointmentListProps) 
     };
 
     if (appointments.length === 0) {
-        return <p className="text-neutral-400">Du hast keine anstehenden Termine.</p>
+        return <p style={{ color: 'var(--color-text-muted)' }}>Du hast keine anstehenden Termine.</p>
     }
 
     return (
         <div className="space-y-4">
             {appointments.map((app) => (
-                <div key={app.id} className="bg-neutral-900 p-4 rounded-lg flex justify-between items-center">
+                <div key={app.id} className=" p-4 rounded-lg flex justify-between items-center" style={{ backgroundColor: 'var(--color-surface)' }}>
                     <div>
                         <p className="font-bold text-lg">{app.service.name}</p>
-                        <p className="text-neutral-300">bei {app.barber.name}</p>
+                        <p style={{ color: 'var(--color-text-muted)' }}>bei {app.barber.name}</p>
                         <p className="text-gold-500 mt-1">
                             {format(new Date(app.startTime), 'EEEE, dd. MMMM yyyy \'um\' HH:mm \'Uhr\'', { locale: de })}
                         </p>

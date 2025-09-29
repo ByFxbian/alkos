@@ -50,7 +50,7 @@ export default async function MeineTerminePage() {
             <div className='mb-12 text-center'>
                 <Link
                     href="/redeem-stamp"
-                    className="bg-gold-500 text-black font-bold text-lg px-8 py-3 roudned-full hover:bg-gold-400 transition-transform duration-300 ease-in-out inline-block transform hover:scale-105"
+                    className="bg-gold-500 text-black font-bold text-lg px-8 py-3 rounded-full hover:bg-gold-400 transition-transform duration-300 ease-in-out inline-block transform hover:scale-105"
                 >
                     Stempel-Code scannen
                 </Link>

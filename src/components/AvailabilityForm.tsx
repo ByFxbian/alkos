@@ -75,7 +75,7 @@ export default function AvailabilityForm({ currentAvailabilities }: Availability
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-neutral-900 p-6 rounded-lg max-w-2xl mx-auto">
+    <form onSubmit={handleSubmit} className="p-6 rounded-lg max-w-2xl mx-auto" style={{ backgroundColor: 'var(--color-surface)' }}>
       <div className="space-y-4">
         {daysOfWeek.map(day => {
           const daySchedule = schedule.get(day.id)!;
@@ -87,7 +87,8 @@ export default function AvailabilityForm({ currentAvailabilities }: Availability
                   id={`active-${day.id}`}
                   checked={daySchedule.isActive}
                   onChange={(e) => handleIsActiveChange(day.id, e.target.checked)}
-                  className="h-5 w-5 rounded bg-neutral-700 border-neutral-600 text-gold-500 focus:ring-gold-500"
+                  className="h-5 w-5 rounded text-gold-500 focus:ring-gold-500"
+                  style={{ backgroundColor: 'var(--color-background)', borderColor: 'var(--color-border)' }}
                 />
                 <label htmlFor={`active-${day.id}`} className="ml-3 text-lg font-medium">{day.name}</label>
               </div>
@@ -97,14 +98,16 @@ export default function AvailabilityForm({ currentAvailabilities }: Availability
                   value={daySchedule.startTime}
                   onChange={(e) => handleTimeChange(day.id, 'startTime', e.target.value)}
                   disabled={!daySchedule.isActive}
-                  className="bg-neutral-800 p-2 rounded w-full"
+                  className=" p-2 rounded w-full"
+                  style={{ backgroundColor: 'var(--color-background)', border: '1px solid var(--color-border)' }}
                 />
                 <input
                   type="time"
                   value={daySchedule.endTime}
                   onChange={(e) => handleTimeChange(day.id, 'endTime', e.target.value)}
                   disabled={!daySchedule.isActive}
-                  className="bg-neutral-800 p-2 rounded w-full"
+                  className="p-2 rounded w-full"
+                  style={{ backgroundColor: 'var(--color-background)', border: '1px solid var(--color-border)' }}
                 />
               </div>
             </div>
@@ -115,7 +118,7 @@ export default function AvailabilityForm({ currentAvailabilities }: Availability
         <button
           type="submit"
           disabled={isLoading}
-          className="bg-gold-500 text-black font-bold px-6 py-2 rounded-md hover:bg-gold-500 disabled:bg-neutral-600 transition-colors"
+          className="bg-gold-500 text-black font-bold px-6 py-2 rounded-md hover:bg-gold-400 disabled:opacity-50 transition-colors"
         >
           {isLoading ? 'Speichert...' : 'Speichern'}
         </button>

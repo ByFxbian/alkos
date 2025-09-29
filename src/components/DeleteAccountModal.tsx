@@ -23,9 +23,9 @@ export default function DeleteAccountModal({ isOpen, onClose, onConfirm, isLoadi
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-neutral-900 p-8 rounded-lg max-w-sm w-full border border-red-800">
+      <div className=" p-8 rounded-lg max-w-sm w-full border border-red-800" style={{ backgroundColor: 'var(--color-surface)' }}>
         <h2 className="text-2xl font-bold text-red-500">Konto endgültig löschen?</h2>
-        <p className="text-neutral-400 mt-2 mb-4">
+        <p className="mt-2 mb-4" style={{ color: 'var(--color-text-muted)' }}>
           Diese Aktion kann nicht rückgängig gemacht werden. Alle deine Termine und Daten werden dauerhaft entfernt.
         </p>
         <p className="mb-4">Bitte gib zur Bestätigung dein Passwort ein.</p>
@@ -34,11 +34,12 @@ export default function DeleteAccountModal({ isOpen, onClose, onConfirm, isLoadi
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Dein Passwort"
-          className="w-full p-2 bg-neutral-800 rounded border border-neutral-700"
+          className="w-full p-2 rounded border "
+          style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)'}}
         />
         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         <div className="mt-6 flex justify-end space-x-4">
-          <button onClick={onClose} className="text-neutral-400 hover:text-white">Abbrechen</button>
+          <button onClick={onClose} className=" hover:text-white" style={{ color: 'var(--color-text-muted)' }}>Abbrechen</button>
           <button
             onClick={handleConfirm}
             disabled={isLoading || !password}

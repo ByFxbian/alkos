@@ -79,7 +79,8 @@ model VerificationToken {
 
 enum Role {
   KUNDE
-  FRISEUR
+  HEADOFBARBER
+  BARBER
   ADMIN
 }
 

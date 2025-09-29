@@ -20,15 +20,19 @@ export default function LoyaltyCard({ completedAppointments, hasFreeAppointment 
   }
 
   return (
-    <div className="bg-neutral-900 p-6 rounded-lg">
+    <div className="p-6 rounded-lg" style={{ backgroundColor: 'var(--color-surface)' }}>
       <h2 className="text-xl font-bold mb-4">Dein Stempelpass</h2>
       <div className="grid grid-cols-5 gap-3">
         {stamps.map((_, index) => (
           <div key={index} className={`w-full aspect-square rounded-full flex items-center justify-center
             ${index < completedAppointments 
               ? 'bg-gold-500' 
-              : 'bg-neutral-800 border-2 border-neutral-700'
+              : 'border-2'
             }`}
+            style={{ 
+              backgroundColor: index < completedAppointments ? 'var(--color-gold-500)' : 'var(--color-surface-3)',
+              borderColor: 'var(--color-border)'
+            }}
           >
             {index < completedAppointments && (
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -38,7 +42,7 @@ export default function LoyaltyCard({ completedAppointments, hasFreeAppointment 
           </div>
         ))}
       </div>
-      <p className="text-center mt-4 text-neutral-300">{completedAppointments} von {STAMPS_NEEDED} Terminen abgeschlossen.</p>
+      <p className="text-center mt-4 " style={{ color: 'var(--color-text-muted)' }}>{completedAppointments} von {STAMPS_NEEDED} Terminen abgeschlossen.</p>
     </div>
   );
 }

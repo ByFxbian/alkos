@@ -15,56 +15,76 @@ async function main() {
   const admin = await prisma.user.create({
     data: {
       email: 'sopa.fabian@gmx.net',
-      name: 'Fabian Admin',
+      name: 'Fabian Sopa ADMIN',
       password: password,
       role: Role.ADMIN,
     },
   });
 
-  const barber1 = await prisma.user.create({
+  /*const barber1 = await prisma.user.create({
     data: {
       email: 'alen@alkos.at',
-      name: 'Alen Alkos',
+      name: 'ALKOS',
       password: password,
-      role: Role.FRISEUR,
+      role: Role.HEADOFBARBER,
     },
   });
-
-  const barber2 = await prisma.user.create({
-    data: {
-      email: 'max@mustermann.at',
-      name: 'Max Mustermann',
-      password: password,
-      role: Role.FRISEUR,
-    },
-  });
-
+*/
   const service1 = await prisma.service.create({
     data: {
-      name: 'Klassischer Haarschnitt',
+      name: 'Haarschnitt',
       duration: 30,
-      price: 35.00,
+      price: 28.00,
     },
   });
 
   const service2 = await prisma.service.create({
     data: {
-      name: 'Haarschnitt & Bart',
-      duration: 60,
-      price: 55.00,
+      name: 'Bart',
+      duration: 15,
+      price: 17.00,
     },
   });
 
    const service3 = await prisma.service.create({
     data: {
+      name: 'Combo',
+      duration: 45,
+      price: 45.00,
+    },
+  });
+
+  const service4 = await prisma.service.create({
+    data: {
+      name: 'Augenbrauen',
+      duration: 15,
+      price: 7.00,
+    },
+  });
+  const service5 = await prisma.service.create({
+    data: {
       name: 'Dauerwelle',
       duration: 120,
-      price: 90.00,
+      price: 145.00,
+    },
+  });
+  const service6 = await prisma.service.create({
+    data: {
+      name: 'Traditionelle Rasur',
+      duration: 20,
+      price: 15.00,
+    },
+  });
+  const service7 = await prisma.service.create({
+    data: {
+      name: 'ALKOS VIP Paket',
+      duration: 90,
+      price: 75.00,
     },
   });
 
   console.log(`Seeding finished.`);
-  console.log({ barber1, barber2, service1, service2, service3 });
+  console.log({ admin, service1, service2, service3, service4, service5, service6, service7 });
 }
 
 main()
