@@ -14,7 +14,7 @@ type HomepageClientProps = {
 const teamMembers = [
     {
         id: 1,
-        name: 'ALKOS',
+        name: 'ALKO',
         role: 'Head of Barber',
         imageUrl: 'https://srtkhlfsd31dcfzp.public.blob.vercel-storage.com/ALKOS.png',
         bio: ''
