@@ -1,11 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { FaApple, FaGoogle } from 'react-icons/fa';
 
-export default function LoginPage() {
+function LoginForm() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +43,7 @@ export default function LoginPage() {
    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-  
+
   return (
     <div className="container mx-auto py-12 px-4 max-w-md">
         <h1 className="text-4xl font-bold mb-4">Login</h1>
@@ -93,4 +93,12 @@ export default function LoginPage() {
         </p>
     </div>
   );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className='text-center mt-20'>Lade...</div>}>
+      <LoginForm />
+    </Suspense>
+  )  
 }
