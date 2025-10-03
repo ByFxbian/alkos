@@ -31,7 +31,7 @@ export const authOptions: AuthOptions = {
                     await resend.emails.send({
                         from: from,
                         to: email,
-                        subject: "Bestätige deine E-Mail-Adresse für Alkos Barber",
+                        subject: "Bestätige deine E-Mail-Adresse für ALKOS",
                         react: VerificationEmail({ url, host: new URL(url).host }),
                     });
                 } catch (error) {
@@ -68,6 +68,14 @@ export const authOptions: AuthOptions = {
         strategy: 'jwt',
     },
     callbacks: {
+        async redirect({ url, baseUrl }) {
+            if(url.startsWith(baseUrl)) {
+                return url.includes("/verify-request") ? baseUrl + '/meine-termine' : url;
+            } else if (url.startsWith("/")) {
+                return new URL(url, baseUrl).toString();
+            }
+            return baseUrl + '/meine-termine';
+        },
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;

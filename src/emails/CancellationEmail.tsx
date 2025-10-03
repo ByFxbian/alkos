@@ -25,8 +25,8 @@ export default function CancellationEmail({ customerName, serviceName, startTime
       <p>Hallo {customerName},</p>
       <p>dein folgender Termin wurde erfolgreich storniert:</p>
       <div style={{ backgroundColor: '#1c1c1c', color: '#ffffff', padding: '15px', borderRadius: '8px', marginTop: '20px' }}>
-        <p><strong>Art:</strong> {serviceName}</p>
-        <p><strong>Wann:</strong> {formatDate(new Date(startTime))}</p>
+        <p><strong>Service:</strong> {serviceName}</p>
+        <p><strong>Termin:</strong> {formatDate(new Date(startTime))}</p>
       </div>
       <p style={{ marginTop: '20px' }}>
         Schade, dass es nicht geklappt hat. Du kannst jederzeit einen neuen Termin über unsere Webseite buchen.

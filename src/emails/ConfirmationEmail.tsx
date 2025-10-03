@@ -26,9 +26,9 @@ export default function ConfirmationEmail({ customerName, serviceName, barberNam
       <p>Hallo {customerName},</p>
       <p>dein Termin bei uns wurde erfolgreich gebucht. Hier sind die Details:</p>
       <div style={{ backgroundColor: '#1c1c1c', color: '#ffffff', padding: '15px', borderRadius: '8px', marginTop: '20px' }}>
-        <p><strong>Art:</strong> {serviceName}</p>
-        <p><strong>Bei:</strong> {barberName}</p>
-        <p><strong>Wann:</strong> {formatDate(new Date(startTime))}</p>
+        <p><strong>Service:</strong> {serviceName}</p>
+        <p><strong>Barber:</strong> {barberName}</p>
+        <p><strong>Termin:</strong> {formatDate(new Date(startTime))}</p>
       </div>
       <p style={{ marginTop: '20px' }}>
         Wir freuen uns auf deinen Besuch! Solltest du den Termin nicht wahrnehmen können, storniere ihn bitte rechtzeitig über dein Kundenkonto.

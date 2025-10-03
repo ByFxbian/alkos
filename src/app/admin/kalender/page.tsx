@@ -8,7 +8,8 @@ import BarberSchedule from '@/components/BarberSchedule';
 export default async function KalenderAdminPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session ||!['ADMIN', 'BARBER', 'HEADOFBARBER'].includes(session.user.role)) {
+  const allowedRoles = ['ADMIN', 'BARBER', 'HEADOFBARBER'];
+  if (!session ||!allowedRoles.includes(session.user.role)) {
     redirect('/login');
   }
 
@@ -19,7 +20,7 @@ export default async function KalenderAdminPage() {
 
   const appointments = await prisma.appointment.findMany({
     where: {
-      barberId: session.user.role === 'ADMIN' ? undefined : session.user.id,
+      barberId: (session.user.role === 'ADMIN' || session.user.role === 'HEADOFBARBER' ) ? undefined : session.user.id,
       startTime: {
         gte: new Date(),
       },
@@ -34,17 +35,19 @@ export default async function KalenderAdminPage() {
     },
   });
 
+  const canManageAppointments = (session.user.role === 'ADMIN' || session.user.role === 'HEADOFBARBER' || session.user.role === 'BARBER');
+
   return (
     <div className="container mx-auto py-12 px-4">
       <h1 className="text-4xl font-bold tracking-tight mb-2">Meine Arbeitszeiten</h1>
-      <p className="text-neutral-400 mb-8">
+      <p className="mb-8" style={{ color: 'var(--color-text-muted)' }}>
         Lege hier deine wöchentlichen Arbeitszeiten fest.
       </p>
       <AvailabilityForm currentAvailabilities={availabilities} />
 
       <div className="mt-16">
         <h2 className="text-4xl font-bold tracking-tight mb-8">Anstehende Termine</h2>
-        <BarberSchedule appointments={appointments} isAdmin={session.user.role === 'ADMIN'} />
+        <BarberSchedule appointments={appointments} isAdmin={canManageAppointments} />
       </div>
     </div>
   );

@@ -21,7 +21,8 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedBarber, setSelectedBarber] = useState<User | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const startDate = new Date(2025, 9, 13);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(startDate);
   
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -135,7 +136,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
 
         <div className={step >= 3 ? '' : 'opacity-50'}>
           <h2 className="text-2xl font-semibold mb-4 text-gold-500">Datum & Uhrzeit</h2>
-          <DayPicker mode="single" selected={selectedDate} onSelect={setSelectedDate} locale={de} fromDate={new Date()} disabled={step < 3} className="flex justify-center" />
+          <DayPicker mode="single" selected={selectedDate} onSelect={setSelectedDate} locale={de} hidden={{ before: startDate }} disabled={step < 3} className="flex justify-center" />
           <div className="mt-4">
             {isLoading && <p>Lade freie Termine...</p>}
             {!isLoading && availableSlots.length > 0 && (

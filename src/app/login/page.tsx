@@ -52,13 +52,13 @@ export default function LoginPage() {
 
         <div className="space-y-2">
           <button 
-            onClick={() => signIn('google', { callbackUrl: '/' })}
+            onClick={() => signIn('google', { callbackUrl: '/auth/verify' })}
             className="w-full flex items-center justify-center gap-2 bg-white text-black font-bold p-2 rounded hover:bg-neutral-200 transition-colors"
           >
             <FaGoogle /> Mit Google anmelden
           </button>
           <button 
-            onClick={() => signIn('apple', { callbackUrl: '/' })}
+            onClick={() => signIn('apple', { callbackUrl: '/auth/verify' })}
             className="w-full flex items-center justify-center gap-2 font-bold p-2 rounded border e hover:opacity-80 transition-colors"
             style={{ 
               backgroundColor: 'var(--color-text)', 

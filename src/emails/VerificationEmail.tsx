@@ -8,7 +8,7 @@ interface VerificationEmailProps {
 export default function VerificationEmail({ url, host }: VerificationEmailProps) {
   return (
     <div style={{ fontFamily: 'sans-serif', textAlign: 'center', padding: '20px' }}>
-      <h1 style={{ color: '#f59e0b' }}>Willkommen bei Alkos!</h1>
+      <h1 style={{ color: '#f59e0b' }}>Willkommen bei ALKOS!</h1>
       <p>Bitte klicke auf den folgenden Button, um deine E-Mail-Adresse zu bestätigen und dein Konto zu aktivieren.</p>
       <a 
         href={url} 

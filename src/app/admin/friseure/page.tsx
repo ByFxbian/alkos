@@ -7,7 +7,7 @@ import UserManagement from '@/components/UserManagement';
 export default async function FriseurAdminPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.user.role !== 'ADMIN') {
+  if (!session || !['ADMIN', 'HEADOFBARBER'].includes(session.user.role)) {
     redirect('/');
   }
 
