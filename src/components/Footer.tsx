@@ -10,9 +10,9 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
           <div>
-            <h3 className="font-bold text-lg text-gold-500">Alkos Barber</h3>
+            <h3 className="font-bold text-lg text-gold-500">ALKOS</h3>
             <p className=" mt-2 text-sm" style={{ color: 'var(--color-text-muted)' }}>
-              Präzision in jedem Schnitt
+              Dein Go-To Barbershop
             </p>
           </div>
           <div>

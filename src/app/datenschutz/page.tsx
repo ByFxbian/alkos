@@ -8,11 +8,11 @@ export default function DatenschutzPage() {
         
         <h2 style={{ color: 'var(--color-text-muted)' }}>1. Name und Kontaktdaten des für die Verarbeitung Verantwortlichen</h2>
         <p>
-          Alkos Barbershop (im folgenden: Verantwortlicher)<br />
+          ALKOS (im folgenden: Verantwortlicher)<br />
           Geschäftsführer: Alen Mujic<br />
-          Simmeringer Hauptstraße 11<br />
-          A-1110 Wien<br />
-          Tel: +43 123 456 789<br />
+          Wiedner Gürtel 12, 1040 Wien<br />
+          A-1040 Wien<br />
+          Tel: +43 660 2231353<br />
           E-Mail: contact@alkosbarber.at
         </p>
 

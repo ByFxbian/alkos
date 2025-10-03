@@ -11,7 +11,46 @@ type HomepageClientProps = {
   barbers: User[];
 };
 
-export default function HomepageClient({ barbers }: HomepageClientProps) {
+const teamMembers = [
+    {
+        id: 1,
+        name: 'ALKOS',
+        role: 'Head of Barber',
+        imageUrl: 'https://srtkhlfsd31dcfzp.public.blob.vercel-storage.com/ALKOS.png',
+        bio: ''
+    },
+    {
+        id: 2,
+        name: 'Tina',
+        role: 'Managing Partner',
+        imageUrl: 'https://srtkhlfsd31dcfzp.public.blob.vercel-storage.com/TINA.png',
+        bio: ''
+    },
+    {
+        id: 3,
+        name: 'Adam',
+        role: 'Barber',
+        imageUrl: 'https://srtkhlfsd31dcfzp.public.blob.vercel-storage.com/ADAM.png',
+        bio: ''
+    },
+    {
+        id: 4,
+        name: 'Simon',
+        role: 'Barber',
+        imageUrl: 'https://srtkhlfsd31dcfzp.public.blob.vercel-storage.com/SIMON.png',
+        bio: ''
+    },
+    {
+        id: 5,
+        name: 'Antonio',
+        role: 'Social Media Content Producer',
+        imageUrl: 'https://srtkhlfsd31dcfzp.public.blob.vercel-storage.com/ANTONIO.png',
+        bio: ''
+    }
+]
+
+
+export default function HomepageClient() {
     //const [opacity, setOpacity] = useState(1);
 
     /*useEffect(() => {
@@ -46,7 +85,7 @@ export default function HomepageClient({ barbers }: HomepageClientProps) {
                             Willkommen bei ALKOS
                         </h1>
                         <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto" style={{ color: 'var(--color-text-muted)' }}>
-                            Hier kommt irgendein Text rein aber ich weiß noch nicht was
+                            Dein Go-To Barbershop
                         </p>
                         <div className="mt-8">
                             <Link
@@ -64,12 +103,12 @@ export default function HomepageClient({ barbers }: HomepageClientProps) {
                             Lerne unser Team kennen
                         </h2>
                         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center'>
-                            {barbers.map((barber) => (
+                            {teamMembers.map((barber) => (
                             <BarberCard
                                 key={barber.id}
-                                name={barber.name || 'Barber'}
+                                name={barber.name}
                                 role={barber.role}
-                                image={barber.image || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
+                                image={barber.imageUrl || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
                             />
                             ))}
                         </div>
