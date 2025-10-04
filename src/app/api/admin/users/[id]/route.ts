@@ -12,7 +12,7 @@ export async function PATCH(
   const session = await getServerSession(authOptions);
   const targetUserId = req.nextUrl.pathname.split('/').pop();
 
-  if (!session || session.user.role !== 'ADMIN') {
+  if (!session || !['ADMIN', 'HEADOFBARBER'].includes(session.user.role)) {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
 
@@ -42,7 +42,7 @@ export async function DELETE(
   const session = await getServerSession(authOptions);
   const targetUserId = req.nextUrl.pathname.split('/').pop();
 
-  if (!session || session.user.role !== 'ADMIN') {
+  if (!session || !['ADMIN', 'HEADOFBARBER'].includes(session.user.role)) {
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
 
