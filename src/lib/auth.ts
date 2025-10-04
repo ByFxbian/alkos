@@ -90,6 +90,7 @@ export const authOptions: AuthOptions = {
                 token.emailVerified = dbUser.emailVerified;
                 token.name = dbUser.name;
                 token.picture = dbUser.image;
+                token.role = dbUser.role;
             }
 
             return token;
