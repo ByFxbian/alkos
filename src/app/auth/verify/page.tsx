@@ -2,21 +2,24 @@
 
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function VerifyPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
+    const [emailSent, setEmailSent] = useState(false);
 
     useEffect(() => {
-        if(status === 'loading') return;
+        if(status === 'loading' || emailSent) return;
 
-        if(!session?.user?.email){
+        if(status === 'unauthenticated' || !session?.user) {
             router.push('/login');
             return;
         }
 
         if(!session.user.emailVerified) {
+            setEmailSent(true);
+
             signIn('email', {
                 email: session.user.email,
                 redirect: false,
@@ -26,7 +29,7 @@ export default function VerifyPage() {
         } else {
             router.push('/meine-termine');
         }
-    }, [session, status, router]);
+    }, [session, status, router, emailSent]);
 
     return (
         <div className="container mx-auto py-20 px-4 text-center">

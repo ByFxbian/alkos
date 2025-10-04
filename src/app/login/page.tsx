@@ -48,8 +48,6 @@ function LoginForm() {
     <div className="container mx-auto py-12 px-4 max-w-md">
         <h1 className="text-4xl font-bold mb-4">Login</h1>
 
-        {error && <p className="text-red-500 bg-red-500/10 p-3 rounded-md mb-4">{error}</p>}
-
         <div className="space-y-2">
           <button 
             onClick={() => signIn('google', { callbackUrl: '/auth/verify' })}
