@@ -59,7 +59,7 @@ export async function POST(req: Request) {
 
     try {
       await resend.emails.send({
-        from: 'Alkos <contact@alkosbarber.at>',
+        from: 'ALKOS <contact@alkosbarber.at>',
         to: newAppointment.customer.email,
         subject: 'Dein Termin wurde bestätigt!',
         react: ConfirmationEmail({
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
           serviceName: newAppointment.service.name,
           barberName: newAppointment.barber.name || '',
           startTime: newAppointment.startTime,
-          host: 'Alkos Barber'
+          host: 'ALKOS'
         }),
       });
     } catch (emailError) {

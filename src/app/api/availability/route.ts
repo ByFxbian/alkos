@@ -5,8 +5,8 @@ import { z } from "zod";
 
 const schema = z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    barberId: z.cuid(),
-    serviceId: z.cuid(),
+    barberId: z.string(),
+    serviceId: z.string(),
 });
 
 export async function GET(req: Request) {
@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     const { date, barberId, serviceId } = validation.data;
 
     try {
-        const requestedDate = new Date(date);
+        const requestedDate = new Date(date + 'T00:00:00');
         const dayOfWeek = requestedDate.getDay();
 
         const barberAvailability = await prisma.availability.findFirst({
@@ -44,24 +44,28 @@ export async function GET(req: Request) {
         const [startHour, startMinute] = barberAvailability.startTime.split(':').map(Number);
         const [endHour, endMinute] = barberAvailability.endTime.split(':').map(Number);
 
-        const dayStart = new Date(date);
-        dayStart.setHours(startHour, startMinute, 0, 0);
+        const dayStart = new Date(date + `T${barberAvailability.startTime}:00`);
+        const dayEnd = new Date(date + `T${barberAvailability.endTime}:00`);
 
-        const dayEnd = new Date(date);
-        dayEnd.setHours(endHour, endMinute, 0, 0);
+        const dayStartUTC = new Date(date + 'T00:00:00.000Z');
+        const dayEndUTC = new Date(date + 'T23:59:59.999Z');
+
+        //dayEnd.setHours(endHour, endMinute, 0, 0);
+        //dayStart.setHours(startHour, startMinute, 0, 0);
 
         const bookedAppointments = await prisma.appointment.findMany({
             where: {
                 barberId: barberId,
                 startTime: {
-                    gte: dayStart,
-                    lt: dayEnd,
+                    gte: dayStartUTC,
+                    lt: dayEndUTC,
                 },
             },
         });
 
-        const allPossibleSlots = [];
+        const allPossibleSlots:Date[] = [];
         let currentTime = new Date(dayStart);
+        
         while (currentTime < dayEnd) {
             allPossibleSlots.push(new Date(currentTime));
             currentTime.setMinutes(currentTime.getMinutes() + 30); 

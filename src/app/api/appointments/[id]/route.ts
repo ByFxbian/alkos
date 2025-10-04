@@ -33,14 +33,14 @@ export async function DELETE(
 
     try {
       await resend.emails.send({
-        from: 'Alkos <contact@alkosbarber.at>', 
+        from: 'ALKOS <contact@alkosbarber.at>', 
         to: appointment.customer.email,
         subject: 'Dein Termin wurde storniert',
         react: CancellationEmail({
           customerName: appointment.customer.name || '',
           serviceName: appointment.service.name,
           startTime: appointment.startTime,
-          host: 'Alkos Barber'
+          host: 'ALKOS'
         }),
       });
     } catch (emailError) {

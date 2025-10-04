@@ -21,7 +21,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedBarber, setSelectedBarber] = useState<User | null>(null);
-  const startDate = new Date(2025, 9, 21);
+  const startDate = new Date(2025, 9, 14); // October 14, 2025
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(startDate);
   
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);

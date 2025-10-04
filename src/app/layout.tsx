@@ -19,7 +19,7 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "Alkos Barber",
+  title: "ALKOS",
   description: "Die beste Adresse für Haare und Bart.",
 };
 
