@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -11,16 +11,18 @@ export default function VerifyPage() {
     useEffect(() => {
         if(status === 'loading') return;
 
-        if(!session?.user){
+        if(!session?.user?.email){
             router.push('/login');
             return;
         }
 
         if(!session.user.emailVerified) {
-            fetch('/api/auth/send-verification', { method: 'POST' })
-                .then(() => {
-                    router.push('/verify-request');
-                });
+            signIn('email', {
+                email: session.user.email,
+                redirect: false,
+            }).then(() => {
+                router.push('/verify-request');
+            })
         } else {
             router.push('/meine-termine');
         }

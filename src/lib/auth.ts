@@ -69,12 +69,14 @@ export const authOptions: AuthOptions = {
     },
     callbacks: {
         async redirect({ url, baseUrl }) {
-            if(url.startsWith(baseUrl)) {
-                return url.includes("/verify-request") ? baseUrl + '/meine-termine' : url;
-            } else if (url.startsWith("/")) {
-                return new URL(url, baseUrl).toString();
+            if(url.includes('callback/email')) {
+                return baseUrl + '/meine-termine';
             }
-            return baseUrl + '/meine-termine';
+
+            if(url.startsWith('/')) return `${baseUrl}${url}`;
+            else if (new URL(url).origin === baseUrl) return url;
+
+            return baseUrl;
         },
         async jwt({ token, user }) {
             if (user) {
