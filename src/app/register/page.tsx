@@ -25,7 +25,7 @@ export default function RegisterPage() {
         redirect: false,
       });
 
-      router.push('/verify-request'); 
+      router.push('/einstellungen'); 
     } else {
       const data = await res.json();
       setError(data.error || 'Ein Fehler ist aufgetreten.');

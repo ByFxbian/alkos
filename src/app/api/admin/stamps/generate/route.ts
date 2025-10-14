@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { randomBytes } from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth';
+import { formatInTimeZone } from "date-fns-tz";
+import { endOfDay } from "date-fns";
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
@@ -28,7 +30,10 @@ export async function POST(req: Request) {
     }
 
     const token = randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    const timeZone = 'Europe/Vienna';
+    const nowInVienna = formatInTimeZone(new Date(), timeZone, 'yyyy-MM-dd HH:mm:ssXXX');
+    const expiresAt = endOfDay(nowInVienna);
 
     try {
         const stampToken = await prisma.stampToken.create({

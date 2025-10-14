@@ -27,7 +27,7 @@ export default function VerifyPage() {
                 router.push('/verify-request');
             })
         } else {
-            router.push('/meine-termine');
+            router.push('/einstellungen');
         }
     }, [session, status, router, emailSent]);
 

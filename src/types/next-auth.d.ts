@@ -6,6 +6,7 @@ declare module 'next-auth' {
             id: string,
             role: string;
             emailVerified: Date | null;
+            instagram?: string | null;
         } & DefaultSession["user"];
     }
 }

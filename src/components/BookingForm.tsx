@@ -33,6 +33,8 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
 
   const [useFreeAppointment, setUseFreeAppointment] = useState(false);
 
+  const [isBooking, setIsBooking] = useState(false);
+
   const handleBooking = async () => {
     if (!selectedService || !selectedBarber || !selectedSlot) {
       alert("Bitte wähle alle Optionen aus.");
@@ -49,6 +51,8 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
       return;
     }
 
+    setIsBooking(true);
+
     const res = await fetch('/api/appointments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -62,10 +66,13 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
 
     if (res.ok) {
       alert('Dein Termin wurde erfolgreich gebucht!');
-      window.location.reload(); 
+      window.location.reload();
     } else {
       alert('Fehler bei der Buchung.');
     }
+
+    setIsBooking(false);
+
   };
 
   useEffect(() => {
@@ -172,8 +179,8 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
 
                 {selectedSlot && (
                   <div className="mt-6 text-center">
-                    <button onClick={handleBooking} className="bg-green-600 text-white font-bold px-8 py-3 rounded-full hover:bg-green-500 w-full">
-                      Termin um {format(new Date(selectedSlot), 'HH:mm')} Uhr bestätigen
+                    <button onClick={handleBooking} disabled={isBooking} className="bg-green-600 text-white font-bold px-8 py-3 rounded-full hover:bg-green-500 w-full disabled:bg-neutral-600 disabled:cursor-not-allowed">
+                      {isBooking ? 'Bitte warten...' : `Termin um ${format(new Date(selectedSlot), 'HH:mm')} Uhr bestätigen`}
                     </button>
                   </div>
                 )}

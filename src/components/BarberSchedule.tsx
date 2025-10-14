@@ -1,11 +1,15 @@
 'use client';
 
-import { format } from 'date-fns';
+import { addDays, format, isSameDay } from 'date-fns';
 import { de } from 'date-fns/locale';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import QRCode from 'qrcode';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
 
 type FullAppointment = {
   id: string;
@@ -108,63 +112,81 @@ export default function BarberSchedule({ appointments, isAdmin }: BarberSchedule
         }
     };
 
+    const nextSevenDays = Array.from({ length: 7 }).map((_, i) => addDays(new Date(), i));
+
     if (appointments.length === 0) {
-        return <p style={{ color: 'var(--color-text-muted)' }}>Keine anstehenden Termine gefunden.</p>;
+        return <p style={{ color: 'var(--color-text-muted)' }}>Für heute sind keine Termine eingetragen.</p>;
     }
 
     return (
         <>
             {showQrModal && <QrCodeModal token={showQrModal} onClose={() => setShowQrModal(null)} />}
-            <div className="space-y-4">
-                {appointments.map((app) => (
-                    <div key={app.id} className=" p-4 rounded-lg border-l-4 border-gold-500" style={{ backgroundColor: 'var(--color-surface)' }}>
-                        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
-                            <div className="flex items-center space-x-4">
-                                <Image
-                                src={app.customer.image || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
-                                alt={app.customer.name || 'Kunde'}
-                                width={48}
-                                height={48}
-                                className="rounded-full object-cover"
-                                />
-                                <div>
-                                    <p className="font-bold text-lg">{app.service.name}</p>
-                                    {app.isFree && <span className="text-xs font-bold uppercase text-green-400 bg-green-950 px-2 py-1 rounded">Stempelpass</span>}
-                                    <p style={{ color: 'var(--color-text-muted)' }}>
-                                        Kunde: {app.customer.name} ({app.customer.email})
-                                    </p>
-                                    {isAdmin && (
-                                        <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                                        Bei: {app.barber.name}
-                                        </p>
-                                    )}
-                                </div>
-                                <div className="text-left sm:text-right flex-shrink-0">
-                                    <p className="font-semibold">
-                                        {format(new Date(app.startTime), 'dd.MM.yyyy', { locale: de })}
-                                    </p>
-                                    <p className="text-lg">
-                                        {format(new Date(app.startTime), 'HH:mm', { locale: de })} Uhr
-                                    </p>
-                                </div>
-                                {isAdmin && (
-                                    <>
-                                        <button onClick={() => generateQrCode(app.id)} className='bg-gold-500 text-black font-semibold px-3 py-2 rounded-md text-sm hover:bg-gold-400'>
-                                            QR-Code
-                                        </button>
-                                        <button onClick={() => handleDelete(app.id)} className="hover:text-red-500 transition-colors" style={{ color: 'var(--color-text-muted)' }}>
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </>
-                                    
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>   
+            <Swiper navigation={true} modules={[Navigation]} className='mySwiper'>
+                {nextSevenDays.map(day => {
+                    const appointmentsForThisDay = appointments.filter(app => isSameDay(new Date(app.startTime), day));
+
+                    return(
+                        <SwiperSlide key={day.toString()}>
+                            <h3 className='text-2xl font-bold text-center mb-4'>
+                                {format(day, 'EEEE, dd. MMMM', { locale: de})}
+                            </h3>
+                            <div className="space-y-4 md:px-8">
+                                {appointmentsForThisDay.length > 0 ? (
+                                    appointmentsForThisDay.map((app) => (
+                                    <div key={app.id} className=" p-4 rounded-lg border-l-4 border-gold-500" style={{ backgroundColor: 'var(--color-surface)' }}>
+                                        <div className='flex justify-between items-start gap-4'>
+                                            <div className="flex items-center space-x-4 min-w-0">
+                                                <Image
+                                                src={app.customer.image || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
+                                                alt={app.customer.name || 'Kunde'}
+                                                width={48}
+                                                height={48}
+                                                className="rounded-full object-cover flex-shrink-0"
+                                                />
+                                                <div className='min-w-0'>
+                                                    <p className="font-bold text-lg truncate">{app.service.name}</p>
+                                                    {app.isFree && <span className="text-xs font-bold uppercase text-green-400 bg-green-950 px-2 py-1 rounded truncate">Stempelpass</span>}
+                                                    <p  className="text-sm truncate" style={{ color: 'var(--color-text-muted)' }}>
+                                                        Kunde: {app.customer.name} ({app.customer.email})
+                                                    </p>
+                                                    {isAdmin && (
+                                                        <p className="text-sm truncate" style={{ color: 'var(--color-text-muted)' }}>
+                                                        Bei: {app.barber.name}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="text-right flex-shrink-0">
+                                                <p className="text-xl font-bold">
+                                                    {format(new Date(app.startTime), 'HH:mm', { locale: de })} Uhr
+                                                </p>
+                                            </div>
+                                        </div>
+                                            {isAdmin && (
+                                                <div className='flex justify-end items-center gap-4 mt-4 pt-4 border-t' style={{borderColor: 'var(--color-border)'}}>
+                                                    <button onClick={() => generateQrCode(app.id)} className='bg-gold-500 text-black font-semibold px-3 py-2 rounded-md text-sm hover:bg-gold-400'>
+                                                        QR-Code
+                                                    </button>
+                                                    <button onClick={() => handleDelete(app.id)} className="hover:text-red-500 transition-colors p-2 rounded-full" style={{ color: 'var(--color-text-muted)' }}>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                                
+                                            )}
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-center py-10" style={{ color: 'var(--color-text-muted)' }}>
+                                    Für diesen Tag sind keine Termine eingetragen.
+                                </p>
+                            )}
+                            </div>   
+                        </SwiperSlide>
+                    );
+                })}
+            </Swiper>
         </>
        
     );

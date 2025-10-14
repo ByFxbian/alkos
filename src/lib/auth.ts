@@ -91,6 +91,7 @@ export const authOptions: AuthOptions = {
                 token.name = dbUser.name;
                 token.picture = dbUser.image;
                 token.role = dbUser.role;
+                token.instragram = dbUser.instagram;
             }
 
             return token;
@@ -101,6 +102,7 @@ export const authOptions: AuthOptions = {
                 session.user.role = token.role as string;
                 session.user.emailVerified = token.emailVerified as Date | null;
                 session.user.image = token.picture as string | null;
+                session.user.instagram = token.instagram as string | null;
             }
             return session;
         },

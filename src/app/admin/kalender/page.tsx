@@ -18,11 +18,23 @@ export default async function KalenderAdminPage() {
     orderBy: { dayOfWeek: 'asc' },
   });
 
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const sevenDaysFromNow = new Date(today);
+  sevenDaysFromNow.setDate(today.getDate() + 7);
+
   const appointments = await prisma.appointment.findMany({
     where: {
-      barberId: (session.user.role === 'ADMIN' || session.user.role === 'HEADOFBARBER' ) ? undefined : session.user.id,
+      /*barberId: (session.user.role === 'ADMIN' || session.user.role === 'HEADOFBARBER' ) ? undefined : session.user.id,
       startTime: {
         gte: new Date(),
+      },*/
+      ...(session.user.role === 'ADMIN' && {}),
+      ...(session.user.role === 'HEADOFBARBER' && {}),
+      ...(session.user.role === 'BARBER' && {barberId: session.user.id}),
+      startTime: {
+        gte: today,
+        lt: sevenDaysFromNow,
       },
     },
     include: {
@@ -46,7 +58,7 @@ export default async function KalenderAdminPage() {
       <AvailabilityForm currentAvailabilities={availabilities} />
 
       <div className="mt-16">
-        <h2 className="text-4xl font-bold tracking-tight mb-8">Anstehende Termine</h2>
+        <h2 className="text-4xl font-bold tracking-tight mb-8">Heutige Termine</h2>
         <BarberSchedule appointments={appointments} isAdmin={canManageAppointments} />
       </div>
     </div>
