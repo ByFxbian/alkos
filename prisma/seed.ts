@@ -5,35 +5,12 @@ import bcrypt from 'bcrypt';
 async function main() {
     console.log(`Start seeding ...`);
 
-    await prisma.appointment.deleteMany();
-    await prisma.availability.deleteMany();
-    await prisma.user.deleteMany(); 
     await prisma.service.deleteMany();
 
-    const password = await bcrypt.hash('password123', 10);
-
-  const admin = await prisma.user.create({
-    data: {
-      email: 'sopa.fabian@gmx.net',
-      name: 'Fabian Sopa ADMIN',
-      password: password,
-      role: Role.ADMIN,
-    },
-  });
-
-  /*const barber1 = await prisma.user.create({
-    data: {
-      email: 'alen@alkos.at',
-      name: 'ALKOS',
-      password: password,
-      role: Role.HEADOFBARBER,
-    },
-  });
-*/
   const service1 = await prisma.service.create({
     data: {
       name: 'Haarschnitt',
-      duration: 30,
+      duration: 20,
       price: 28.00,
     },
   });
@@ -49,7 +26,7 @@ async function main() {
    const service3 = await prisma.service.create({
     data: {
       name: 'Combo',
-      duration: 45,
+      duration: 30,
       price: 45.00,
     },
   });
@@ -84,7 +61,7 @@ async function main() {
   });
 
   console.log(`Seeding finished.`);
-  console.log({ admin, service1, service2, service3, service4, service5, service6, service7 });
+  console.log({ service1, service2, service3, service4, service5, service6, service7 });
 }
 
 main()
