@@ -71,7 +71,7 @@ export async function GET(req: Request) {
 
         while (currentTime < dayEndInVienna) {
             allPossibleSlots.push(new Date(currentTime));
-            currentTime.setMinutes(currentTime.getMinutes() + 30); 
+            currentTime.setMinutes(currentTime.getMinutes() + 20); 
         }
         
          const availableSlots = allPossibleSlots.filter(slotStartTime => {
