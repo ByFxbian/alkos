@@ -46,15 +46,6 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
       return;
     }
 
-    /*if (!session.user.emailVerified) {
-      alert('Bitte bestätige zuerst deine E-Mail-Adresse, bevor du einen Termin buchst.');
-      return;
-    }*/
-   if(!session.user.instagram) {
-    alert('Bitte füge in den Einstellungen zuerst dein Instagram hinzu, bevor du einen Termin buchst.');
-    return
-   }
-
     setIsBooking(true);
 
     const res = await fetch('/api/appointments', {
