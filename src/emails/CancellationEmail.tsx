@@ -1,4 +1,5 @@
-import { format } from 'date-fns-tz';
+import { format, formatInTimeZone } from 'date-fns-tz';
+import { de } from 'date-fns/locale';
 import React from 'react';
 
 interface CancellationEmailProps {
@@ -17,9 +18,7 @@ const formatDate = (date: Date) => {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date) + ' Uhr';*/
-  return format(new Date(date), "EEEE, dd. MMMM yyyy 'um' HH:mm 'Uhr'", {
-    timeZone: 'Europe/Vienna',
-  });
+  return formatInTimeZone(new Date(date), 'Europe/Vienna', "EEEE, dd. MMMM yyyy 'um' HH:mm 'Uhr'", { locale: de });
 };
 
 export default function CancellationEmail({ customerName, serviceName, startTime, host }: CancellationEmailProps) {
