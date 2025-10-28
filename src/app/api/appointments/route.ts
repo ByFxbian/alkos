@@ -8,14 +8,18 @@ import ConfirmationEmail from '@/emails/ConfirmationEmail';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
+  console.log("API Route /api/appointments POST called");
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user) {
+    console.warn("API Route /api/appointments: Unauthorized access attempt.");
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
+  console.log("API Route /api/appointments: User authorized.", { userId: session.user.id });
 
   try {
     const body = await req.json();
+    console.log("API Route /api/appointments: Request body:", body);
     const { barberId, serviceId, startTime, useFreeAppointment  } = body;
     const customerId = session.user.id;
 
@@ -41,6 +45,16 @@ export async function POST(req: Request) {
     const appointmentStartTime = new Date(startTime);
     const appointmentEndTime = new Date(appointmentStartTime.getTime() + service.duration * 60000);
 
+    const existingAppointment = await prisma.appointment.findFirst({
+      where: {
+        barberId: barberId,
+        startTime: appointmentStartTime,
+      },
+    });
+
+    if(existingAppointment) {
+      return NextResponse.json({ error: 'Dieser Zeitslot wurde gerade eben gebucht oder ist bereits belegt.'}, { status: 409 });
+    }
     const newAppointment = await prisma.appointment.create({
       data: {
         startTime: appointmentStartTime,
@@ -56,6 +70,7 @@ export async function POST(req: Request) {
         service: true,
       },
     });
+    console.log("API Route /api/appointments: Appointment created successfully.", { appointmentId: newAppointment.id, userId: customerId });
 
     try {
       await resend.emails.send({
@@ -76,7 +91,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json(newAppointment, { status: 201 });
   } catch (error) {
-    console.error('Booking error:', error);
+    console.error('API Route /api/appointments - Booking error:', error);
+    if (error instanceof NextResponse && error.status === 409) {
+      return error;
+    }
     return NextResponse.json({ error: 'Fehler bei der Terminerstellung.' }, { status: 500 });
   }
 }

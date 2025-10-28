@@ -10,13 +10,23 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
+import CustomerDetailsModal from './CustomerDetailsModal';
+
+type CustomerDataForSchedule = {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+    instagram: string | null;
+    completedAppointments: number;
+}
 
 type FullAppointment = {
   id: string;
   startTime: Date;
   isFree: boolean;
   service: { name: string };
-  customer: { name: string | null; email: string; image: string | null;};
+  customer: CustomerDataForSchedule;
   barber: { name: string | null };
 };
 
@@ -84,6 +94,7 @@ function QrCodeModal({ token, onClose }: { token: string; onClose: () => void })
 export default function BarberSchedule({ appointments, isAdmin }: BarberScheduleProps) {
     const router = useRouter();
     const [showQrModal, setShowQrModal] = useState<string | null>(null);
+    const [selectedCustomer, setSelectedCustomer] = useState<CustomerDataForSchedule | null>(null);
 
     const generateQrCode = async (appointmentId: string) => {
         const res = await fetch('/api/admin/stamps/generate', {
@@ -121,6 +132,10 @@ export default function BarberSchedule({ appointments, isAdmin }: BarberSchedule
     return (
         <>
             {showQrModal && <QrCodeModal token={showQrModal} onClose={() => setShowQrModal(null)} />}
+            <CustomerDetailsModal
+              customer={selectedCustomer}
+              onClose={() => setSelectedCustomer(null)}
+            />
             <Swiper navigation={true} modules={[Navigation]} className='mySwiper'>
                 {nextSevenDays.map(day => {
                     const appointmentsForThisDay = appointments.filter(app => isSameDay(new Date(app.startTime), day));
@@ -130,24 +145,24 @@ export default function BarberSchedule({ appointments, isAdmin }: BarberSchedule
                             <h3 className='text-2xl font-bold text-center mb-4'>
                                 {format(day, 'EEEE, dd. MMMM', { locale: de})}
                             </h3>
-                            <div className="space-y-4 md:px-8">
+                            <div className="space-y-4 md:px-8 min-h-[200px]">
                                 {appointmentsForThisDay.length > 0 ? (
                                     appointmentsForThisDay.map((app) => (
                                     <div key={app.id} className=" p-4 rounded-lg border-l-4 border-gold-500" style={{ backgroundColor: 'var(--color-surface)' }}>
                                         <div className='flex justify-between items-start gap-4'>
-                                            <div className="flex items-center space-x-4 min-w-0">
+                                            <div className="flex items-center space-x-4 min-w-0 cursor-pointer" onClick={() => setSelectedCustomer(app.customer)}>
                                                 <Image
                                                 src={app.customer.image || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
                                                 alt={app.customer.name || 'Kunde'}
                                                 width={48}
                                                 height={48}
-                                                className="rounded-full object-cover flex-shrink-0"
+                                                className="rounded-full object-cover flex-shrink-0 w-12 h-12"
                                                 />
                                                 <div className='min-w-0'>
                                                     <p className="font-bold text-lg truncate">{app.service.name}</p>
                                                     {app.isFree && <span className="text-xs font-bold uppercase text-green-400 bg-green-950 px-2 py-1 rounded truncate">Stempelpass</span>}
                                                     <p  className="text-sm truncate" style={{ color: 'var(--color-text-muted)' }}>
-                                                        Kunde: {app.customer.name} ({app.customer.email})
+                                                        Kunde: {app.customer.name}
                                                     </p>
                                                     {isAdmin && (
                                                         <p className="text-sm truncate" style={{ color: 'var(--color-text-muted)' }}>

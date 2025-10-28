@@ -25,10 +25,6 @@ export default async function KalenderAdminPage() {
 
   const appointments = await prisma.appointment.findMany({
     where: {
-      /*barberId: (session.user.role === 'ADMIN' || session.user.role === 'HEADOFBARBER' ) ? undefined : session.user.id,
-      startTime: {
-        gte: new Date(),
-      },*/
       ...(session.user.role === 'ADMIN' && {}),
       ...(session.user.role === 'HEADOFBARBER' && {}),
       ...(session.user.role === 'BARBER' && {barberId: session.user.id}),
@@ -39,7 +35,16 @@ export default async function KalenderAdminPage() {
     },
     include: {
       service: true,
-      customer: true,
+      customer: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          instagram: true,
+          completedAppointments: true,
+        }
+      },
       barber: true,
     },
     orderBy: {

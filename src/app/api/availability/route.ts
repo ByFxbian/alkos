@@ -73,9 +73,11 @@ export async function GET(req: Request) {
             allPossibleSlots.push(new Date(currentTime));
             currentTime.setMinutes(currentTime.getMinutes() + 20); 
         }
+
+        const nowInVienna = toZonedTime(new Date(), timeZone)
         
-         const availableSlots = allPossibleSlots.filter(slotStartTime => {
-            if (slotStartTime < new Date()) {
+        const availableSlots = allPossibleSlots.filter(slotStartTime => {
+            if (slotStartTime < nowInVienna) {
                 return false;
             }
 

@@ -78,32 +78,53 @@ export const authOptions: AuthOptions = {
 
             return baseUrl;
         },
-        async jwt({ token, user }) {
-            if (user) {
-                token.id = user.id;
-                token.role = (user as User).role;
-                token.emailVerified = (user as User).emailVerified;
+        async jwt({ token, user, account, profile, trigger }) {
+            const isSignIn = !!user;
+            console.log(`JWT Callback ${isSignIn ? 'SignIn' : 'Update'}:`, { tokenId: token?.id, userName: token?.name, userParam: user?.id, accountProvider: account?.provider, trigger });
+            try {
+                if (isSignIn && user) {
+                    token.id = user.id;
+                    token.role = (user as User).role || token.role;
+                    token.emailVerified = (user as User).emailVerified || token.emailVerified;
+                    console.log("JWT Callback during SignIn - Initial Token:", { id: token.id, role: token.role, emailVerified: token.emailVerified });
+                }
+                if(typeof token.id === 'string') {
+                    const dbUser = await prisma.user.findUnique({ where: { id: token.id }});
+                    if(!dbUser) {
+                        console.warn("JWT Callback: DB User not found for token ID:", token.id);
+                    } else {
+                        token.emailVerified = dbUser.emailVerified;
+                        token.name = dbUser.name;
+                        token.picture = dbUser.image;
+                        token.role = dbUser.role;
+                        token.instragram = dbUser.instagram;
+                        console.log("JWT Callback: DB User found and token updated.", { id: dbUser.id, role: dbUser.role, emailVerified: dbUser.emailVerified });
+                    }
+                } else if (isSignIn) {
+                    console.error("JWT Callback SignIn Error: User object present but token ID could not be set.", { user });
+                } else {
+                    console.warn("JWT Callback Update Warning: Token ID is missing or invalid on update.", { token });
+                }
+            } catch (error) {
+                console.error("Error in JWT Callback:", error);
             }
-
-            const dbUser = await prisma.user.findUnique({ where: { id: token.id as string } });
-            if (dbUser) {
-                token.emailVerified = dbUser.emailVerified;
-                token.name = dbUser.name;
-                token.picture = dbUser.image;
-                token.role = dbUser.role;
-                token.instragram = dbUser.instagram;
-            }
-
+            console.log("JWT Callback End:", { tokenId: token?.id, userName: token?.name, role: token?.role });
             return token;
         },
         async session({ session, token }) {
-            if (session.user) {
+            console.log("Session Callback Start:", { sessionUserId: session?.user?.id, tokenUserId: token?.id });
+            if (token && token.id && session.user) {
                 session.user.id = token.id as string;
                 session.user.role = token.role as string;
                 session.user.emailVerified = token.emailVerified as Date | null;
                 session.user.image = token.picture as string | null;
+                session.user.name = token.name as string | null;
                 session.user.instagram = token.instagram as string | null;
+                console.log("Session Callback: Session updated from token.", { userId: session.user.id, role: session.user.role });
+            } else {
+                console.warn("Session Callback: Token is invalid or missing, session might be invalid.", { token });
             }
+            console.log("Session Callback End:", { sessionUserId: session?.user?.id });
             return session;
         },
     },
