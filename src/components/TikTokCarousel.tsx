@@ -38,6 +38,7 @@ export default function TikTokCarousel() {
       >
         {videos.map(video => (
           <SwiperSlide key={video.id} style={{ width: '325px', height: '575px', overflow: 'hidden', borderRadius: '12px', backgroundColor: '#000' }}>
+            {video.url ? (
             <iframe
               src={video.url}
               style={{
@@ -48,6 +49,11 @@ export default function TikTokCarousel() {
               allow="autoplay; encrypted-media;"
               allowFullScreen
             ></iframe>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-white bg-black">
+              Video noch nicht verfügbar
+            </div>
+          )}
           </SwiperSlide>
         ))}
       </Swiper>
