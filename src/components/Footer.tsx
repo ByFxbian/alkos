@@ -44,7 +44,9 @@ export default function Footer() {
           }}>
           <p>&copy; {new Date().getFullYear()} ALKOS. Alle Rechte vorbehalten.</p>
           <p className="mt-1">
-            <Link href="/impressum" className="hover:underline">Impressum</Link> | <Link href="/datenschutz" className="hover:underline">Datenschutz</Link>
+            <Link href="/impressum" className="hover:underline">Impressum</Link> |{' '}
+            <Link href="/datenschutz" className="hover:underline">Datenschutz</Link> |{' '}
+            <Link href="/fehler-melden" className="hover:underline">Fehler melden</Link>
           </p>
         </div>
       </div>
