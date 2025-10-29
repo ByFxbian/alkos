@@ -4,22 +4,28 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Resend } from 'resend';
 import ConfirmationEmail from '@/emails/ConfirmationEmail';
+import { logger } from '@/lib/logger';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
   console.log("API Route /api/appointments POST called");
+  logger.info("API Route /api/appointments POST called");
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user) {
     console.warn("API Route /api/appointments: Unauthorized access attempt.");
+    logger.warn("API Route /api/appointments: Unauthorized access attempt."); // Ersetze console.warn
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
   console.log("API Route /api/appointments: User authorized.", { userId: session.user.id });
+  logger.info("API Route /api/appointments: User authorized.", { userId: session.user.id });
 
+  let response: NextResponse;
   try {
     const body = await req.json();
     console.log("API Route /api/appointments: Request body:", body);
+    logger.info("API Route /api/appointments: Request body:", { body }); // Logge das Objekt
     const { barberId, serviceId, startTime, useFreeAppointment  } = body;
     const customerId = session.user.id;
 
@@ -71,6 +77,7 @@ export async function POST(req: Request) {
       },
     });
     console.log("API Route /api/appointments: Appointment created successfully.", { appointmentId: newAppointment.id, userId: customerId });
+    logger.info("API Route /api/appointments: Appointment created successfully.", { appointmentId: newAppointment.id, userId: session.user.id });
 
     try {
       await resend.emails.send({
@@ -85,16 +92,24 @@ export async function POST(req: Request) {
           host: 'ALKOS'
         }),
       });
-    } catch (emailError) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (emailError: any) {
+      logger.error("API Route /api/appointments: Error when sending confirmation email.", emailError);
       console.error('Fehler beim Senden der Bestätigungs-E-Mail:', emailError);
     }
-
-    return NextResponse.json(newAppointment, { status: 201 });
-  } catch (error) {
+    response = NextResponse.json(newAppointment, { status: 201 });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    logger.error('API Route /api/appointments - Booking error:', error); // Ersetze console.error
     console.error('API Route /api/appointments - Booking error:', error);
     if (error instanceof NextResponse && error.status === 409) {
-      return error;
+      response = error;
+    } else {
+      response = NextResponse.json({ error: 'Fehler bei der Terminerstellung.' }, { status: 500 });
     }
-    return NextResponse.json({ error: 'Fehler bei der Terminerstellung.' }, { status: 500 });
+  } finally {
+    logger.info("API Route /api/appointments POST: Flushing logs.");
+    await logger.flush();
   }
+  return response;
 }

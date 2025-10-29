@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { fromZonedTime, toZonedTime, format } from "date-fns-tz";
+import { logger } from "@/lib/logger";
 
 const schema = z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -14,10 +15,15 @@ const timeZone = 'Europe/Vienna';
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
+    const params = Object.fromEntries(searchParams.entries());
+    logger.info("API Route /api/availability GET called", { params }); // Logging Start mit Parametern
+    let response: NextResponse;
 
-    const validation = schema.safeParse(Object.fromEntries(searchParams.entries()));
+    const validation = schema.safeParse(params);
     if(!validation.success) {
-        return NextResponse.json({ error: 'Invalid input', details: z.treeifyError(validation.error) }, { status: 400 })
+        logger.warn("API Route /api/availability GET: Invalid input.", { error: validation.error });
+        response = NextResponse.json({ error: 'Invalid input', details: z.treeifyError(validation.error) }, { status: 400 })
+        return response;
     }
     const { date, barberId, serviceId } = validation.data;
 
@@ -33,6 +39,7 @@ export async function GET(req: Request) {
         });
 
         if (!barberAvailability) {
+            logger.info("API Route /api/availability GET: No availability found for barber on this day.", { date, barberId, dayOfWeek });
             return NextResponse.json([]);
         }
 
@@ -44,8 +51,8 @@ export async function GET(req: Request) {
         }
         const serviceDuration = service.duration;
 
-        const [startHour, startMinute] = barberAvailability.startTime.split(':').map(Number);
-        const [endHour, endMinute] = barberAvailability.endTime.split(':').map(Number);
+        //const [startHour, startMinute] = barberAvailability.startTime.split(':').map(Number);
+        //const [endHour, endMinute] = barberAvailability.endTime.split(':').map(Number);
 
         //const dayStart = new Date(date + `T${barberAvailability.startTime}:00`);
         //const dayEnd = new Date(date + `T${barberAvailability.endTime}:00`);
@@ -95,11 +102,22 @@ export async function GET(req: Request) {
         });
 
         const formattedSlots = availableSlots.map(slot => slot.toISOString());
+        logger.info("API Route /api/availability GET: Availability calculated.", { date, barberId, serviceId, numberOfSlots: formattedSlots.length });
 
-        return NextResponse.json(formattedSlots);
+        response = NextResponse.json(formattedSlots);
     } catch (error) {
+        logger.error('API Route /api/availability GET - Availability error:', { date, barberId, serviceId, error }); // Logging Fehler
         console.error('Availability error:', error);
-        return NextResponse.json({ error: 'An error occurred while fetching availability.' }, { status: 500 });
+        response = NextResponse.json({ error: 'An error occurred while fetching availability.' }, { status: 500 });
+    } finally {
+        logger.info("API Route /api/availability GET: Flushing Logs.");
+        await logger.flush();
     }
+    if (!response!) {
+        logger.error("API Route /api/availability GET: Reached end without setting a response.");
+        response = NextResponse.json({ error: 'Interner Serverfehler' }, { status: 500 });
+        await logger.flush();
+    }
+    return response!;
 }
 
