@@ -8,38 +8,57 @@ import { PrismaClientKnownRequestError } from '@/generated/prisma/runtime/librar
 export async function DELETE(
   req: NextRequest,
 ) {
-  //const { params } = context as { params: { id: string } };
   const session = await getServerSession(authOptions);
-  //const { id: appointmentId } = params;
   const appointmentId = req.nextUrl.pathname.split('/').pop();
+  logger.info("API Route /api/admin/appointments/[id] DELETE called", { appointmentId });
   let response: NextResponse;
   try {
-    const allowedRoles = ['ADMIN', 'HEADOFBARBER'];
-    if (!session || !session.user || !allowedRoles.includes(session.user.role)) {
-      logger.warn("API Route /api/admin/appointments/[id] DELETE: Forbidden access attempt.", {
-        appointmentId,
-        requestingUserId: session?.user?.id,
-        requestingUserRole: session?.user?.role
-      });
-      response = NextResponse.json({ error: 'Zugriff verweigert' }, { status: 403 });
+    if (!session || !session.user) {
+      logger.warn("API Route /api/admin/appointments/[id] DELETE: Unauthorized (not logged in).", { appointmentId });
+      response = NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
+      return response;
+    } 
+    logger.info("API Route /api/admin/appointments/[id] DELETE: User identified.", { userId: session.user.id, role: session.user.role, appointmentId });
+
+    if(!appointmentId) {
+      logger.error("API Route /api/admin/appointments/[id] DELETE: Missing appointment ID.");
+      response = NextResponse.json({ error: 'Termin-ID fehlt.' }, { status: 400 });
     } else {
-      logger.info("API Route /api/admin/appointments/[id] DELETE: User authorized.", { userId: session.user.id, role: session.user.role, appointmentId });
-      if(!appointmentId) {
-        response = NextResponse.json({ error: 'Termin-ID fehlt.' }, { status: 400 });
+      const appointment = await prisma.appointment.findUnique({
+        where: { id: appointmentId },
+        select: { barberId: true } // Nur die barberId wird benötigt
+      });
+      if (!appointment) {
+            logger.warn("API Route /api/admin/appointments/[id] DELETE: Appointment not found during auth check.", { appointmentId, userId: session.user.id });
+            response = NextResponse.json({ error: 'Zu löschender Termin nicht gefunden.' }, { status: 404 });
       } else {
-        await prisma.$transaction(async (tx) => {
-          const deletedTokens = await tx.stampToken.deleteMany({
-            where: { appointmentId: appointmentId },
-          });
-          logger.info("API Route /api/admin/appointments/[id] DELETE: Deleted associated stamp tokens.", { appointmentId, count: deletedTokens.count });
+        const isAdminOrHead = ['ADMIN', 'HEADOFBARBER'].includes(session.user.role);
+        const isOwnAppointment = session.user.role === 'BARBER' && appointment.barberId === session.user.id;
 
-          await tx.appointment.delete({
-            where: { id: appointmentId },
+        if (!isAdminOrHead && !isOwnAppointment) {
+          logger.warn("API Route /api/admin/appointments/[id] DELETE: Forbidden access attempt.", {
+              appointmentId,
+              appointmentBarberId: appointment.barberId,
+              requestingUserId: session.user.id,
+              requestingUserRole: session.user.role
           });
-          logger.info("API Route /api/admin/appointments/[id] DELETE: Appointment deleted successfully.", { appointmentId, deletedByUserId: session.user.id });
-        });
+          response = NextResponse.json({ error: 'Zugriff verweigert' }, { status: 403 });
+        } else {
+          logger.info("API Route /api/admin/appointments/[id] DELETE: User authorized for deletion.", { userId: session.user.id, role: session.user.role, appointmentId });
+          await prisma.$transaction(async (tx) => {
+            const deletedTokens = await tx.stampToken.deleteMany({
+              where: { appointmentId: appointmentId },
+            });
+            logger.info("API Route /api/admin/appointments/[id] DELETE: Deleted associated stamp tokens.", { appointmentId, count: deletedTokens.count });
 
-        response = NextResponse.json({ message: 'Termin erfolgreich vom Admin gelöscht' });
+            await tx.appointment.delete({
+              where: { id: appointmentId },
+            });
+            logger.info("API Route /api/admin/appointments/[id] DELETE: Appointment deleted successfully.", { appointmentId, deletedByUserId: session.user.id });
+          });
+
+          response = NextResponse.json({ message: 'Termin erfolgreich vom Admin gelöscht' });
+        }
       }
     }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
