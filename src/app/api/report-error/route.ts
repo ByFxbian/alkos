@@ -20,7 +20,7 @@ export async function POST(req: Request) {
         const userEmail = session?.user?.email;
 
         const subject = `Fehler von ALKOS`;
-        let emailBody = `Eine neue Fehlermeldung wurde übermittel:\n\n`;
+        let emailBody = `Eine neue Fehlermeldung wurde übermittelt:\n\n`;
         emailBody += `Beschreibung:\n${description}\n\n`;
         if(reporterEmail) {
             emailBody += `Gemeldet von (E-Mail angegeben): ${reporterEmail}\n`;
