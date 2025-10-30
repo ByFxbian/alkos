@@ -21,7 +21,7 @@ export async function GET(request: Request) {
         const now = new Date();
 
         const reminderWindowStart = addHours(now, 24);
-        const reminderWindowEnd = addHours(now, 25);
+        const reminderWindowEnd = addHours(now, 48);
 
         const appointmentsToSend = await prisma.appointment.findMany({
             where: {
