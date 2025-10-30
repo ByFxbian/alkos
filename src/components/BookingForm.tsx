@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DayPicker, getDefaultClassNames } from 'react-day-picker';
 import { format, startOfDay } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -31,7 +31,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedBarber, setSelectedBarber] = useState<User | null>(null);
   //const startDate = new Date(2025, 9, 14); // October 14, 2025
-  const today = startOfDay(new Date());
+  const today = useMemo(() => startOfDay(new Date()), []);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
@@ -94,7 +94,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
 
   };
 
-  useEffect(() => {
+  /*useEffect(() => {
     if (!selectedDate && step >= 3) {
       setSelectedDate(today);
     }
@@ -121,74 +121,37 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
       setSelectedSlot(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedService, selectedBarber, selectedDate]);
+  }, [selectedService, selectedBarber, selectedDate]);*/
 
-  const css = `
-    .rdp {
-      --rdp-cell-size: 45px;
-      --rdp-caption-font-size: 1.25rem;
-      --rdp-background-color: var(--color-surface-3);
-      --rdp-accent-color: var(--color-gold-500); /* Basis-Akzentfarbe */
-      --rdp-color: var(--color-text);
-      margin: 1em 0;
-      border: 1px solid var(--color-border);
-      border-radius: 8px;
+  useEffect(() => {
+    if(step === 3 && !selectedDate) {
+      setSelectedDate(today);
     }
-    .rdp-head_cell {
-      color: var(--color-text-muted);
-      font-size: 0.8rem;
+  }, [step, selectedDate, today]);
+
+  useEffect(() => {
+    if(selectedService && selectedBarber && selectedDate) {
+      setIsLoading(true);
+      const dateString = format(selectedDate, 'yyyy-MM-dd');
+
+      const query = new URLSearchParams({
+        date: dateString,
+        barberId: selectedBarber.id,
+        serviceId: selectedService.id,
+      }).toString();
+
+      fetch(`/api/availability?${query}`)
+        .then((res) => res.json())
+        .then((slots) => {
+          setAvailableSlots(slots);
+          setSelectedSlot(null);
+        }) 
+        .finally(() => setIsLoading(false));
+    } else {
+      setAvailableSlots([]);
+      setSelectedSlot(null);
     }
-    .rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
-      background-color: var(--color-surface);
-    }
-    /* Ausgewählter Tag - WICHTIG */
-    .rdp-day_selected,
-    .rdp-day_selected:focus-visible,
-    .rdp-day_selected:hover {
-      background-color: var(--color-gold-500); /* Goldener Hintergrund */
-      color: black !important; /* Schwarze Schriftfarbe, !important zur Sicherheit */
-      border-radius: 50%;
-      font-weight: bold;
-      border: none; /* Sicherstellen, dass kein blauer Rand bleibt */
-      outline: none; /* Sicherstellen, dass kein blauer Fokusring bleibt */
-    }
-     /* Heutiger Tag (nicht ausgewählt) */
-    .rdp-day_today:not(.rdp-day_selected) {
-       color: var(--color-gold-500);
-       border: 1px solid var(--color-gold-500);
-       border-radius: 50%;
-       background-color: transparent; /* Sicherstellen, dass kein blauer Hintergrund bleibt */
-    }
-    /* Navigationspfeile - WICHTIG */
-    .rdp-nav_button {
-      color: var(--color-gold-500); /* Goldene Farbe */
-      transition: background-color 0.2s ease;
-      border-radius: 50%; /* Optional: Runde Buttons */
-      border: none;
-      outline: none;
-    }
-     .rdp-nav_button:not([disabled]):hover {
-       background-color: var(--color-surface);
-    }
-     .rdp-nav_button:focus-visible {
-         outline: 2px solid var(--color-gold-500); /* Fokus-Indikator */
-         outline-offset: 2px;
-     }
-    /* Monats/Jahresanzeige */
-    .rdp-caption_label {
-       color: var(--color-text);
-       font-weight: bold;
-    }
-    /* Deaktivierte Tage */
-    .rdp-day_disabled {
-       color: var(--color-text-muted);
-       opacity: 0.4;
-    }
-     /* Ausgeblendete Tage */
-    .rdp-day_hidden {
-        visibility: hidden;
-    }
-  `;
+  }, [selectedService, selectedBarber, selectedDate]);
 
     return (
     <>
