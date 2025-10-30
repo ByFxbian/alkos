@@ -18,6 +18,7 @@ export const authOptions: AuthOptions = {
         AppleProvider({
             clientId: process.env.APPLE_ID!,
             clientSecret: process.env.APPLE_SECRET!,
+            checks: ["state"],
         }),
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID!,
