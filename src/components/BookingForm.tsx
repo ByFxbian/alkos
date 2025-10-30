@@ -211,7 +211,12 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
                   className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${selectedService?.id === service.id ? 'bg-gold-500 text-black border-gold-500' : ' hover:border-gold-500'}`} style={{ borderColor: selectedService?.id !== service.id ? 'var(--color-border)' : '' }}>
                   <div className="flex justify-between items-center">
                     <p className="font-bold">{service.name}</p>
-                    <p className="font-semibold">{service.price.toFixed(2)} €</p>
+                    <p className={`font-semibold ${useFreeAppointment && selectedService?.id === service.id ? 'line-through text-gray-500' : ''}`}>
+                      {service.price.toFixed(2)} €
+                    </p>
+                    {useFreeAppointment && selectedService?.id === service.id && (
+                      <p className="font-semibold text-green-400">0.00 €</p>
+                    )}
                   </div>
                   <p>{service.duration} Minuten</p>
                   {service.name === 'Combo' && (
@@ -284,7 +289,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
                   {selectedSlot && (
                     <div className="mt-6 text-center">
                       <button onClick={handleBooking} disabled={isBooking} className="bg-green-600 text-white font-bold px-8 py-3 rounded-full hover:bg-green-500 w-full disabled:bg-neutral-600 disabled:cursor-not-allowed">
-                        {isBooking ? 'Bitte warten...' : `Termin um ${format(new Date(selectedSlot), 'HH:mm')} Uhr bestätigen`}
+                        {isBooking ? 'Bitte warten...' : `Termin um ${format(new Date(selectedSlot), 'HH:mm')} Uhr ${useFreeAppointment ? ' (Gratis)' : ''} bestätigen`}
                       </button>
                     </div>
                   )}
