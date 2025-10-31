@@ -68,10 +68,14 @@ export default function Navbar() {
                       <Link href="/admin/kalender" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Terminkalender</Link>
                   )}
                   {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
-                      <Link href="/admin/friseure" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Mitarbeiter bearbeiten</Link>
+                      <Link href="/admin/friseure" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Nutzer verwalten</Link>
                   )}
                   {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
                     <Link href="/admin/services" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Services verwalten</Link>
+                  )}
+
+                  {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
+                      <Link href="/admin/dashboard" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Dashboard</Link>
                   )}
                   
                   <hr className=" my-1" style={{ borderColor: 'var(--color-border)' }}/>
@@ -118,11 +122,15 @@ export default function Navbar() {
                 <Link href="/admin/kalender" className="hover:bg-gold-500 hover:text-black">Terminkalender</Link>
               )}
               {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
-                <Link href="/admin/friseure" className="hover:bg-gold-500 hover:text-black">Mitarbeiter bearbeiten</Link>
+                <Link href="/admin/friseure" className="hover:bg-gold-500 hover:text-black">Nutzer verwalten</Link>
               )}
 
               {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
                 <Link href="/admin/services" className="hover:bg-gold-500 hover:text-black">Services verwalten</Link>
+              )}
+
+              {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
+                <Link href="/admin/dashboard" className="hover:bg-gold-500 hover:text-black">Dashboard</Link>
               )}
 
               <button onClick={() => { signOut({ callbackUrl: '/' }); setIsMobileMenuOpen(false); }} className="text-red-400 hover:bg-red-500 hover:text-white">

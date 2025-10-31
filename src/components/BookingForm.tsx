@@ -7,7 +7,7 @@ import { de } from 'date-fns/locale';
 import 'react-day-picker/dist/style.css';
 import type { User, Service } from '@/generated/prisma';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type BookingFormProps = {
   barbers: User[];
@@ -26,11 +26,9 @@ function BookingProcessingModal() {
 }
 
 export default function BookingForm({ barbers, services, hasFreeAppointment  }: BookingFormProps) {
-  const defaultClassNames = getDefaultClassNames();
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedBarber, setSelectedBarber] = useState<User | null>(null);
-  //const startDate = new Date(2025, 9, 14); // October 14, 2025
   const today = useMemo(() => startOfDay(new Date()), []);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   
@@ -39,6 +37,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
 
   const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
 
   const [useFreeAppointment, setUseFreeAppointment] = useState(false);
@@ -94,35 +93,6 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
 
   };
 
-  /*useEffect(() => {
-    if (!selectedDate && step >= 3) {
-      setSelectedDate(today);
-    }
-  
-    if (selectedService && selectedBarber && selectedDate) {
-      setIsLoading(true);
-      const dateString = format(selectedDate, 'yyyy-MM-dd');
-      
-      const query = new URLSearchParams({
-        date: dateString,
-        barberId: selectedBarber.id,
-        serviceId: selectedService.id,
-      }).toString();
-
-      fetch(`/api/availability?${query}`)
-        .then((res) => res.json())
-        .then((slots) => {
-          setAvailableSlots(slots);
-          setSelectedSlot(null);
-        })
-        .finally(() => setIsLoading(false));
-    } else {
-      setAvailableSlots([]);
-      setSelectedSlot(null);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedService, selectedBarber, selectedDate]);*/
-
   useEffect(() => {
     if(step === 3 && !selectedDate) {
       setSelectedDate(today);
@@ -152,6 +122,24 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
       setSelectedSlot(null);
     }
   }, [selectedService, selectedBarber, selectedDate]);
+
+  useEffect(() => {
+    if(!selectedService && services.length > 0 && barbers.length > 0) {
+      const serviceId = searchParams.get('serviceId');
+      const barberId = searchParams.get('barberId');
+
+      if(serviceId && barberId) {
+        const service = services.find(s => s.id === serviceId);
+        const barber = barbers.find(b => b.id === barberId);
+
+        if(service && barber) {
+          setSelectedService(service);
+          setSelectedBarber(barber);
+          setStep(3);
+        }
+      }
+    }
+  }, [services, barbers, searchParams]);
 
     return (
     <>
