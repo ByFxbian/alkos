@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { fromZonedTime, toZonedTime, format } from "date-fns-tz";
+import { startOfDay, endOfDay } from "date-fns";
 import { logger } from "@/lib/logger";
 
 const schema = z.object({
@@ -51,32 +52,44 @@ export async function GET(req: Request) {
         }
         const serviceDuration = service.duration;
 
-        //const [startHour, startMinute] = barberAvailability.startTime.split(':').map(Number);
-        //const [endHour, endMinute] = barberAvailability.endTime.split(':').map(Number);
+        const availabilityStartInVienna = fromZonedTime(`${date}T${barberAvailability.startTime}:00`, timeZone);
+        const availabilityEndInVienna = fromZonedTime(`${date}T${barberAvailability.endTime}:00`, timeZone);
 
-        //const dayStart = new Date(date + `T${barberAvailability.startTime}:00`);
-        //const dayEnd = new Date(date + `T${barberAvailability.endTime}:00`);
-
-        const dayStartInVienna = fromZonedTime(`${date}T${barberAvailability.startTime}:00`, timeZone);
-        const dayEndInVienna = fromZonedTime(`${date}T${barberAvailability.endTime}:00`, timeZone);
-
-        //dayEnd.setHours(endHour, endMinute, 0, 0);
-        //dayStart.setHours(startHour, startMinute, 0, 0);
+        const dayStart = startOfDay(availabilityStartInVienna);
+        const dayEnd = endOfDay(availabilityStartInVienna);
 
         const bookedAppointments = await prisma.appointment.findMany({
             where: {
                 barberId: barberId,
                 startTime: {
-                    gte: dayStartInVienna,
-                    lt: dayEndInVienna,
+                    gte: availabilityStartInVienna,
+                    lt: availabilityEndInVienna,
                 },
             },
         });
 
-        const allPossibleSlots:Date[] = [];
-        let currentTime = new Date(dayStartInVienna);
+        const blockedTimes = await prisma.blockedTime.findMany({
+            where: {
+                barberId: barberId,
+                OR: [
+                    {
+                        startTime: { gte: dayStart, lt: dayEnd }
+                    },
+                    {
+                        endTime: { gte: dayStart, lt: dayEnd }
+                    },
+                    {
+                        startTime: { lte: dayStart },
+                        endTime: { gte: dayEnd }
+                    }
+                ]
+            }
+        });
 
-        while (currentTime < dayEndInVienna) {
+        const allPossibleSlots:Date[] = [];
+        let currentTime = new Date(availabilityStartInVienna);
+
+        while (currentTime < availabilityEndInVienna) {
             allPossibleSlots.push(new Date(currentTime));
             currentTime.setMinutes(currentTime.getMinutes() + 20); 
         }
@@ -90,7 +103,7 @@ export async function GET(req: Request) {
 
             const slotEndTime = new Date(slotStartTime.getTime() + serviceDuration * 60000);
 
-            if (slotEndTime > dayEndInVienna) {
+            if (slotEndTime > availabilityEndInVienna) {
                 return false;
             }
 
@@ -98,7 +111,11 @@ export async function GET(req: Request) {
                 (slotStartTime < booking.endTime) && (slotEndTime > booking.startTime)
             );
 
-            return !isBooked;
+            const isBlocked = blockedTimes.some(block => 
+                (slotStartTime < block.endTime) && (slotEndTime > block.startTime) 
+            );
+
+            return !isBooked && !isBlocked;
         });
 
         const formattedSlots = availableSlots.map(slot => slot.toISOString());

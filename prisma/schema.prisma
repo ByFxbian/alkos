@@ -69,6 +69,8 @@ model User {
   availabilities Availability[]
 
   passwordResetTokens PasswordResetToken[]
+
+  blockedTimes BlockedTime[] @relation("BarberBlockedTimes")
 }
 
 model VerificationToken {
@@ -152,4 +154,18 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+model BlockedTime {
+  id        String  @id() @default(cuid())
+  startTime DateTime
+  endTime   DateTime
+  reason    String?
+
+  barberId  String
+  barber    User    @relation("BarberBlockedTimes", fields: [barberId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([barberId, startTime, endTime])
 }

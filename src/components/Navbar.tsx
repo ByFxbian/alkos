@@ -70,6 +70,9 @@ export default function Navbar() {
                   {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
                       <Link href="/admin/friseure" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Mitarbeiter bearbeiten</Link>
                   )}
+                  {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
+                    <Link href="/admin/services" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Services verwalten</Link>
+                  )}
                   
                   <hr className=" my-1" style={{ borderColor: 'var(--color-border)' }}/>
                   <button onClick={() => signOut({ callbackUrl: '/' })} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-red-500 hover:text-white">
@@ -116,6 +119,10 @@ export default function Navbar() {
               )}
               {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
                 <Link href="/admin/friseure" className="hover:bg-gold-500 hover:text-black">Mitarbeiter bearbeiten</Link>
+              )}
+
+              {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
+                <Link href="/admin/services" className="hover:bg-gold-500 hover:text-black">Services verwalten</Link>
               )}
 
               <button onClick={() => { signOut({ callbackUrl: '/' }); setIsMobileMenuOpen(false); }} className="text-red-400 hover:bg-red-500 hover:text-white">
