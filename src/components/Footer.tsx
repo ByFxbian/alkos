@@ -20,7 +20,7 @@ export default function Footer() {
             <ul className="mt-2 space-y-1 text-sm">
               <li><Link href="/termine" className=" hover:text-gold-500" style={{ color: 'var(--color-text-muted)' }}>Termine</Link></li>
               <li><Link href="/team" className=" hover:text-gold-500" style={{ color: 'var(--color-text-muted)' }}>Team</Link></li>
-              <li><Link href="/gallerie" className=" hover:text-gold-500" style={{ color: 'var(--color-text-muted)' }}>Gallerie</Link></li>
+              {/*<li><Link href="/gallerie" className=" hover:text-gold-500" style={{ color: 'var(--color-text-muted)' }}>Gallerie</Link></li>*/}
             </ul>
           </div>
           <div>

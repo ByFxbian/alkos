@@ -3,17 +3,28 @@
 import type { User, Role } from "@/generated/prisma";
 import { useRouter } from 'next/navigation';
 import { useState, useMemo } from 'react';
+import CustomerDetailsModal from "./CustomerDetailsModal";
 
 type UserManagementProps = {
   allUsers: User[];
   currentUserId: string;
 };
 
+type CustomerDataForModal = {
+    name: string | null;
+    email: string;
+    image: string | null;
+    instagram: string | null;
+    completedAppointments: number;
+}
+
 export default function UserManagement({ allUsers, currentUserId }: UserManagementProps) {
   const router = useRouter();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<Role | 'ALL'>('ALL');
+
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerDataForModal | null>(null);
 
   const filteredUsers = useMemo(() => {
     return allUsers.filter(user => {
@@ -45,8 +56,23 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
     }
   };
 
+  const handleShowDetails = (user: User) => {
+    setSelectedCustomer({
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      instagram: user.instagram,
+      completedAppointments: user.completedAppointments,
+    });
+  };
+
   return (
     <div>
+      <CustomerDetailsModal 
+        customer={selectedCustomer}
+        onClose={() => setSelectedCustomer(null)}
+      />
+
       <div className="flex flex-col md:flex-row gap-4 mb-4">
         <input
           type="text"
@@ -89,8 +115,13 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
               return (
                 <tr key={user.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium">{user.name}</div>
-                    <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{user.email}</div>
+                    <button 
+                      onClick={() => handleShowDetails(user)}
+                      className="text-left hover:text-gold-500 transition-colors"
+                    >
+                      <div className="text-sm font-medium">{user.name}</div>
+                      <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{user.email}</div>
+                    </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <select
@@ -130,8 +161,13 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
             <div key={user.id} className="p-4 rounded-lg" style={{ backgroundColor: 'var(--color-surface)' }}>
               
               <div className="mb-4">
-                <div className="text-sm font-medium">{user.name}</div>
-                <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{user.email}</div>
+                <button 
+                  onClick={() => handleShowDetails(user)}
+                  className="text-left hover:text-gold-500 transition-colors"
+                >
+                  <div className="text-sm font-medium">{user.name}</div>
+                  <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{user.email}</div>
+                </button>
               </div>
               
               <div className="mb-4">

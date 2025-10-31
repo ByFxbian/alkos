@@ -115,7 +115,7 @@ export default function HomepageClient() {
                     </div>
                 </section>
 
-                <section id="tiktok" className="py-20" style={{ backgroundColor: 'var(--color-surface-3)' }}>
+                {/*<section id="tiktok" className="py-20" style={{ backgroundColor: 'var(--color-surface-3)' }}>
                     <div className="container mx-auto px-4">
                         <h2 className="text-4xl font-bold text-center mb-12">
                             Unsere Arbeit in Action
@@ -127,7 +127,7 @@ export default function HomepageClient() {
                             </Link>
                         </div>
                     </div>
-                </section>
+                </section>*/}
             </main>
     );
 }
