@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
 import { Prisma } from '@/generated/prisma';
+import { revalidatePath } from 'next/cache';
 
 const serviceSchema = z.object({
   name: z.string().min(1, "Name ist erforderlich"),
@@ -45,6 +46,8 @@ export async function PUT(req: NextRequest) {
       data: { name, duration, price },
     });
 
+    revalidatePath('/termine');
+
     logger.info("API Route /api/admin/services/[id] PUT: Service updated.", { serviceId });
     response = NextResponse.json(updatedService);
 
@@ -77,6 +80,8 @@ export async function DELETE(req: NextRequest) {
     await prisma.service.delete({
       where: { id: serviceId },
     });
+
+    revalidatePath('/termine');
 
     logger.info("API Route /api/admin/services/[id] DELETE: Service deleted.", { serviceId });
     response = NextResponse.json({ message: 'Service gelöscht' });

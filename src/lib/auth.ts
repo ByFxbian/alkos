@@ -98,7 +98,7 @@ export const authOptions: AuthOptions = {
                         token.name = dbUser.name;
                         token.picture = dbUser.image;
                         token.role = dbUser.role;
-                        token.instragram = dbUser.instagram;
+                        token.instagram = dbUser.instagram;
                         console.log("JWT Callback: DB User found and token updated.", { id: dbUser.id, role: dbUser.role, emailVerified: dbUser.emailVerified });
                     }
                 } else if (isSignIn) {

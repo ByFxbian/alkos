@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import { ThemeProvider } from "./theme-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
+import InstagramBanner from "@/components/InstagramBanner";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -38,6 +39,7 @@ export default function RootLayout({
         <Providers>
           <ThemeProvider>
             <div className="flex flex-col min-h-screen">
+              <InstagramBanner />
               <Navbar />
               <main className="flex-grow">
                 {children}

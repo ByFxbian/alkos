@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
+import { revalidatePath } from 'next/cache';
 
 const serviceSchema = z.object({
   name: z.string().min(1, "Name ist erforderlich"),
@@ -41,6 +42,8 @@ export async function POST(req: Request) {
         price,
       },
     });
+
+    revalidatePath('/termine');
 
     logger.info("API Route /api/admin/services POST: Service created.", { serviceId: newService.id });
     response = NextResponse.json(newService, { status: 201 });
