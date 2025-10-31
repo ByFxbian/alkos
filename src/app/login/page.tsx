@@ -89,6 +89,9 @@ function LoginForm() {
         <p className="mt-4 text-center">
             Noch kein Konto? <Link href="/register" className="text-gold-500 hover:underline">Jetzt registrieren</Link>
         </p>
+        <p className="mt-2 text-center">
+            <Link href="/forgot-password" className="text-sm text-gold-500 hover:underline">Passwort vergessen?</Link>
+        </p>
     </div>
   );
 }

@@ -67,6 +67,8 @@ model User {
   appointmentsAsBarber   Appointment[] @relation("BarberAppointments")
 
   availabilities Availability[]
+
+  passwordResetTokens PasswordResetToken[]
 }
 
 model VerificationToken {
@@ -138,4 +140,16 @@ model StampToken {
   expiresAt DateTime
   redeemedAt DateTime?
   createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id       String   @id @default(cuid())
+  token    String   @unique
+  userId   String   
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  redeemedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
