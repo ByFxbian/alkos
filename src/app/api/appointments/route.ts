@@ -51,6 +51,11 @@ export async function POST(req: Request) {
     const appointmentStartTime = new Date(startTime);
     const appointmentEndTime = new Date(appointmentStartTime.getTime() + service.duration * 60000);
 
+    const now = new Date();
+    const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+    const isLastMinuteBooking = appointmentStartTime < twentyFourHoursFromNow;
+
     const existingAppointment = await prisma.appointment.findFirst({
       where: {
         barberId: barberId,
@@ -69,6 +74,7 @@ export async function POST(req: Request) {
         barberId,
         serviceId,
         isFree: useFreeAppointment || false,
+        reminderSentAt: isLastMinuteBooking ? new Date() : null,
       },
       include: {
         customer: true,

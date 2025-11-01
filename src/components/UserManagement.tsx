@@ -4,6 +4,7 @@ import type { User, Role } from "@/generated/prisma";
 import { useRouter } from 'next/navigation';
 import { useState, useMemo } from 'react';
 import CustomerDetailsModal from "./CustomerDetailsModal";
+import Image from "next/image";
 
 type UserManagementProps = {
   allUsers: User[];
@@ -11,12 +12,14 @@ type UserManagementProps = {
 };
 
 type CustomerDataForModal = {
-    name: string | null;
-    email: string;
-    image: string | null;
-    instagram: string | null;
-    completedAppointments: number;
+  name: string | null;
+  email: string;
+  image: string | null;
+  instagram: string | null;
+  completedAppointments: number;
 }
+
+const PLACEHOLDER_IMAGE = 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';
 
 export default function UserManagement({ allUsers, currentUserId }: UserManagementProps) {
   const router = useRouter();
@@ -119,8 +122,17 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
                       onClick={() => handleShowDetails(user)}
                       className="text-left hover:text-gold-500 transition-colors"
                     >
-                      <div className="text-sm font-medium">{user.name}</div>
-                      <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{user.email}</div>
+                      <Image
+                        src={user.image || PLACEHOLDER_IMAGE}
+                        alt={user.name || 'Profilbild'}
+                        width={40}
+                        height={40}
+                        className="rounded-full object-cover w-10 h-10"
+                      />
+                      <div> 
+                        <div className="text-sm font-medium">{user.name}</div>
+                        <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{user.email}</div>
+                      </div>
                     </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -165,8 +177,17 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
                   onClick={() => handleShowDetails(user)}
                   className="text-left hover:text-gold-500 transition-colors"
                 >
-                  <div className="text-sm font-medium">{user.name}</div>
-                  <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{user.email}</div>
+                  <Image
+                    src={user.image || PLACEHOLDER_IMAGE}
+                    alt={user.name || 'Profilbild'}
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover w-10 h-10"
+                  />
+                  <div>
+                    <div className="text-sm font-medium">{user.name}</div>
+                    <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{user.email}</div>
+                  </div>
                 </button>
               </div>
               
