@@ -39,8 +39,23 @@ export async function POST(req: Request) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
-      logger.warn("API Route /api/auth/register: Conflict - User already exists.", { providedEmail: (requestBody as any).email });
-      response = NextResponse.json({ error: 'Benutzer existiert bereits' }, { status: 409 });
+      let targetFields: string[] = [];
+      if (error.meta && Array.isArray(error.meta.target)) {
+        targetFields = error.meta.target as string[];
+      }
+      if (targetFields.includes('email')) {
+        logger.warn("API Route /api/auth/register: Conflict - Email already exists.", { providedEmail: (requestBody as any).email });
+        response = NextResponse.json({ error: 'Diese E-Mail-Adresse ist bereits registriert.' }, { status: 409 });
+      
+      } else if (targetFields.includes('instagram')) {
+        logger.warn("API Route /api/auth/register: Conflict - Instagram handle already taken.", { providedInstagram: (requestBody as any).instagram });
+        response = NextResponse.json({ error: 'Dieser Instagram-Name ist bereits vergeben.' }, { status: 409 });
+      
+      } else {
+        logger.warn("API Route /api/auth/register: Conflict - Unique constraint failed.", { errorMeta: error.meta });
+        response = NextResponse.json({ error: 'Benutzer existiert bereits' }, { status: 409 });
+      }
+
     } else {
       logger.error('API Route /api/auth/register - Registration error:', { error, requestBody });
       if (error instanceof TypeError) {
