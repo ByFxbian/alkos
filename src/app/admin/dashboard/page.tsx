@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import StatCard from '@/components/StatCard';
 import { Role } from '@/generated/prisma';
+import Image from 'next/image';
 
 export const revalidate = 60;
 
@@ -87,7 +88,6 @@ export default async function AdminDashboardPage() {
 
   const barberStatsArray = Object.values(statsByBarber).sort((a, b) => b.revenue - a.revenue);
 
-  // B) Beliebtester Service
   const servicePopularity: Record<string, { name: string, count: number }> = {};
   allServices.forEach(s => {
     servicePopularity[s.id] = { name: s.name, count: 0 };
@@ -105,7 +105,6 @@ export default async function AdminDashboardPage() {
     <div className="container mx-auto py-12 px-4">
       <h1 className="text-4xl font-bold tracking-tight mb-8">Dashboard</h1>
 
-      {/* Grid für die Haupt-Statistiken */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         <StatCard 
           title="Termine (Nächste 7 Tage)" 
@@ -123,11 +122,10 @@ export default async function AdminDashboardPage() {
           description={mostPopularService?.count > 0 ? `${mostPopularService.count} mal gebucht` : 'Keine Buchungen'}
         />
       </div>
-
-      {/* Sektion für Barber-Umsatz */}
       <div>
         <h2 className="text-2xl font-bold tracking-tight mb-4">Umsatz & Termine (Nächste 7 Tage)</h2>
-        <div className="rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--color-surface)' }}>
+
+        <div className="hidden md:block rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--color-surface)' }}>
           <table className="min-w-full divide-y" style={{ borderColor: 'var(--color-border)' }}>
             <thead style={{ backgroundColor: 'var(--color-surface-3)'}}>
               <tr>
@@ -147,6 +145,24 @@ export default async function AdminDashboardPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className='md:hidden space-y-4'>
+            {barberStatsArray.map((barber) => (
+              <div key={barber.name} className='p-4 rounded-lg flex items-center justify-between' style={{ backgroundColor: 'var(--color-surface)'}}>
+                <div className='flex items-center gap-3'>
+                  <div className='w-10 h-10 bg-neutral-700 rounded-full flex items-center justify-center font-bold'>{barber.name.charAt(0)}</div>
+                  <div>
+                    <p className='font-bold text-lg'>{barber.name}</p>
+                    <p className='text-sm' style={{ color: 'var(--color-text-muted)'}}>{barber.appointmentCount} Termine</p>
+                  </div>
+                </div>
+                <div className='text-right'>
+                  <p className='text-xl font-bold text-gold-500'>{barber.revenue.toFixed(0)} €</p>
+                  <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Umsatz</p>
+                </div>
+              </div>
+            ))}
       </div>
     </div>
   );

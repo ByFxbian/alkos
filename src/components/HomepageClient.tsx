@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-//import Image from 'next/image';
+import Image from 'next/image';
 import BarberCard from '@/components/BarberCard';
-//import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import type { User } from '@/generated/prisma';
 import TikTokCarousel from '@/components/TikTokCarousel';
 
@@ -51,9 +51,9 @@ const teamMembers = [
 
 
 export default function HomepageClient() {
-    //const [opacity, setOpacity] = useState(1);
+    const [opacity, setOpacity] = useState(1);
 
-    /*useEffect(() => {
+    useEffect(() => {
         const handleScroll = () => {
             const scrollY = window.scrollY;
             const fadeOutDistance = 500;
@@ -64,21 +64,21 @@ export default function HomepageClient() {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
-  */
+  
     return (
-            /*<div className="fixed top-0 left-0 w-full h-screen -z-10" style={{ opacity }}>
-                <Image
-                src="/barber-bg.png"
-                alt="Hintergrund eines Barbershops"
-                fill
-                style={{ objectFit: 'cover' }}
-                quality={90}
-                priority
-                />
-                <div className="absolute inset-0 bg-black/50"></div>
-            </div>
-*/
             <main>
+                <div className="fixed top-0 left-0 w-full h-screen -z-10" style={{ opacity }}>
+                    <Image
+                    src="/images/hero-bg.jpeg"
+                    alt="Hintergrund ALKOS Barbershop"
+                    fill
+                    style={{ objectFit: 'cover' }}
+                    quality={90}
+                    priority
+                    className="blur-xs"
+                    />
+                    <div className="absolute inset-0 bg-black/50"></div>
+                </div>
                 <section className="min-h-screen flex items-center justify-center -mt-16 rounded-xl"> {/* backdrop-blur-sm */}
                     <div className="container mx-auto text-center px-4">
                         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight">

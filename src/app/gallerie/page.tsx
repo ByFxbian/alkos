@@ -1,12 +1,12 @@
 import Image from 'next/image';
 
 const galleryImages = [
-  { id: 1, src: 'https://www.svgrepo.com/show/508699/landscape-placeholder.svg', alt: 'Frisur 1' },
-  { id: 2, src: 'https://www.svgrepo.com/show/508699/landscape-placeholder.svg', alt: 'Frisur 2' },
-  { id: 3, src: 'https://www.svgrepo.com/show/508699/landscape-placeholder.svg', alt: 'Ein Barber bei der Arbeit' },
-  { id: 4, src: 'https://www.svgrepo.com/show/508699/landscape-placeholder.svg', alt: 'Frisur 4' },
-  { id: 5, src: 'https://www.svgrepo.com/show/508699/landscape-placeholder.svg', alt: 'Bartpflege' },
-  { id: 6, src: 'https://www.svgrepo.com/show/508699/landscape-placeholder.svg', alt: 'Detailaufnahme einer Rasur' },
+  { id: 1, src: '/images/gallery-1.jpeg', alt: 'Waschbereich' },
+  { id: 2, src: '/images/gallery-2.jpeg', alt: 'Schneidebereich Neon Sign' },
+  { id: 3, src: '/images/gallery-3.jpeg', alt: 'Schneidebereich 2' },
+  { id: 4, src: '/images/gallery-6.jpeg', alt: 'Design Dekoration Eingangsbereich' },
+  { id: 5, src: '/images/gallery-5.jpeg', alt: 'ALKOS beim Schnitt' },
+  { id: 6, src: '/images/gallery-4.jpeg', alt: 'Wartebereich Fernseher' },
 ];
 
 export default function GalleriePage() {
@@ -26,7 +26,7 @@ export default function GalleriePage() {
             className={`
               ${idx % 6 === 0 || idx % 6 === 4 ? 'md:col-span-2' : ''}
               ${idx % 6 === 1 ? 'md:row-span-2' : ''}
-              group overflow-hidden rounded-lg
+              group overflow-hidden rounded-lg relative h-100 md:h-auto
             `}
           >
             <Image

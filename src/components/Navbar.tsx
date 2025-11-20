@@ -34,7 +34,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center space-x-6">
           <Link href="/termine" className="hover:text-gold-500 transition-colors">Termine</Link>
           <Link href="/team" className="hover:text-gold-500 transition-colors">Team</Link>
-           {/*<Link href="/gallerie" className="hover:text-gold-500 transition-colors">Gallerie</Link>*/}
+           <Link href="/gallerie" className="hover:text-gold-500 transition-colors">Gallerie</Link>
            <Link href="/fehler-melden" className="text-sm hover:text-gold-500 transition-colors text-red-400">Fehler melden</Link>
         </div>
 
@@ -104,7 +104,7 @@ export default function Navbar() {
         >
           <Link href="/termine" className="hover:text-gold-500" onClick={() => setIsMobileMenuOpen(false)}>Termine</Link>
           <Link href="/team" className="hover:text-gold-500" onClick={() => setIsMobileMenuOpen(false)}>Team</Link>
-          {/*<Link href="/gallerie" className="hover:text-gold-500" onClick={() => setIsMobileMenuOpen(false)}>Gallerie</Link>*/}
+          <Link href="/gallerie" className="hover:text-gold-500" onClick={() => setIsMobileMenuOpen(false)}>Gallerie</Link>
           <Link href="/fehler-melden" className="hover:text-gold-500 text-red-400" onClick={() => setIsMobileMenuOpen(false)}>Fehler melden</Link>
           <hr className="w-48" style={{ borderColor: 'var(--color-border)' }} />
 
