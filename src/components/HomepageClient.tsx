@@ -104,25 +104,7 @@ export default function HomepageClient() {
                     </div>
                 </section>
 
-                <section id='team' className='py-20' style={{ backgroundColor: 'var(--color-surface-2)' }}>
-                    <div className='container mx-auto px-4'>
-                        <h2 className='text-4xl font-bold text-center mb-12'>
-                            Lerne unser Team kennen
-                        </h2>
-                        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center'>
-                            {teamMembers.map((barber) => (
-                            <BarberCard
-                                key={barber.id}
-                                name={barber.name}
-                                role={barber.role}
-                                image={barber.imageUrl || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
-                            />
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                <section id='atomosphere' className='py-20' style={{ backgroundColor: 'var(--color-surface-3)'}}>
+                <section id='atomosphere' className='py-20' style={{ backgroundColor: 'var(--color-surface-2)'}}>
                     <div className='container mx-auto px-4'>
                         <h2 className='text-4xl font-bold text-center mb-4'>
                             Unsere Atmosphäre
@@ -156,6 +138,24 @@ export default function HomepageClient() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                                 </svg>
                             </Link>
+                        </div>
+                    </div>
+                </section>
+
+                <section id='team' className='py-20' style={{ backgroundColor: 'var(--color-surface-3)' }}>
+                    <div className='container mx-auto px-4'>
+                        <h2 className='text-4xl font-bold text-center mb-12'>
+                            Lerne unser Team kennen
+                        </h2>
+                        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center'>
+                            {teamMembers.map((barber) => (
+                            <BarberCard
+                                key={barber.id}
+                                name={barber.name}
+                                role={barber.role}
+                                image={barber.imageUrl || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
+                            />
+                            ))}
                         </div>
                     </div>
                 </section>
