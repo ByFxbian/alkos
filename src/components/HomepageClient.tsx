@@ -49,6 +49,14 @@ const teamMembers = [
     }
 ]
 
+const salonImages = [
+  { id: 1, src: '/images/gallery-1.jpeg', alt: 'Waschbereich' },
+  { id: 2, src: '/images/gallery-2.jpeg', alt: 'Schneidebereich Neon Sign' },
+  { id: 3, src: '/images/gallery-3.jpeg', alt: 'Schneidebereich 2' },
+  { id: 4, src: '/images/gallery-6.jpeg', alt: 'Design Dekoration Eingangsbereich' },
+  { id: 5, src: '/images/gallery-5.jpeg', alt: 'ALKOS beim Schnitt' },
+  { id: 6, src: '/images/gallery-4.jpeg', alt: 'Wartebereich Fernseher' },
+];
 
 export default function HomepageClient() {
     const [opacity, setOpacity] = useState(1);
@@ -77,7 +85,6 @@ export default function HomepageClient() {
                     priority
                     className="blur-xs"
                     />
-                    <div className="absolute inset-0 bg-black/50"></div>
                 </div>
                 <section className="min-h-screen flex items-center justify-center -mt-16 rounded-xl"> {/* backdrop-blur-sm */}
                     <div className="container mx-auto text-center px-4">
@@ -111,6 +118,44 @@ export default function HomepageClient() {
                                 image={barber.imageUrl || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
                             />
                             ))}
+                        </div>
+                    </div>
+                </section>
+
+                <section id='atomosphere' className='py-20' style={{ backgroundColor: 'var(--color-surface-3)'}}>
+                    <div className='container mx-auto px-4'>
+                        <h2 className='text-4xl font-bold text-center mb-4'>
+                            Unsere Atmosphäre
+                        </h2>
+                        <p className='text-center mb-12 max-w-2xl mx-auto' style={{ color: 'var(--color-text-muted)'}}>
+                            Mehr als nur ein Cut. Entspann dich in unserem Loungebereich oder zock eine Runde an unserer Playstation. 
+                        </p>
+
+                        <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                            {salonImages.map((img, index) => (
+                                <div 
+                                    key={index} 
+                                    className={`relative h-100 md:h-100 rounded-xl overflow-hidden group shadow-lg transition-all duration-300 hover:shadow-gold-500/20 border border-neutral-800/50`}
+                                >
+                                    <Image
+                                        src={img.src}
+                                        alt={img.alt}
+                                        fill
+                                        sizes="(max-width: 768px) 50vw, 33vw"
+                                        className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
+                                    />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="text-center mt-12">
+                            <Link href="/gallerie" className="inline-flex items-center text-gold-500 font-bold hover:text-gold-400 transition-colors group">
+                                Zur ganzen Gallerie
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                </svg>
+                            </Link>
                         </div>
                     </div>
                 </section>
