@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Manrope, Playfair_Display, Roboto, Syne } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
@@ -52,6 +52,14 @@ export const metadata: Metadata = {
     locale: "de_AT",
     type: "website",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#0a0a0a',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
