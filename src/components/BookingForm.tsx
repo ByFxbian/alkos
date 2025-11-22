@@ -11,6 +11,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import { FaGoogle, FaApple, FaCalendarAlt } from 'react-icons/fa';
 import Link from 'next/link';
+import { createEvent, DateArray, EventAttributes } from 'ics';
 
 type BookingFormProps = {
   barbers: User[];
@@ -57,6 +58,14 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
 
   const [confirmedAppointment, setConfirmedAppointment] = useState<ConfirmedAppointmentData | null>(null);
 
+  useEffect(() => {
+    if (bookingSuccess) {
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
+    }
+  }, [bookingSuccess]);
+
   const getGoogleCalenderLink = () => {
     if (!confirmedAppointment) return '#';
     const { slot, service, barber } = confirmedAppointment;
@@ -78,30 +87,43 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
     const { slot, service, barber } = confirmedAppointment;
 
     const start = new Date(slot);
-    const end = addMinutes(start, service.duration);
 
-    const icsContent = `BEGIN:VCALENDAR
-      VERSION:2.0
-      PRODID:-//ALKOS Barber//Termin//DE
-      BEGIN:VEVENT
-      UID:${Date.now()}@alkosbarber.at
-      DTSTAMP:${new Date().toISOString().replace(/-|:|\.\d\d\d/g, "")}
-      DTSTART:${start.toISOString().replace(/-|:|\.\d\d\d/g, "")}
-      DTEND:${end.toISOString().replace(/-|:|\.\d\d\d/g, "")}
-      SUMMARY:Termin bei ALKOS (${service.name})
-      DESCRIPTION:Barber: ${barber.name}\\nService: ${service.name}
-      LOCATION:Wiedner Gürtel 12, 1040 Wien
-      END:VEVENT
-      END:VCALENDAR`;
+    const startArray: DateArray = [
+      start.getFullYear(),
+      start.getMonth() + 1,
+      start.getDate(),
+      start.getHours(),
+      start.getMinutes()
+    ];
 
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'termin_alkos.ics');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const event: EventAttributes = {
+      start: startArray,
+      duration: { minutes: service.duration },
+      title: `Termin bei ALKOS (${service.name})`,
+      description: `Barber: ${barber.name}\nService: ${service.name}`,
+      location: 'Wiedner Gürtel 12, 1040 Wien',
+      status: 'CONFIRMED',
+      busyStatus: 'BUSY',
+      url: 'https://alkosbarber.at',
+      organizer: { name: 'ALKOS Barber', email: 'contact@alkosbarber.at' },
+    };
+
+    createEvent(event, (error, value) => {
+        if (error) {
+            console.error(error);
+            alert("Fehler beim Erstellen der Kalenderdatei.");
+            return;
+        }
+
+        const blob = new Blob([value], { type: 'text/calendar;charset=utf-8' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'termin_alkos.ics');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
   };
 
   const handleBooking = async () => {
@@ -146,8 +168,6 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
         setSelectedSlot(null);
         setUseFreeAppointment(false);
         setStep(1);
-
-        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         const data = await res.json();
         alert(`Fehler bei der Buchung: ${data.error || 'Unbekannter Fehler'}`);
