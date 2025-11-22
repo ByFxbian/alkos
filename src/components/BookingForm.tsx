@@ -18,6 +18,12 @@ type BookingFormProps = {
   hasFreeAppointment: boolean;
 };
 
+type ConfirmedAppointmentData = {
+    slot: string;
+    service: Service;
+    barber: User;
+};
+
 function BookingProcessingModal() {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
@@ -49,24 +55,30 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
   const [showBookingProcessing, setShowBookingProcessing] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
+  const [confirmedAppointment, setConfirmedAppointment] = useState<ConfirmedAppointmentData | null>(null);
+
   const getGoogleCalenderLink = () => {
-    if(!selectedSlot || !selectedService || !selectedBarber) return '';
-    const start = new Date(selectedSlot);
-    const end = addMinutes(start, selectedService.duration);
+    if (!confirmedAppointment) return '#';
+    const { slot, service, barber } = confirmedAppointment;
 
-    const title = encodeURIComponent(`Termin bei ALKOS (${selectedService.name})`);
-    const details = encodeURIComponent(`Barber: ${selectedBarber.name}\nService: ${selectedService.name}`);
+    const start = new Date(slot);
+    const end = addMinutes(start, service.duration);
+
+    const title = encodeURIComponent(`Termin bei ALKOS (${service.name})`);
+    const details = encodeURIComponent(`Barber: ${barber.name}\nService: ${service.name}`);
     const location = encodeURIComponent("Wiedner Gürtel 12, 1040 Wien");
-
-    const formatTime = (date:Date) => date.toISOString().replace(/-|:|\.\d\d\d/g, "");
+    
+    const formatTime = (date: Date) => date.toISOString().replace(/-|:|\.\d\d\d/g, "");
+    
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatTime(start)}/${formatTime(end)}&details=${details}&location=${location}`;
   }
 
   const downloadIcsFile = () => {
-    if (!selectedSlot || !selectedService || !selectedBarber) return;
-    
-    const start = new Date(selectedSlot);
-    const end = addMinutes(start, selectedService.duration);
+    if (!confirmedAppointment) return;
+    const { slot, service, barber } = confirmedAppointment;
+
+    const start = new Date(slot);
+    const end = addMinutes(start, service.duration);
 
     const icsContent = `BEGIN:VCALENDAR
       VERSION:2.0
@@ -76,8 +88,8 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
       DTSTAMP:${new Date().toISOString().replace(/-|:|\.\d\d\d/g, "")}
       DTSTART:${start.toISOString().replace(/-|:|\.\d\d\d/g, "")}
       DTEND:${end.toISOString().replace(/-|:|\.\d\d\d/g, "")}
-      SUMMARY:Termin bei ALKOS (${selectedService.name})
-      DESCRIPTION:Barber: ${selectedBarber.name}\\nService: ${selectedService.name}
+      SUMMARY:Termin bei ALKOS (${service.name})
+      DESCRIPTION:Barber: ${barber.name}\\nService: ${service.name}
       LOCATION:Wiedner Gürtel 12, 1040 Wien
       END:VEVENT
       END:VCALENDAR`;
@@ -105,19 +117,27 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
 
     setIsBooking(true);
     setShowBookingProcessing(true);
+    const bookingData = {
+        serviceId: selectedService.id,
+        barberId: selectedBarber.id,
+        startTime: selectedSlot,
+        useFreeAppointment: useFreeAppointment,
+    };
+
+    const confirmedData: ConfirmedAppointmentData = {
+        slot: selectedSlot,
+        service: selectedService,
+        barber: selectedBarber
+    };
     try {
       const res = await fetch('/api/appointments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          serviceId: selectedService.id,
-          barberId: selectedBarber.id,
-          startTime: selectedSlot,
-          useFreeAppointment: useFreeAppointment,
-        }),
+        body: JSON.stringify(bookingData),
       });
 
       if (res.ok) {
+        setConfirmedAppointment(confirmedData);
         setBookingSuccess(true);
         router.refresh();
         setSelectedService(null);
@@ -126,6 +146,8 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
         setSelectedSlot(null);
         setUseFreeAppointment(false);
         setStep(1);
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         const data = await res.json();
         alert(`Fehler bei der Buchung: ${data.error || 'Unbekannter Fehler'}`);
@@ -189,7 +211,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
   }, [services, barbers, searchParams]);
 
 
-  if (bookingSuccess) {
+  if (bookingSuccess && confirmedAppointment) {
     return (
       <div className="container mx-auto py-20 px-4 text-center max-w-lg">
         <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -204,10 +226,14 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
 
         <div className="bg-neutral-100 dark:bg-neutral-900 p-6 rounded-xl mb-8 text-left border border-neutral-200 dark:border-neutral-800">
             <p className="text-sm text-neutral-500 mb-1">Datum & Uhrzeit</p>
-            <p className="font-bold text-lg mb-4">{selectedSlot && format(new Date(selectedSlot), "EEEE, dd. MMMM 'um' HH:mm", { locale: de })}</p>
+            <p className="font-bold text-lg mb-4">
+                {format(new Date(confirmedAppointment.slot), "EEEE, dd. MMMM 'um' HH:mm", { locale: de })}
+            </p>
             
             <p className="text-sm text-neutral-500 mb-1">Service & Barber</p>
-            <p className="font-bold text-lg">{selectedService?.name} bei {selectedBarber?.name}</p>
+            <p className="font-bold text-lg">
+                {confirmedAppointment.service.name} bei {confirmedAppointment.barber.name}
+            </p>
         </div>
 
         <div className="space-y-3">
