@@ -129,6 +129,8 @@ model Appointment {
 
   reminderSentAt DateTime?
 
+  reviewEmailSentAt DateTime?
+
   @@index([barberId, startTime])
   @@index([customerId, startTime])
 }

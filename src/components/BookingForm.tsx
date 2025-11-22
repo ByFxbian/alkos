@@ -2,12 +2,15 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { DayPicker, getDefaultClassNames } from 'react-day-picker';
-import { format, startOfDay } from 'date-fns';
+import { addMinutes, format, startOfDay } from 'date-fns';
 import { de } from 'date-fns/locale';
 import 'react-day-picker/dist/style.css';
 import type { User, Service } from '@/generated/prisma';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
+
+import { FaGoogle, FaApple, FaCalendarAlt } from 'react-icons/fa';
+import Link from 'next/link';
 
 type BookingFormProps = {
   barbers: User[];
@@ -44,6 +47,50 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
 
   const [isBooking, setIsBooking] = useState(false);
   const [showBookingProcessing, setShowBookingProcessing] = useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+
+  const getGoogleCalenderLink = () => {
+    if(!selectedSlot || !selectedService || !selectedBarber) return '';
+    const start = new Date(selectedSlot);
+    const end = addMinutes(start, selectedService.duration);
+
+    const title = encodeURIComponent(`Termin bei ALKOS (${selectedService.name})`);
+    const details = encodeURIComponent(`Barber: ${selectedBarber.name}\nService: ${selectedService.name}`);
+    const location = encodeURIComponent("Wiedner Gürtel 12, 1040 Wien");
+
+    const formatTime = (date:Date) => date.toISOString().replace(/-|:|\.\d\d\d/g, "");
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatTime(start)}/${formatTime(end)}&details=${details}&location=${location}`;
+  }
+
+  const downloadIcsFile = () => {
+    if (!selectedSlot || !selectedService || !selectedBarber) return;
+    
+    const start = new Date(selectedSlot);
+    const end = addMinutes(start, selectedService.duration);
+
+    const icsContent = `BEGIN:VCALENDAR
+      VERSION:2.0
+      PRODID:-//ALKOS Barber//Termin//DE
+      BEGIN:VEVENT
+      UID:${Date.now()}@alkosbarber.at
+      DTSTAMP:${new Date().toISOString().replace(/-|:|\.\d\d\d/g, "")}
+      DTSTART:${start.toISOString().replace(/-|:|\.\d\d\d/g, "")}
+      DTEND:${end.toISOString().replace(/-|:|\.\d\d\d/g, "")}
+      SUMMARY:Termin bei ALKOS (${selectedService.name})
+      DESCRIPTION:Barber: ${selectedBarber.name}\\nService: ${selectedService.name}
+      LOCATION:Wiedner Gürtel 12, 1040 Wien
+      END:VEVENT
+      END:VCALENDAR`;
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'termin_alkos.ics');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleBooking = async () => {
     if (!selectedService || !selectedBarber || !selectedSlot) {
@@ -71,7 +118,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
       });
 
       if (res.ok) {
-        alert('Dein Termin wurde erfolgreich gebucht!');
+        setBookingSuccess(true);
         router.refresh();
         setSelectedService(null);
         setSelectedBarber(null);
@@ -140,6 +187,63 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
       }
     }
   }, [services, barbers, searchParams]);
+
+
+  if (bookingSuccess) {
+    return (
+      <div className="container mx-auto py-20 px-4 text-center max-w-lg">
+        <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            </svg>
+        </div>
+        <h1 className="text-4xl font-bold mb-2">Termin bestätigt!</h1>
+        <p className="text-lg mb-8" style={{ color: 'var(--color-text-muted)' }}>
+            Dein Termin wurde erfolgreich gebucht. Wir haben dir eine Bestätigung per E-Mail gesendet.
+        </p>
+
+        <div className="bg-neutral-100 dark:bg-neutral-900 p-6 rounded-xl mb-8 text-left border border-neutral-200 dark:border-neutral-800">
+            <p className="text-sm text-neutral-500 mb-1">Datum & Uhrzeit</p>
+            <p className="font-bold text-lg mb-4">{selectedSlot && format(new Date(selectedSlot), "EEEE, dd. MMMM 'um' HH:mm", { locale: de })}</p>
+            
+            <p className="text-sm text-neutral-500 mb-1">Service & Barber</p>
+            <p className="font-bold text-lg">{selectedService?.name} bei {selectedBarber?.name}</p>
+        </div>
+
+        <div className="space-y-3">
+            <p className="font-semibold mb-2">Termin zum Kalender hinzufügen:</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <a 
+                    href={getGoogleCalenderLink()} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-black dark:text-white py-3 px-6 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors font-medium"
+                >
+                    <FaGoogle className="text-blue-500" /> Google
+                </a>
+                <button 
+                    onClick={downloadIcsFile}
+                    className="flex items-center justify-center gap-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-black dark:text-white py-3 px-6 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors font-medium"
+                >
+                    <FaApple className="text-black dark:text-white" /> Apple
+                </button>
+                <button 
+                    onClick={downloadIcsFile}
+                    className="flex items-center justify-center gap-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-black dark:text-white py-3 px-6 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors font-medium"
+                >
+                    <FaCalendarAlt className="text-blue-700" /> Outlook
+                </button>
+            </div>
+        </div>
+
+        <div className="mt-12">
+            <Link href="/meine-termine" className="text-gold-500 hover:underline">
+                Zu meinen Terminen
+            </Link>
+        </div>
+      </div>
+    );
+  }
 
     return (
     <>

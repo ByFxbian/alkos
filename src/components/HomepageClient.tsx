@@ -5,7 +5,9 @@ import Image from 'next/image';
 import BarberCard from '@/components/BarberCard';
 import { useState, useEffect } from 'react';
 import type { User } from '@/generated/prisma';
+import { motion, type Variants } from 'framer-motion';
 import TikTokCarousel from '@/components/TikTokCarousel';
+import LocationMap from './LocationMap';
 
 type HomepageClientProps = {
   barbers: User[];
@@ -58,6 +60,26 @@ const salonImages = [
   { id: 6, src: '/images/gallery-4.jpeg', alt: 'Wartebereich Fernseher' },
 ];
 
+const containerVariants:Variants = {
+    hidden: { opacity: 0},
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.2,
+            delayChildren: 0.3
+        }
+    }
+};
+
+const itemVariants:Variants = {
+    hidden: { y: 30, opacity: 0},
+    visible: {
+        y: 0,
+        opacity: 1,
+        transition: { type: "spring", stiffness: 50 }
+    }
+};
+
 export default function HomepageClient() {
     const [opacity, setOpacity] = useState(1);
 
@@ -86,7 +108,7 @@ export default function HomepageClient() {
                     className="blur-xs"
                     />
                 </div>
-                <section className="min-h-screen flex items-center justify-center -mt-16 rounded-xl"> {/* backdrop-blur-sm */}
+                {/*<section className="min-h-screen flex items-center justify-center -mt-16 rounded-xl">
                     <div className="container mx-auto text-center px-4">
                         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight">
                             Willkommen bei ALKOS
@@ -102,22 +124,70 @@ export default function HomepageClient() {
                             </Link>
                         </div>
                     </div>
+                </section>*/}
+                <section className='min-h-screen flex items-center justify-center -mt-16 rounded-xl overflow-hidden'>
+                    <motion.div 
+                        className="container mx-auto text-center px-4 relative z-10"
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                    >
+                        <motion.h1 
+                            className="text-6xl md:text-8xl font-extrabold tracking-tighter text-white drop-shadow-2xl shadow-black mb-2"
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ duration: 0.8, delay: 0.2 }}
+                        >
+                            ALKOS
+                        </motion.h1>
+                        <motion.p 
+                            className="text-xl md:text-2xl max-w-2xl mx-auto text-neutral-200 font-medium drop-shadow-lg shadow-black"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.8, delay: 0.5 }}
+                        >
+                            Dein Go-To Barbershop.
+                        </motion.p>
+                        
+                        <motion.div 
+                            className="mt-10"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            <Link
+                            href="/termine"
+                            className="bg-gold-500 text-black font-bold text-lg px-10 py-4 rounded-full hover:bg-gold-400 transition-colors shadow-xl inline-block">
+                            Jetzt Termin buchen
+                            </Link>
+                        </motion.div>
+                    </motion.div>
                 </section>
 
-                <section id='atomosphere' className='py-20' style={{ backgroundColor: 'var(--color-surface-2)'}}>
+                <section id='atomosphere' className='py-24' style={{ backgroundColor: 'var(--color-surface-2)'}}>
                     <div className='container mx-auto px-4'>
-                        <h2 className='text-4xl font-bold text-center mb-4'>
-                            Unsere Atmosphäre
-                        </h2>
-                        <p className='text-center mb-12 max-w-2xl mx-auto' style={{ color: 'var(--color-text-muted)'}}>
-                            Mehr als nur ein Cut. Entspann dich in unserem Loungebereich oder zock eine Runde an unserer Playstation. 
-                        </p>
+                        <motion.div 
+                            className="text-center mb-16"
+                            initial={{ opacity: 0 }}
+                            whileInView={{ opacity: 1 }}
+                            viewport={{ once: true }}
+                        >
+                            <h2 className='text-4xl md:text-5xl font-bold text-center mb-4'>
+                                Unsere Atmosphäre
+                            </h2>
+                            <p className='text-center mb-12 max-w-2xl mx-auto' style={{ color: 'var(--color-text-muted)'}}>
+                                Mehr als nur ein Cut. Entspann dich in unserem Loungebereich oder zock eine Runde an unserer Playstation. 
+                            </p>
+                        </motion.div>
 
                         <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
                             {salonImages.map((img, index) => (
-                                <div 
+                               <motion.div 
                                     key={index} 
-                                    className={`relative h-100 md:h-100 rounded-xl overflow-hidden group shadow-lg transition-all duration-300 hover:shadow-gold-500/20 border border-neutral-800/50`}
+                                    className={`relative h-48 md:h-72 rounded-2xl overflow-hidden group shadow-lg border border-white/5 cursor-pointer`}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                                    viewport={{ once: true }}
                                 >
                                     <Image
                                         src={img.src}
@@ -127,7 +197,7 @@ export default function HomepageClient() {
                                         className="object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
                                     />
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
-                                </div>
+                                </motion.div>
                             ))}
                         </div>
 
@@ -144,19 +214,32 @@ export default function HomepageClient() {
 
                 <section id='team' className='py-20' style={{ backgroundColor: 'var(--color-surface-3)' }}>
                     <div className='container mx-auto px-4'>
-                        <h2 className='text-4xl font-bold text-center mb-12'>
-                            Lerne unser Team kennen
-                        </h2>
-                        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center'>
+                        <motion.h2 
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className='text-4xl md:text-5xl font-bold text-center mb-16'
+                        >
+                            Die Crew
+                        </motion.h2>
+                        <motion.div 
+                            className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 justify-center'
+                            variants={containerVariants}
+                            initial="hidden"
+                            whileInView="visible"
+                            viewport={{ once: true, margin: "-100px" }} // Startet wenn 100px im Viewport
+                        >
                             {teamMembers.map((barber) => (
-                            <BarberCard
-                                key={barber.id}
-                                name={barber.name}
-                                role={barber.role}
-                                image={barber.imageUrl || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
-                            />
+                                <motion.div key={barber.id} variants={itemVariants}>
+                                    <BarberCard
+                                        name={barber.name}
+                                        role={barber.role}
+                                        image={barber.imageUrl}
+                                        bio={barber.bio}
+                                    />
+                                </motion.div>
                             ))}
-                        </div>
+                        </motion.div>
                     </div>
                 </section>
 
@@ -173,6 +256,40 @@ export default function HomepageClient() {
                         </div>
                     </div>
                 </section>*/}
+
+                <section className="py-24 bg-neutral-950">
+                    <div className="container mx-auto px-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                            <div>
+                                <h2 className="text-4xl font-bold mb-6">Hier findest du uns</h2>
+                                <p className="text-lg text-neutral-400 mb-8">
+                                    Zentral am Wiedner Gürtel. Perfekt erreichbar, entspannte Parkplatzsituation und direkt im Geschehen.
+                                </p>
+                                <div className="space-y-4 text-neutral-300">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-gold-500/10 rounded-full flex items-center justify-center text-gold-500">
+                                            📍
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-white">Adresse</p>
+                                            <p>Wiedner Gürtel 12, 1040 Wien</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-gold-500/10 rounded-full flex items-center justify-center text-gold-500">
+                                            🚃
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-white">Öffis</p>
+                                            <p>Hauptbahnhof / Südtiroler Platz (U1, S-Bahn)</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <LocationMap />
+                        </div>
+                    </div>
+                </section>
             </main>
     );
 }

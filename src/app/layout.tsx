@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display, Roboto } from "next/font/google";
+import { Inter, Manrope, Playfair_Display, Roboto, Syne } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { Providers } from './providers';
@@ -8,6 +8,7 @@ import { ThemeProvider } from "./theme-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
 import InstagramBanner from "@/components/InstagramBanner";
+import StickyBookingButton from "@/components/StickyBookingButton";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -21,12 +22,37 @@ const roboto = Roboto({
   weight: ['400', '500', '700'],
 });
 
-export const metadata: Metadata = {
-  title: "ALKOS",
-  description: "Die beste Adresse für Haare und Bart.",
-};
+const syne = Syne({
+  subsets: ["latin"],
+  variable: "--font-syne",
+  weight: ['400', '700', '800'],
+});
 
-const inter = Inter({ subsets: ["latin"] })
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-manrope",
+  weight: ['400', '500', '600', '700'],
+});
+
+export const metadata: Metadata = {
+  title: "ALKOS | High-End Barber Vienna",
+  description: "Die beste Adresse für Haare und Bart am Wiedner Gürtel.",
+  openGraph: {
+    title: "ALKOS | High-End Barber Vienna",
+    description: "Buche deinen Termin beim besten Barber der Stadt.",
+    url: "https://alkosbarber.at",
+    siteName: "ALKOS",
+    images: [
+      {
+        url: "/images/hero-bg.jpeg",
+        width: 1200,
+        height: 630,
+      },
+    ],
+    locale: "de_AT",
+    type: "website",
+  },
+};
 
 export default function RootLayout({
   children,
@@ -34,11 +60,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de" className={`${playfair.variable} ${roboto.variable}`}>
-      <body>
+    <html lang="de" className={`${syne.variable} ${manrope.variable}`}>
+      <body className="font-sans antialiased selection:bg-gold-500 selection:text-black">
         <Providers>
           <ThemeProvider>
-            <div className="flex flex-col min-h-screen">
+            <div className="flex flex-col min-h-screen relative">
               <InstagramBanner />
               <Navbar />
               <main className="flex-grow">
@@ -47,6 +73,7 @@ export default function RootLayout({
                 <Analytics/>
               </main>
               <Footer />
+              <StickyBookingButton />
             </div>
           </ThemeProvider>
         </Providers>
