@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import StatCard from '@/components/StatCard';
 import { Role } from '@/generated/prisma';
 import Image from 'next/image';
+import RevenueChart from '@/components/RevenueChart';
 
 export const revalidate = 60;
 
@@ -107,19 +108,19 @@ export default async function AdminDashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         <StatCard 
-          title="Termine (Nächste 7 Tage)" 
+          title="Kommende Termine" 
           value={totalAppointments}
-          description="Gesamtanzahl gebuchter Termine"
+          description="Nächste 7 Tage"
         />
         <StatCard 
           title="Neue Kunden" 
           value={newCustomerCount}
-          description="Anmeldungen in den letzten 30 Tagen"
+          description="Registriert (Letzte 30 Tage)"
         />
         <StatCard 
-          title="Top Service (Nächste 7 Tage)" 
+          title="Top Service" 
           value={mostPopularService?.name || 'N/A'}
-          description={mostPopularService?.count > 0 ? `${mostPopularService.count} mal gebucht` : 'Keine Buchungen'}
+          description={mostPopularService?.count > 0 ? `${mostPopularService.count} mal gebucht (7 Tage)` : 'Keine Buchungen (7 Tage)'}
         />
       </div>
       <div>
@@ -163,6 +164,10 @@ export default async function AdminDashboardPage() {
                 </div>
               </div>
             ))}
+      </div>
+
+      <div className="mt-12">
+        <RevenueChart barbers={barbers} />
       </div>
     </div>
   );
