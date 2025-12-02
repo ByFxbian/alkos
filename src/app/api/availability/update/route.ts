@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 
 export async function POST(req: Request) {
-  logger.info("API Route /api/availability/update POST called"); // Logging Start
+  logger.info("API Route /api/availability/update POST called");
   const session = await getServerSession(authOptions);
   let response: NextResponse;
 
@@ -55,12 +55,12 @@ export async function POST(req: Request) {
 
     response = NextResponse.json({ message: 'Arbeitszeiten aktualisiert' }, { status: 200 });
   } catch (error) {
-    logger.error('API Route /api/availability/update POST - Update availability error:', { userId: session?.user?.id, error }); // Logging Fehler
+    logger.error('API Route /api/availability/update POST - Update availability error:', { userId: session?.user?.id, error });
     console.error('Update availability error:', error);
     response = NextResponse.json({ error: 'Fehler beim Speichern.' }, { status: 500 });
   } finally {
      logger.info("API Route /api/availability/update POST: Flushing logs.");
-    await logger.flush(); // Flush am Ende
+    await logger.flush();
   }
   if (!response!) {
       logger.error("API Route /api/availability/update POST: Reached end without setting a response.");

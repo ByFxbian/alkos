@@ -26,7 +26,7 @@ export async function DELETE(
     } else {
       const appointment = await prisma.appointment.findUnique({
         where: { id: appointmentId },
-        select: { barberId: true } // Nur die barberId wird benötigt
+        select: { barberId: true }
       });
       if (!appointment) {
             logger.warn("API Route /api/admin/appointments/[id] DELETE: Appointment not found during auth check.", { appointmentId, userId: session.user.id });

@@ -37,8 +37,6 @@ export default function SettingsForm({ user }: SettingsFormProps) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
-  //const [showInstagramBanner, setShowInstagramBanner] = useState(false);
-
   const inputFileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -99,7 +97,6 @@ export default function SettingsForm({ user }: SettingsFormProps) {
         body: JSON.stringify({
           name: formData.name,
           instagram: formData.instagram,
-          //imageUrl: formData.imageUrl,
           bio: formData.bio,
           password: formData.password || null, 
         }),
@@ -139,22 +136,11 @@ export default function SettingsForm({ user }: SettingsFormProps) {
     }
   };
 
-  /*useEffect(() => {
-    if(user && !user.instagram) {
-      setShowInstagramBanner(true);
-    }
-  }, [user]);*/
 
   return (
     <>
         {isLoading && <LoadingModal message="Speichere Einstellungen..." />}
         <form onSubmit={handleSubmit} className="max-w-lg mx-auto p-8 rounded-lg space-y-6" style={{ backgroundColor: 'var(--color-surface)'}}>
-            {/*{showInstagramBanner && (
-              <div className="bg-blue-900/50 border border-blue-700 text-blue-300 p-4 rounded-lg text-center">
-                <p className="font-bold mb-2">Vervollständige dein Profil</p>
-                <p className="text-sm">Bitte trage deinen Instagram-Namen ein, um Termine buchen zu können.</p>
-              </div>
-            )}*/}
             {!user.emailVerified && (
                 <div className="bg-yellow-900/50 border border-yellow-700 text-yellow-300 p-4 rounded-lg text-center">
                     <p className="font-bold mb-2">Dein Konto ist nicht verifiziert.</p>

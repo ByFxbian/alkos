@@ -8,7 +8,7 @@ import { logger } from '@/lib/logger';
 
 export async function PATCH(req: Request) {
   console.log("API Route /api/user/settings PATCH called");
-  logger.info("API Route /api/user/settings PATCH called"); // Logging Start
+  logger.info("API Route /api/user/settings PATCH called");
   const session = await getServerSession(authOptions);
   let response: NextResponse;
 
@@ -61,7 +61,7 @@ export async function PATCH(req: Request) {
 
     response = NextResponse.json(updatedUser);
   } catch (error: any) {
-    logger.error('API Route /api/user/settings PATCH - Settings update error:', { userId: session?.user?.id, error }); // Logging Fehler
+    logger.error('API Route /api/user/settings PATCH - Settings update error:', { userId: session?.user?.id, error });
     console.error('API Route /api/user/settings PATCH - Settings update error:', error);
     if (error.code === 'P2002') {
       logger.warn("API Route /api/user/settings PATCH: Conflict - Instagram username likely taken.", { userId: session?.user?.id, instagram: (await req.clone().json()).instagram });
@@ -71,7 +71,7 @@ export async function PATCH(req: Request) {
     }
   } finally {
       logger.info("API Route /api/user/settings PATCH: Flushing logs.");
-      await logger.flush(); // Flush am Ende
+      await logger.flush();
   }
 
   if (!response!) {
@@ -83,7 +83,7 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  logger.info("API Route /api/user/settings DELETE called"); // Logging Start
+  logger.info("API Route /api/user/settings DELETE called");
   console.log("API Route /api/user/settings DELETE called");
   const session = await getServerSession(authOptions);
   let response: NextResponse;
@@ -130,17 +130,17 @@ export async function DELETE(req: Request) {
       await tx.appointment.deleteMany({ where: { barberId: userId } });
       await tx.availability.deleteMany({ where: { barberId: userId } });
 
-      await tx.account.deleteMany({ where: { userId: userId }}); // Explizit für OAuth Accounts
-      await tx.session.deleteMany({ where: { userId: userId }}); // Explizit für Sessions
+      await tx.account.deleteMany({ where: { userId: userId }});
+      await tx.session.deleteMany({ where: { userId: userId }});
       
       await tx.user.delete({ where: { id: userId } });
     });
-    logger.info("API Route /api/user/settings DELETE: Account deleted successfully.", { userId: session.user.id }); // Logging Erfolg
+    logger.info("API Route /api/user/settings DELETE: Account deleted successfully.", { userId: session.user.id });
     console.log("API Route /api/user/settings DELETE: Account deleted successfully for user:", session.user.id);
 
     response = NextResponse.json({ message: 'Konto erfolgreich gelöscht' });
   } catch (error) {
-    logger.error('API Route /api/user/settings DELETE - Account deletion error:', { userId: session?.user?.id, error }); // Logging Fehler
+    logger.error('API Route /api/user/settings DELETE - Account deletion error:', { userId: session?.user?.id, error });
     console.error('API Route /api/user/settings DELETE - Account deletion error:', { userId: session?.user?.id, error }); 
     if (error instanceof NextResponse) {
       response = error;
@@ -150,9 +150,8 @@ export async function DELETE(req: Request) {
     
   } finally {
        logger.info("API Route /api/user/settings DELETE: Flushing logs.");
-      await logger.flush(); // Flush am Ende
+      await logger.flush();
   }
-   // Fallback
   if (!response!) {
       logger.error("API Route /api/user/settings DELETE: Reached end without setting a response.");
       response = NextResponse.json({ error: 'Interner Serverfehler' }, { status: 500 });

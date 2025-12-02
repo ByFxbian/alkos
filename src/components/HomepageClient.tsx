@@ -108,23 +108,6 @@ export default function HomepageClient() {
                     className="blur-xs"
                     />
                 </div>
-                {/*<section className="min-h-screen flex items-center justify-center -mt-16 rounded-xl">
-                    <div className="container mx-auto text-center px-4">
-                        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight">
-                            Willkommen bei ALKOS
-                        </h1>
-                        <p className="mt-4 text-lg md:text-xl max-w-2xl mx-auto" style={{ color: 'var(--color-text-muted)' }}>
-                            Dein Go-To Barbershop
-                        </p>
-                        <div className="mt-8">
-                            <Link
-                            href="/termine"
-                            className="bg-gold-500 text-black font-bold text-lg px-8 py-3 rounded-full hover:bg-gold-400 transition-transform duration-300 ease-in-out inline-block transform hover:scale-105">
-                            Jetzt Termin buchen
-                            </Link>
-                        </div>
-                    </div>
-                </section>*/}
                 <section className='min-h-screen flex items-center justify-center -mt-16 rounded-xl overflow-hidden'>
                     <motion.div 
                         className="container mx-auto text-center px-4 relative z-10"
@@ -227,7 +210,7 @@ export default function HomepageClient() {
                             variants={containerVariants}
                             initial="hidden"
                             whileInView="visible"
-                            viewport={{ once: true, margin: "-100px" }} // Startet wenn 100px im Viewport
+                            viewport={{ once: true, margin: "-100px" }}
                         >
                             {teamMembers.map((barber) => (
                                 <motion.div key={barber.id} variants={itemVariants}>
@@ -242,20 +225,6 @@ export default function HomepageClient() {
                         </motion.div>
                     </div>
                 </section>
-
-                {/*<section id="tiktok" className="py-20" style={{ backgroundColor: 'var(--color-surface-3)' }}>
-                    <div className="container mx-auto px-4">
-                        <h2 className="text-4xl font-bold text-center mb-12">
-                            Unsere Arbeit in Action
-                        </h2>
-                        <TikTokCarousel />
-                        <div className="text-center mt-12">
-                            <Link href="/gallerie" className="text-gold-500 font-semibold hover:underline">
-                            Klicke hier um mehr zu sehen &rarr;
-                            </Link>
-                        </div>
-                    </div>
-                </section>*/}
 
                 <section className="py-24 bg-neutral-950">
                     <div className="container mx-auto px-4">

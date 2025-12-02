@@ -64,7 +64,7 @@ const router = useRouter();
   const isAdminOrHead = currentUserRole === 'ADMIN' || currentUserRole === 'HEADOFBARBER';
 
   const displayedBlocks = isAdminOrHead 
-    ? existingBlocks.filter(b => (b.barber.name === allBarbers.find(u => u.id === targetBarberId)?.name) || targetBarberId === currentUserId && !b.barber.name ) // Einfache Filterung, besser wäre barberId in existingBlocks zu haben, aber wir nutzen was wir haben
+    ? existingBlocks.filter(b => (b.barber.name === allBarbers.find(u => u.id === targetBarberId)?.name) || targetBarberId === currentUserId && !b.barber.name )
     : existingBlocks;
 
   const getBlockForDay = (day: Date) => {
@@ -76,11 +76,9 @@ const router = useRouter();
   };
 
   const handleDayClick = async (day: Date, modifiers: any) => {
-    // Prüfen ob schon blockiert
     const existingBlock = modifiers.blocked ? getBlockForDay(day) : null;
 
     if (existingBlock) {
-        // LÖSCHEN
         if(!confirm(`Blockierung für ${format(day, 'dd.MM.yyyy')} löschen?`)) return;
         
         setIsLoading(true);
@@ -236,7 +234,6 @@ const router = useRouter();
       {isLoading && <LoadingModal message="Aktualisiere Kalender..." />}
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        {/* LINKER TEIL: KALENDER & SELECT */}
         <div className="bg-neutral-50 dark:bg-neutral-900 p-6 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
             
             {isAdminOrHead && (
@@ -261,7 +258,7 @@ const router = useRouter();
                     modifiers={modifiers}
                     modifiersStyles={modifiersStyles}
                     locale={de}
-                    disabled={{ before: new Date() }} // Keine Vergangenheit bearbeiten
+                    disabled={{ before: new Date() }}
                     className="p-4 border rounded-lg bg-white dark:bg-black text-lg"
                 />
             </div>
@@ -270,7 +267,6 @@ const router = useRouter();
             </p>
         </div>
 
-        {/* RECHTER TEIL: LISTE (Detailansicht) */}
         <div className="bg-neutral-50 dark:bg-neutral-900 p-6 rounded-xl border border-neutral-200 dark:border-neutral-800">
             <h3 className="font-bold text-xl mb-4">Aktuelle Blockierungen</h3>
             <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
@@ -299,7 +295,7 @@ const router = useRouter();
                             <p className="text-sm mt-1 text-gold-500">{block.reason}</p>
                         </div>
                         <button 
-                            onClick={() => handleDayClick(new Date(block.startTime), {blocked: true})} // Trigger delete logic
+                            onClick={() => handleDayClick(new Date(block.startTime), {blocked: true})}
                             className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-full transition-colors"
                             title="Löschen"
                         >
@@ -314,156 +310,4 @@ const router = useRouter();
       </div>
     </>
   );
-
-  /*return (
-    <>
-      {isLoading && <LoadingModal message="Aktualisiere Kalender..." />}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-        <form onSubmit={handleCreateBlock} className="p-6 rounded-lg space-y-4" style={{ backgroundColor: 'var(--color-surface)' }}>
-          <h3 className="text-xl font-semibold mb-4">Neue Abwesenheit eintragen</h3>
-
-          {isAdminOrHead && (
-            <div>
-              <label htmlFor="barberSelect" className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-muted)' }}>
-                Für wen?
-              </label>
-              <select
-                id="barberSelect"
-                value={targetBarberId}
-                onChange={(e) => setTargetBarberId(e.target.value)}
-                className="w-full p-2 rounded border"
-                style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}
-              >
-                {allBarbers.map(barber => (
-                  <option key={barber.id} value={barber.id}>{barber.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <div>
-            <label htmlFor="blockDate" className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-muted)' }}>
-              Datum
-            </label>
-            <input
-              type="date"
-              id="blockDate"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-              min={format(new Date(), 'yyyy-MM-dd')}
-              className="w-full p-2 rounded border"
-              style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}
-            />
-          </div>
-
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="isFullDay"
-              checked={isFullDay}
-              onChange={(e) => setIsFullDay(e.target.checked)}
-              className="h-5 w-5 rounded text-gold-500 focus:ring-gold-500"
-              style={{ backgroundColor: 'var(--color-background)', borderColor: 'var(--color-border)' }}
-            />
-            <label htmlFor="isFullDay" className="ml-3 text-lg font-medium">Ganzer Tag</label>
-          </div>
-
-          {!isFullDay && (
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label htmlFor="startTime" className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-muted)' }}>
-                  Von
-                </label>
-                <input
-                  type="time"
-                  id="startTime"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full p-2 rounded border"
-                  style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}
-                />
-              </div>
-              <div className="flex-1">
-                <label htmlFor="endTime" className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-muted)' }}>
-                  Bis
-                </label>
-                <input
-                  type="time"
-                  id="endTime"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full p-2 rounded border"
-                  style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}
-                />
-              </div>
-            </div>
-          )}
-
-          <div>
-            <label htmlFor="reason" className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-muted)' }}>
-              Grund (Optional)
-            </label>
-            <input
-              type="text"
-              id="reason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="z.B. Urlaub, Arzttermin"
-              className="w-full p-2 rounded border"
-              style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}
-            />
-          </div>
-
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-
-          <div className="text-right">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="bg-gold-500 text-black font-bold px-6 py-2 rounded-md hover:bg-gold-400 disabled:opacity-50 transition-colors"
-            >
-              Speichern
-            </button>
-          </div>
-        </form>
-
-        <div className="p-6 rounded-lg" style={{ backgroundColor: 'var(--color-surface)' }}>
-          <h3 className="text-xl font-semibold mb-4">Geplante Abwesenheiten</h3>
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {existingBlocks.length > 0 ? (
-              existingBlocks.map(block => (
-                <div 
-                    key={block.id} 
-                    className="p-3 rounded border flex justify-between items-center" 
-                    style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-3)' }}
-                >
-                  <div>
-                    <p className="font-semibold">{formatDateRange(block.startTime, block.endTime)}</p>
-                    <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                      {block.reason}
-                      {isAdminOrHead && ` (${block.barber.name})`}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteBlock(block.id)}
-                    className="text-red-500 hover:text-red-400 p-1"
-                    title="Blockierung löschen"
-                    disabled={isLoading}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              ))
-            ) : (
-              <p style={{ color: 'var(--color-text-muted)' }}>Keine Abwesenheiten geplant.</p>
-            )}
-          </div>
-        </div>
-      </div>
-    </>
-  );*/
 }

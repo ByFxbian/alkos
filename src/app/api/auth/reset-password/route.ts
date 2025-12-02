@@ -19,9 +19,9 @@ export async function POST(req: Request) {
         const resetToken = await prisma.passwordResetToken.findUnique({
         where: {
             token: token,
-            redeemedAt: null, // Darf noch nicht eingelöst sein
+            redeemedAt: null,
             expiresAt: {
-            gte: new Date(), // Darf nicht abgelaufen sein
+            gte: new Date(),
             },
         },
         });

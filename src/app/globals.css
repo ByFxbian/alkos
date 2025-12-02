@@ -13,7 +13,7 @@
 
   --color-background: theme(colors.white);
   --color-text: theme(colors.black);
-  --color-surface: theme(colors.neutral.100); /* Für Hintergründe von Karten etc. */
+  --color-surface: theme(colors.neutral.100);
   --color-text-muted: theme(colors.neutral.500);
   --color-border: theme(colors.neutral.200);
 
@@ -103,7 +103,7 @@
   --rdp-cell-size: 45px !important;
   --rdp-caption-font-size: 1.25rem !important;
   --rdp-background-color: var(--color-surface-3) !important;
-  --rdp-accent-color: var(--color-gold-500) !important; /* Wird von .rdp-day_selected überschrieben */
+  --rdp-accent-color: var(--color-gold-500) !important;
   --rdp-color: var(--color-text) !important;
   margin: 1em 0 !important;
   border: 1px solid var(--color-border) !important;
@@ -150,8 +150,8 @@ rdp-day_selected,
   border-radius: 50% !important;
   border: none !important;
   outline: none !important;
-  width: var(--rdp-cell-size) !important; /* Größe anpassen */
-  height: var(--rdp-cell-size) !important; /* Größe anpassen */
+  width: var(--rdp-cell-size) !important;
+  height: var(--rdp-cell-size) !important;
 }
 
 .rdp-nav_button:not([disabled]):hover {

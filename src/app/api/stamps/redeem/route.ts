@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from '@/lib/logger';
 
 export async function POST(req: Request) {
-  logger.info("API Route /api/stamps/redeem POST called"); // Logging Start
+  logger.info("API Route /api/stamps/redeem POST called");
   const session = await getServerSession(authOptions);
   if (!session || !session.user) {
     logger.warn("API Route /api/stamps/redeem POST: Unauthorized access attempt.");
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ message: 'Stempel erfolgreich erhalten!' });
   } catch (error) {
-    logger.error('API Route /api/stamps/redeem POST - Redeem stamp error:', { userId: session?.user?.id, error }); // Logging Fehler
+    logger.error('API Route /api/stamps/redeem POST - Redeem stamp error:', { userId: session?.user?.id, error });
     console.error('Redeem stamp error:', error);
     return NextResponse.json({ error: 'Fehler beim Einlösen des Stempels.' }, { status: 500 });
   }

@@ -17,7 +17,7 @@ if(sourceToken) {
         info: console.info,
         warn: console.warn,
         error: console.error,
-        flush: async () => { /* No-op im Konsolen-Fallback */ },
+        flush: async () => {},
     } as any;
 }
 

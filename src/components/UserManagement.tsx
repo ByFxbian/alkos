@@ -93,7 +93,6 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
           style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}
         >
           <option value="ALL">Alle Rollen</option>
-          {/* Rollen aus prisma/schema.prisma */}
           <option value="KUNDE">Kunde</option>
           <option value="BARBER">Barber</option>
           <option value="HEADOFBARBER">Head Of Barber</option>

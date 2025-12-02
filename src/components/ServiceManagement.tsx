@@ -108,8 +108,7 @@ export default function ServiceManagement({ services }: ServiceManagementProps) 
   return (
     <>
       {isLoading && <LoadingModal message="Speichere..." />}
-      
-      {/* Formular (Erstellen & Bearbeiten) */}
+
       <div className="p-6 rounded-lg mb-8" style={{ backgroundColor: 'var(--color-surface)' }}>
         <h3 className="text-xl font-semibold mb-4">{isEditing ? 'Service bearbeiten' : 'Neuen Service hinzufügen'}</h3>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -166,8 +165,6 @@ export default function ServiceManagement({ services }: ServiceManagementProps) 
           </div>
         </form>
       </div>
-
-      {/* Service-Liste */}
       <div className="rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--color-surface)' }}>
         <table className="min-w-full divide-y" style={{ borderColor: 'var(--color-border)' }}>
           <thead style={{ backgroundColor: 'var(--color-surface-3)'}}>

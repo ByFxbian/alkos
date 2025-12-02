@@ -29,9 +29,6 @@ export default async function KalenderAdminPage() {
 
   const appointments = await prisma.appointment.findMany({
     where: {
-      /*...(session.user.role === 'ADMIN' && {}),
-      ...(session.user.role === 'HEADOFBARBER' && {}),
-      ...(session.user.role === 'BARBER' && {barberId: session.user.id}),*/
       ...(isAdminOrHead ? {} : { barberId: session.user.id }),
       startTime: {
         gte: today,

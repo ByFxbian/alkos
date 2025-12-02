@@ -17,7 +17,7 @@ const timeZone = 'Europe/Vienna';
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const params = Object.fromEntries(searchParams.entries());
-    logger.info("API Route /api/availability GET called", { params }); // Logging Start mit Parametern
+    logger.info("API Route /api/availability GET called", { params });
     let response: NextResponse;
 
     const validation = schema.safeParse(params);
@@ -123,7 +123,7 @@ export async function GET(req: Request) {
 
         response = NextResponse.json(formattedSlots);
     } catch (error) {
-        logger.error('API Route /api/availability GET - Availability error:', { date, barberId, serviceId, error }); // Logging Fehler
+        logger.error('API Route /api/availability GET - Availability error:', { date, barberId, serviceId, error });
         console.error('Availability error:', error);
         response = NextResponse.json({ error: 'An error occurred while fetching availability.' }, { status: 500 });
     } finally {

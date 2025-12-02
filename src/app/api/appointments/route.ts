@@ -15,7 +15,7 @@ export async function POST(req: Request) {
 
   if (!session || !session.user) {
     console.warn("API Route /api/appointments: Unauthorized access attempt.");
-    logger.warn("API Route /api/appointments: Unauthorized access attempt."); // Ersetze console.warn
+    logger.warn("API Route /api/appointments: Unauthorized access attempt.");
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
   console.log("API Route /api/appointments: User authorized.", { userId: session.user.id });
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     console.log("API Route /api/appointments: Request body:", body);
-    logger.info("API Route /api/appointments: Request body:", { body }); // Logge das Objekt
+    logger.info("API Route /api/appointments: Request body:", { body });
     const { barberId, serviceId, startTime, useFreeAppointment  } = body;
     const customerId = session.user.id;
 
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
     response = NextResponse.json(newAppointment, { status: 201 });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
-    logger.error('API Route /api/appointments - Booking error:', error); // Ersetze console.error
+    logger.error('API Route /api/appointments - Booking error:', error);
     console.error('API Route /api/appointments - Booking error:', error);
     if (error instanceof NextResponse && error.status === 409) {
       response = error;

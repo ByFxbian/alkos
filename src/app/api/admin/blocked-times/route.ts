@@ -39,11 +39,9 @@ export async function POST(req: Request) {
         const isAdminOrHead = ['ADMIN', 'HEADOFBARBER'].includes(session.user.role);
 
         if (isAdminOrHead && adminSpecifiedBarberId) {
-            // Admin/Head blockiert Zeit für einen anderen Barber
             targetBarberId = adminSpecifiedBarberId;
             logger.info(`API Route /api/admin/blocked-times POST: Admin ${session.user.id} is blocking time for user ${targetBarberId}.`);
         } else {
-            // Barber blockiert für sich selbst (oder Admin/Head für sich selbst)
             targetBarberId = session.user.id;
         }
 

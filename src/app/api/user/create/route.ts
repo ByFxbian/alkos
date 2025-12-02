@@ -3,11 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 
 export async function POST(req: Request) {
-    logger.info("API Route /api/user/create POST called"); // Logging Start
+    logger.info("API Route /api/user/create POST called");
     try {
         const body = await req.json();
         const { email, name } = body;
-        logger.info("API Route /api/user/create: Attempting user creation.", { email, nameProvided: !!name }); // Log Versuch
+        logger.info("API Route /api/user/create: Attempting user creation.", { email, nameProvided: !!name });
 
         if(!email) {
             logger.warn("API Route /api/user/create: Email is required but missing.");
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
         return NextResponse.json(newUser, { status: 201 });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
-        logger.error('API Route /api/user/create - User creation error:', { error, providedEmail: (await req.clone().json()).email }); // Logging Fehler
+        logger.error('API Route /api/user/create - User creation error:', { error, providedEmail: (await req.clone().json()).email });
         console.error('User creation error: ', error);
 
         if(error.code === "P2002") {

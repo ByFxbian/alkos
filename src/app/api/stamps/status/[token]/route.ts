@@ -4,7 +4,6 @@ import { prisma } from '@/lib/prisma';
 export async function GET(
   req: NextRequest,
 ) {
-  //const { params } = context as { params: { token: string } };
   const token = req.nextUrl.pathname.split('/').pop();
 
   if (!token) {

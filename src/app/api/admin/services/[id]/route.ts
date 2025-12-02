@@ -88,8 +88,6 @@ export async function DELETE(req: NextRequest) {
 
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
-      // P2003 = Foreign key constraint failed.
-      // Heißt: Es hängen noch Termine (Appointments) an diesem Service.
       logger.warn("API Route /api/admin/services/[id] DELETE: Cannot delete service, appointments attached.", { serviceId });
       response = NextResponse.json({ error: 'Service kann nicht gelöscht werden, da noch Termine damit verknüpft sind.' }, { status: 409 });
     } else {

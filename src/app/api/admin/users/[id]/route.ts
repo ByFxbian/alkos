@@ -8,7 +8,6 @@ import { Role } from '@/generated/prisma';
 export async function PATCH(
   req: NextRequest,
 ) {
-  //const { params } = context as { params: { id: string } };
   const session = await getServerSession(authOptions);
   const targetUserId = req.nextUrl.pathname.split('/').pop();
 
@@ -38,7 +37,6 @@ export async function PATCH(
 export async function DELETE(
   req: NextRequest,
 ) {
-  //const { params } = context as { params: { id: string } };
   const session = await getServerSession(authOptions);
   const targetUserId = req.nextUrl.pathname.split('/').pop();
 

@@ -10,14 +10,6 @@ interface CancellationEmailProps {
 }
 
 const formatDate = (date: Date) => {
-    /*return new Intl.DateTimeFormat('de-DE', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date) + ' Uhr';*/
   return formatInTimeZone(new Date(date), 'Europe/Vienna', "EEEE, dd. MMMM yyyy 'um' HH:mm 'Uhr'", { locale: de });
 };
 

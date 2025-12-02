@@ -12,9 +12,8 @@ export async function DELETE(
   req: NextRequest,
 ) {
   const appointmentId = req.nextUrl.pathname.split('/').pop();
-  logger.info("API Route /api/appointments/[id] DELETE called", { appointmentId }); // Logging Start
+  logger.info("API Route /api/appointments/[id] DELETE called", { appointmentId });
   const session = await getServerSession(authOptions);
-  //const { id: appointmentId } = params;
   let response: NextResponse;
 
   if (!session || !session.user) {
@@ -81,7 +80,7 @@ export async function DELETE(
     response = NextResponse.json({ message: 'Termin erfolgreich storniert' }, { status: 200 });
   } catch (error) {
     console.error('Cancellation error:', error);
-    logger.error('API Route /api/appointments/[id] DELETE - Cancellation error:', { appointmentId, userId: session?.user?.id, error }); // Logging Fehler
+    logger.error('API Route /api/appointments/[id] DELETE - Cancellation error:', { appointmentId, userId: session?.user?.id, error });
     response = NextResponse.json({ error: 'Fehler bei der Stornierung.' }, { status: 500 });
   } finally {
     logger.info("API Route /api/appointments/[id] DELETE: Flushing logs.");

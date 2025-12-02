@@ -11,7 +11,6 @@ export default function StickyBookingButton() {
 
   useEffect(() => {
     const handleScroll = () => {
-      // Zeige Button erst, wenn man etwas gescrollt hat (nach dem Hero)
       if (window.scrollY > 300) {
         setIsVisible(true);
       } else {
