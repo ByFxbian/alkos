@@ -27,7 +27,7 @@
     "date-fns-tz": "^3.2.0",
     "framer-motion": "^12.23.24",
     "ics": "^3.8.1",
-    "next": "15.4.1",
+    "next": "15.4.10",
     "next-auth": "^4.24.11",
     "nodemailer": "^6.10.1",
     "postgres": "^3.4.7",
