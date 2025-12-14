@@ -14,6 +14,12 @@ export async function POST(req: Request) {
     requestBody = await req.json();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { email, name, password, instagram } = requestBody as any;
+    const isBlacklisted = await prisma.blockedEmail.findUnique({
+      where: { email }
+    });
+    if(isBlacklisted) {
+      return NextResponse.json({ error: 'Diese E-Mail-Adresse ist dauerhaft gesperrt.' }, { status: 403 });
+    }
     logger.info("API Route /api/auth/register: Attempting registration", { email, name, instagramProvided: !!instagram });
 
     if (!email || !name || !password) {

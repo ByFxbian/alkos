@@ -96,6 +96,27 @@ export default function BarberSchedule({ appointments, isAdmin }: BarberSchedule
     const [showQrModal, setShowQrModal] = useState<string | null>(null);
     const [selectedCustomer, setSelectedCustomer] = useState<CustomerDataForSchedule | null>(null);
 
+    const handleSendInvoice = async (appointmentId: string) => {
+        if(!confirm("Möchtest du dem Kunden die Rechnung per E-Mail senden?")) return;
+        
+        try {
+            const res = await fetch('/api/admin/invoice/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ appointmentId })
+            });
+            
+            if(res.ok) {
+                alert("Rechnung wurde erfolgreich versendet!");
+            } else {
+                const data = await res.json();
+                alert(`Fehler: ${data.error || 'Versand fehlgeschlagen'}`);
+            }
+        } catch (e) {
+            alert("Netzwerkfehler beim Senden der Rechnung.");
+        }
+    };
+
     const generateQrCode = async (appointmentId: string) => {
         const res = await fetch('/api/admin/stamps/generate', {
             method: 'POST',
@@ -179,6 +200,14 @@ export default function BarberSchedule({ appointments, isAdmin }: BarberSchedule
                                         </div>
                                             {isAdmin && (
                                                 <div className='flex justify-end items-center gap-4 mt-4 pt-4 border-t' style={{borderColor: 'var(--color-border)'}}>
+                                                    <button 
+                                                        onClick={() => handleSendInvoice(app.id)} 
+                                                        className='bg-blue-600 text-white font-semibold px-3 py-2 rounded-md text-sm hover:bg-blue-500 transition-colors flex items-center gap-1'
+                                                        title="Rechnung per E-Mail senden"
+                                                    >
+                                                        <span>📄</span>
+                                                        <span className="hidden sm:inline">Rechnung</span>
+                                                    </button>
                                                     <button onClick={() => generateQrCode(app.id)} className='bg-gold-500 text-black font-semibold px-3 py-2 rounded-md text-sm hover:bg-gold-400'>
                                                         QR-Code
                                                     </button>
@@ -187,6 +216,7 @@ export default function BarberSchedule({ appointments, isAdmin }: BarberSchedule
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                         </svg>
                                                     </button>
+
                                                 </div>
                                                 
                                             )}

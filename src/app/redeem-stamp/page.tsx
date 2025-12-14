@@ -26,6 +26,12 @@ export default function RedeemStampPage() {
 
     const data = await res.json();
     if (res.ok) {
+      try {
+        const audio = new Audio('/qrcodesound.mp3');
+        audio.play().catch(e => console.log("Audio Autoplay blocked", e));
+      } catch (e) {
+        console.log("Sound error", e);
+      }
       setMessage('Stempel erfolgreich erhalten! Du wirst weitergeleitet...');
       setTimeout(() => router.push('/meine-termine'), 2000);
     } else {

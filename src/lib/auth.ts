@@ -69,6 +69,26 @@ export const authOptions: AuthOptions = {
         strategy: 'jwt',
     },
     callbacks: {
+        async signIn({ user }) {
+            if(!user.email) return false;
+
+            const isBlacklisted = await prisma.blockedEmail.findUnique({
+                where: { email: user.email }
+            });
+            if(isBlacklisted) {
+                return false;
+            }
+
+            const dbUser = await prisma.user.findUnique({
+                where: { email: user.email }
+            });
+
+            if(dbUser && dbUser.isBlocked) {
+                return false;
+            }
+
+            return true;
+        },
         async redirect({ url, baseUrl }) {
             if(url.includes('callback/email')) {
                 return baseUrl + '/meine-termine';

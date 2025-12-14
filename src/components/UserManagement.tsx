@@ -6,8 +6,10 @@ import { useState, useMemo } from 'react';
 import CustomerDetailsModal from "./CustomerDetailsModal";
 import Image from "next/image";
 
+type UserWithBlock = User & { isBlocked: boolean };
+
 type UserManagementProps = {
-  allUsers: User[];
+  allUsers: UserWithBlock[];
   currentUserId: string;
 };
 
@@ -58,6 +60,22 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
       router.refresh();
     }
   };
+
+  const handleBlock = async (userId: string, currentStatus: boolean) => {
+    await fetch(`/api/admin/users/${userId}/block`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isBlocked: !currentStatus }),
+    });
+    router.refresh();
+  }
+
+  const handleBan = async (userId: string) => {
+    if (confirm('ACHTUNG: Benutzer löschen UND E-Mail permanent sperren?')) {
+      await fetch(`/api/admin/users/${userId}/delete-blacklist`, { method: 'DELETE' });
+      router.refresh();
+    }
+  }
 
   const handleShowDetails = (user: User) => {
     setSelectedCustomer({
@@ -115,7 +133,7 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
                 user.role === 'ADMIN';
 
               return (
-                <tr key={user.id}>
+                <tr key={user.id} className={user.isBlocked ? "bg-red-50 dark:bg-red-900/10" : ""}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button 
                       onClick={() => handleShowDetails(user)}
@@ -129,7 +147,10 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
                         className="rounded-full object-cover w-10 h-10"
                       />
                       <div> 
-                        <div className="text-sm font-medium">{user.name}</div>
+                        <div className="text-sm font-medium">
+                          {user.name}
+                          {user.isBlocked && <span className="ml-2 text-xs text-red-500 font-bold">(BLOCKIERT)</span>}
+                        </div>
                         <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{user.email}</div>
                       </div>
                     </button>
@@ -148,13 +169,20 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
                       <option value="ADMIN">Admin</option>
                     </select>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                    <button onClick={() => handleBlock(user.id, user.isBlocked)} disabled={isRowDisabled} 
+                        className={`px-2 py-1 rounded ${user.isBlocked ? 'text-green-500 hover:bg-green-500/10' : 'text-orange-500 hover:bg-orange-500/10'}`}>
+                        {user.isBlocked ? 'Entsperren' : 'Blockieren'}
+                    </button>
                     <button
                       onClick={() => handleDelete(user.id)}
                       disabled={isRowDisabled}
-                      className="text-red-500 hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="text-red-500 hover:bg-red-500/10 px-2 py-1 rounded"
                     >
                       Löschen
+                    </button>
+                    <button onClick={() => handleBan(user.id)} disabled={isRowDisabled} className="text-red-700 font-bold hover:bg-red-700/10 px-2 py-1 rounded" title="Löschen & Email sperren">
+                      BANNEN
                     </button>
                   </td>
                 </tr>
@@ -169,53 +197,37 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
           const isRowDisabled = user.id === currentUserId || user.role === 'ADMIN';
           
           return (
-            <div key={user.id} className="p-4 rounded-lg" style={{ backgroundColor: 'var(--color-surface)' }}>
+            <div key={user.id} className={`p-4 rounded-lg border ${user.isBlocked ? 'border-red-500 bg-red-500/5' : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900'}`} style={{ backgroundColor: 'var(--color-surface)' }}>
               
-              <div className="mb-4">
-                <button 
-                  onClick={() => handleShowDetails(user)}
-                  className="text-left hover:text-gold-500 transition-colors"
-                >
-                  <Image
-                    src={user.image || PLACEHOLDER_IMAGE}
-                    alt={user.name || 'Profilbild'}
-                    width={40}
-                    height={40}
-                    className="rounded-full object-cover w-10 h-10"
-                  />
-                  <div>
-                    <div className="text-sm font-medium">{user.name}</div>
-                    <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{user.email}</div>
-                  </div>
-                </button>
+              <div className="flex items-center gap-3 mb-4" onClick={() => handleShowDetails(user)}>
+                <Image
+                  src={user.image || PLACEHOLDER_IMAGE}
+                  alt={user.name || 'Profilbild'}
+                  width={40}
+                  height={40}
+                  className="rounded-full object-cover w-10 h-10"
+                />
+                <div>
+                  <div className="font-bold">{user.name} {user.isBlocked && <span className="text-red-500">(BLOCK)</span>}</div>
+                  <div className="text-sm opacity-60">{user.email}</div>
+                </div>
               </div>
               
-              <div className="mb-4">
-                <label className="block text-xs font-medium uppercase mb-1" style={{ color: 'var(--color-text-muted)' }}>Rolle</label>
-                <select
-                  value={user.role}
-                  onChange={(e) => handleRoleChange(user.id, e.target.value as Role)}
-                  disabled={isRowDisabled}
-                  className="w-full text-sm rounded-lg p-2"
-                  style={{ backgroundColor: 'var(--color-surface-3)', border: '1px solid var(--color-border)' }}
-                >
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <select value={user.role} onChange={(e) => handleRoleChange(user.id, e.target.value as Role)} disabled={isRowDisabled} className="p-2 rounded border bg-transparent">
                   <option value="KUNDE">Kunde</option>
                   <option value="BARBER">Barber</option>
-                  <option value="HEADOFBARBER">Head Of Barber</option>
+                  <option value="HEADOFBARBER">Head</option>
                   <option value="ADMIN">Admin</option>
                 </select>
+                <button onClick={() => handleBlock(user.id, user.isBlocked)} disabled={isRowDisabled} className="border rounded p-2 text-center text-sm">
+                  {user.isBlocked ? '🔓 Entsperren' : '🔒 Blockieren'}
+                </button>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium uppercase mb-1" style={{ color: 'var(--color-text-muted)' }}>Aktionen</label>
-                <button
-                  onClick={() => handleDelete(user.id)}
-                  disabled={isRowDisabled}
-                  className="w-full text-left text-red-500 hover:text-red-400 p-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ backgroundColor: 'var(--color-surface-3)'}}
-                >
-                  Löschen
-                </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => handleDelete(user.id)} disabled={isRowDisabled} className="bg-red-100 dark:bg-red-900/20 text-red-500 p-2 rounded text-sm">Löschen</button>
+                <button onClick={() => handleBan(user.id)} disabled={isRowDisabled} className="bg-red-500 text-white p-2 rounded text-sm font-bold">BANNEN (Löschen+Sperren)</button>
               </div>
             </div>
           );
