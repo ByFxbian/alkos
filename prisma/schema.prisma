@@ -71,6 +71,15 @@ model User {
   passwordResetTokens PasswordResetToken[]
 
   blockedTimes BlockedTime[] @relation("BarberBlockedTimes")
+
+  isBlocked Boolean @default(false)
+}
+
+model BlockedEmail {
+  id    String  @id @default(cuid())
+  email String  @unique
+  reason String?
+  createdAt DateTime @default(now())
 }
 
 model VerificationToken {
