@@ -5,9 +5,18 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function StickyBookingButton() {
+type StickyBookingButtonProps = {
+  locationSlug?: string;
+};
+
+export default function StickyBookingButton({ locationSlug }: StickyBookingButtonProps) {
   const [isVisible, setIsVisible] = useState(false);
   const pathname = usePathname();
+
+  const getLink = (path: string) => {
+        if (!locationSlug) return path;
+        return `/${locationSlug}${path}`; 
+    };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,7 +31,7 @@ export default function StickyBookingButton() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  if (pathname === '/termine' || pathname.startsWith('/admin')) {
+  if (pathname === '/wien/termine' || pathname === '/baden/termine' || pathname.startsWith('/admin')) {
     return null;
   }
 
@@ -38,7 +47,7 @@ export default function StickyBookingButton() {
         >
           <div className="pointer-events-auto shadow-2xl shadow-gold-500/20 rounded-full">
             <Link
-              href="/termine"
+              href={getLink('/termine')}
               className="block w-full bg-gold-500 text-black font-bold text-center py-4 rounded-full text-lg active:scale-95 transition-transform"
             >
               Jetzt Termin buchen

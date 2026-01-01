@@ -6,64 +6,99 @@ import AvailabilityForm from '@/components/AvailabilityForm';
 import BarberSchedule from '@/components/BarberSchedule';
 import { Role } from '@/generated/prisma';
 import { BlockedTimeManager } from '@/components/BlockedTimeManager';
+import { cookies } from 'next/headers';
+
+export const revalidate = 0;
 
 export default async function KalenderAdminPage() {
   const session = await getServerSession(authOptions);
 
   const allowedRoles = ['ADMIN', 'BARBER', 'HEADOFBARBER'];
-  if (!session ||!allowedRoles.includes(session.user.role)) {
-    redirect('/login');
+  if (!session || !session.user?.email || !allowedRoles.includes(session.user.role)) {
+    redirect('/api/auth/signin');
+  }
+
+  const dbUser = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: { locations: true }
+  });
+
+  if (!dbUser) {
+      redirect('/api/auth/signin');
+  }
+
+  const isGlobalAdmin = dbUser.role === 'ADMIN';
+  
+  const allowedLocationIds = isGlobalAdmin
+      ? (await prisma.location.findMany({ select: { id: true } })).map(l => l.id)
+      : dbUser.locations.map(l => l.id);
+
+  const cookieStore = await cookies();
+  const filterId = cookieStore.get('admin_location_filter')?.value;
+  
+  let queryLocationIds = allowedLocationIds;
+  if (filterId && filterId !== 'ALL') {
+      if (allowedLocationIds.includes(filterId)) {
+          queryLocationIds = [filterId];
+      }
   }
 
   const availabilities = await prisma.availability.findMany({
-    where: { barberId: session.user.id },
+    where: { barberId: dbUser.id },
     orderBy: { dayOfWeek: 'asc' },
   });
 
   const today = new Date();
   today.setHours(0,0,0,0);
-  const sevenDaysFromNow = new Date(today);
-  sevenDaysFromNow.setDate(today.getDate() + 7);
+  const endViewDate = new Date(today);
+  endViewDate.setDate(today.getDate() + 7);
 
-  const isAdminOrHead = ['ADMIN', 'HEADOFBARBER'].includes(session.user.role);
+  const isAdminOrHead = ['ADMIN', 'HEADOFBARBER'].includes(dbUser.role);
 
-  const appointments = await prisma.appointment.findMany({
-    where: {
-      ...(isAdminOrHead ? {} : { barberId: session.user.id }),
+  const AppointmentWhereClause: any = {
       startTime: {
         gte: today,
-        lt: sevenDaysFromNow,
+        lt: endViewDate,
       },
-    },
+      locationId: { in: queryLocationIds }
+  };
+
+  if (!isAdminOrHead) {
+      AppointmentWhereClause.barberId = dbUser.id;
+  }
+
+  const appointments = await prisma.appointment.findMany({
+    where: AppointmentWhereClause,
     include: {
       service: true,
-      customer: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-          instagram: true,
-          completedAppointments: true,
-        }
-      },
-      barber: true,
+      customer: true,
+      barber: true, 
+      location: true,
     },
     orderBy: {
       startTime: 'asc',
     },
   });
 
+  const BlockedTimeWhereClause: any = {
+      endTime: { gte: new Date() }
+  };
+
+  if (!isAdminOrHead) {
+      BlockedTimeWhereClause.barberId = dbUser.id;
+  } else {
+      BlockedTimeWhereClause.barber = {
+          locations: {
+              some: { id: { in: queryLocationIds } }
+          }
+      };
+  }
+
   const blockedTimes = await prisma.blockedTime.findMany({
-    where: {
-      ...(isAdminOrHead ? {} : { barberId: session.user.id }),
-      endTime: {
-          gte: new Date(),
-      },
-    },
+    where: BlockedTimeWhereClause,
     include: {
       barber: {
-          select: { name: true }
+          select: { name: true, image: true }
       }
     },
     orderBy: {
@@ -73,7 +108,8 @@ export default async function KalenderAdminPage() {
 
   const allBarbers = isAdminOrHead ? await prisma.user.findMany({
     where: {
-        role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] }
+      role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] },
+      locations: { some: { id: { in: queryLocationIds } } }
     },
     select: {
         id: true,
@@ -81,33 +117,65 @@ export default async function KalenderAdminPage() {
     }
   }) : [];
 
-  const canManageAppointments = (session.user.role === 'ADMIN' || session.user.role === 'HEADOFBARBER' || session.user.role === 'BARBER');
-
   return (
-    <div className="container mx-auto py-12 px-4">
-      <h1 className="text-4xl font-bold tracking-tight mb-2">Meine Arbeitszeiten</h1>
-      <p className="mb-8" style={{ color: 'var(--color-text-muted)' }}>
-        Lege hier deine wöchentlichen Arbeitszeiten fest.
-      </p>
-      <AvailabilityForm currentAvailabilities={availabilities} />
-
-      <div className="mt-16">
-        <h2 className="text-4xl font-bold tracking-tight mb-2">Abwesenheiten (Urlaub, etc.)</h2>
-        <p className="mb-8" style={{ color: 'var(--color-text-muted)' }}>
-          Trage hier einzelne Tage oder Zeiträume ein, an denen du nicht verfügbar bist.
-        </p>
-        <BlockedTimeManager
-          existingBlocks={blockedTimes}
-          allBarbers={allBarbers}
-          currentUserId={session.user.id}
-          currentUserRole={session.user.role as Role}
-        />
+    <div className="container mx-auto py-12 px-4 animate-in fade-in duration-700 space-y-16">
+      
+      <div>
+        <div className="mb-8">
+            <h1 className="text-4xl font-bold tracking-tight text-[var(--color-text)]">Meine Arbeitszeiten</h1>
+            <p className="mt-2 text-[var(--color-text-muted)]">
+                Definiere hier deine regulären Wochenarbeitszeiten. Diese gelten allgemein für dich.
+            </p>
+        </div>
+        
+        <div className="bg-[var(--color-surface-2)] p-6 rounded-xl border border-[var(--color-border)] shadow-sm">
+             <AvailabilityForm currentAvailabilities={availabilities} />
+        </div>
       </div>
 
-      <div className="mt-16">
-        <h2 className="text-4xl font-bold tracking-tight mb-8">Heutige Termine</h2>
-        <BarberSchedule appointments={appointments} isAdmin={canManageAppointments} />
+      <div>
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+             <div>
+                <h2 className="text-3xl font-bold tracking-tight text-[var(--color-text)]">
+                    {isAdminOrHead ? 'Team Termine' : 'Meine Termine'}
+                </h2>
+                <p className="mt-2 text-[var(--color-text-muted)]">
+                    Kommende Buchungen für {queryLocationIds.length > 1 ? 'alle Standorte' : 'den gewählten Standort'}.
+                </p>
+             </div>
+             {queryLocationIds.length === 1 && (
+                 <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">
+                     Gefiltert
+                 </span>
+             )}
+        </div>
+
+        <div className="bg-[var(--color-surface-2)] p-6 rounded-xl border border-[var(--color-border)] shadow-sm">
+             <BarberSchedule 
+                appointments={appointments} 
+                isAdmin={isAdminOrHead} 
+             />
+        </div>
       </div>
+
+      <div>
+         <div className="mb-8">
+            <h2 className="text-3xl font-bold tracking-tight text-[var(--color-text)]">Abwesenheiten & Urlaub</h2>
+            <p className="mt-2 text-[var(--color-text-muted)]">
+               Verwalte hier Urlaube, Krankheitsstände oder einmalige Abwesenheiten {isAdminOrHead ? 'für das Team' : 'für dich'}.
+            </p>
+         </div>
+
+         <div className="bg-[var(--color-surface-2)] p-6 rounded-xl border border-[var(--color-border)] shadow-sm">
+             <BlockedTimeManager
+                existingBlocks={blockedTimes}
+                allBarbers={allBarbers}
+                currentUserId={dbUser.id}
+                currentUserRole={dbUser.role as Role}
+            />
+         </div>
+      </div>
+
     </div>
   );
 }

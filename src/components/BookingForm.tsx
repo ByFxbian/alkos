@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { DayPicker, getDefaultClassNames } from 'react-day-picker';
+import { DayPicker } from 'react-day-picker';
 import { addMinutes, format, startOfDay } from 'date-fns';
 import { de } from 'date-fns/locale';
 import 'react-day-picker/dist/style.css';
@@ -9,36 +9,39 @@ import type { User, Service } from '@/generated/prisma';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import { FaGoogle, FaApple, FaCalendarAlt } from 'react-icons/fa';
+import { FaGoogle, FaApple, FaCalendarAlt, FaUserTie } from 'react-icons/fa';
 import Link from 'next/link';
 import { createEvent, DateArray, EventAttributes } from 'ics';
+import { motion } from 'framer-motion';
 
 type BookingFormProps = {
   barbers: User[];
   services: Service[];
   hasFreeAppointment: boolean;
+  currentLocationId: string;
 };
 
 type ConfirmedAppointmentData = {
     slot: string;
     service: Service;
-    barber: User;
+    barber: User | { name: string; id: string };
 };
 
 function BookingProcessingModal() {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-      <div className=" p-6 rounded-lg text-center" style={{ backgroundColor: 'var(--color-surface)' }}>
-        <p className="font-semibold animate-pulse">Termin wird gebucht...</p>
+      <div className=" p-6 rounded-lg text-center border border-gold-500/20 shadow-2xl" style={{ backgroundColor: 'var(--color-surface)' }}>
+        <div className="w-16 h-16 border-4 border-gold-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="font-semibold animate-pulse text-gold-500">Termin wird reserviert...</p>
       </div>
     </div>
   );
 }
 
-export default function BookingForm({ barbers, services, hasFreeAppointment  }: BookingFormProps) {
+export default function BookingForm({ barbers, services, hasFreeAppointment, currentLocationId  }: BookingFormProps) {
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [selectedBarber, setSelectedBarber] = useState<User | null>(null);
+  const [selectedBarber, setSelectedBarber] = useState<User | { id: string, name: string } | null>(null);
   const today = useMemo(() => startOfDay(new Date()), []);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   
@@ -144,6 +147,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
         barberId: selectedBarber.id,
         startTime: selectedSlot,
         useFreeAppointment: useFreeAppointment,
+        locationId: currentLocationId
     };
 
     const confirmedData: ConfirmedAppointmentData = {
@@ -197,6 +201,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
         date: dateString,
         barberId: selectedBarber.id,
         serviceId: selectedService.id,
+        locationId: currentLocationId
       }).toString();
 
       fetch(`/api/availability?${query}`)
@@ -210,7 +215,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
       setAvailableSlots([]);
       setSelectedSlot(null);
     }
-  }, [selectedService, selectedBarber, selectedDate]);
+  }, [selectedService, selectedBarber, selectedDate, currentLocationId]);
 
   useEffect(() => {
     if(!selectedService && services.length > 0 && barbers.length > 0) {
@@ -294,11 +299,29 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
     return (
     <>
       {showBookingProcessing && <BookingProcessingModal />}  
-      <div className="container mx-auto py-12 px-4">
-        <h1 className="text-4xl font-bold tracking-tight mb-8">Termin buchen</h1>
+      <div className="container mx-auto py-8 px-4">
+        
+        {/* Progress Bar */}
+        <div className="max-w-4xl mx-auto mb-12">
+             <div className="flex items-center justify-between mb-2 text-sm font-bold uppercase tracking-widest text-[var(--color-text-muted)]">
+                 <span className={step >= 1 ? 'text-gold-500' : ''}>Service</span>
+                 <span className={step >= 2 ? 'text-gold-500' : ''}>Barber</span>
+                 <span className={step >= 3 ? 'text-gold-500' : ''}>Zeit</span>
+             </div>
+             <div className="h-2 bg-[var(--color-surface-2)] rounded-full overflow-hidden">
+                 <motion.div 
+                    initial={{ width: '33%' }}
+                    animate={{ width: `${step * 33.33}%` }}
+                    transition={{ duration: 0.5, ease: "easeInOut" }}
+                    className="h-full bg-gold-500"
+                 />
+             </div>
+        </div>
+
+        <h1 className="text-4xl font-bold tracking-tight mb-8 text-center md:text-left">Termin buchen</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <div>
-            <h2 className="text-2xl font-semibold mb-4 text-gold-500">Art</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-gold-500">Service</h2>
             <div className="space-y-2">
               {services.map(service => (
                 <button key={service.id} 
@@ -309,19 +332,20 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
                     setSelectedDate(undefined);
                     setStep(2); 
                   }} 
-                  className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${selectedService?.id === service.id ? 'bg-gold-500 text-black border-gold-500' : ' hover:border-gold-500'}`} style={{ borderColor: selectedService?.id !== service.id ? 'var(--color-border)' : '' }}>
+                  className={`w-full text-left p-4 rounded-lg border transition-all duration-300 ${selectedService?.id === service.id ? 'bg-gold-500 text-black border-gold-500 scale-105 shadow-xl' : 'border-[var(--color-border)] hover:border-gold-500 hover:bg-[var(--color-surface-2)]'}`}
+                >
                   <div className="flex justify-between items-center">
                     <p className="font-bold">{service.name}</p>
-                    <p className={`font-semibold ${useFreeAppointment && selectedService?.id === service.id ? 'line-through text-gray-500' : ''}`}>
+                    <p className={`font-semibold ${useFreeAppointment && selectedService?.id === service.id ? 'line-through opacity-50' : ''}`}>
                       {service.price.toFixed(2)} €
                     </p>
                     {useFreeAppointment && selectedService?.id === service.id && (
                       <p className="font-semibold text-green-400">0.00 €</p>
                     )}
                   </div>
-                  <p>{service.duration} Minuten</p>
+                  <p className="text-sm opacity-80">{service.duration} Minuten</p>
                   {service.name === 'Combo' && (
-                    <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                    <p className="text-xs mt-1 opacity-60">
                       (Inkludiert: Haarschnitt & Bart)
                     </p>
                   )}
@@ -330,18 +354,36 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
             </div>
           </div>
 
-          <div className={step >= 2 ? '' : 'opacity-50'}>
+          <div className={`transition-opacity duration-500 ${step >= 2 ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
             <h2 className="text-2xl font-semibold mb-4 text-gold-500">Barber</h2>
             <div className="space-y-2">
+              
+              {/* ANY BARBER BUTTON */}
+              <button 
+                onClick={() => { setSelectedBarber({ id: 'any', name: 'Beliebiger Barber' }); setSelectedDate(today); setStep(3); }} 
+                disabled={step < 2} 
+                className={`w-full text-left p-4 rounded-lg border transition-all duration-300 group ${selectedBarber?.id === 'any' ? 'bg-gold-500 text-black border-gold-500 scale-105 shadow-xl' : 'border-[var(--color-border)] hover:border-gold-500 hover:bg-[var(--color-surface-2)]'}`}
+              >
+                  <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${selectedBarber?.id === 'any' ? 'bg-black/20' : 'bg-[var(--color-surface)]'}`}>
+                         <FaUserTie className="w-5 h-5" />
+                      </div>
+                      <div>
+                          <p className="font-bold">Egal / Beliebiger Barber</p>
+                          <p className="text-xs opacity-70">Zeigt alle verfügbaren Termine an</p>
+                      </div>
+                  </div>
+              </button>
+
               {barbers.map(barber => (
-                <button key={barber.id} onClick={() => { setSelectedBarber(barber); setStep(3); }} disabled={step < 2} className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${selectedBarber?.id === barber.id ? 'bg-gold-500 text-black border-gold-500' : ' hover:border-gold-500'}`} style={{ borderColor: selectedBarber?.id !== barber.id ? 'var(--color-border)' : '' }}>
+                <button key={barber.id} onClick={() => { setSelectedBarber(barber); setStep(3); }} disabled={step < 2} className={`w-full text-left p-4 rounded-lg border transition-all duration-300 ${selectedBarber?.id === barber.id ? 'bg-gold-500 text-black border-gold-500 scale-105 shadow-xl' : 'border-[var(--color-border)] hover:border-gold-500 hover:bg-[var(--color-surface-2)]'}`}>
                   <p className="font-bold">{barber.name}</p>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className={step >= 3 ? '' : 'opacity-50 pointer-events-none'}>
+          <div className={`transition-opacity duration-500 ${step >= 3 ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
             <h2 className="text-2xl font-semibold mb-4 text-gold-500">Datum & Uhrzeit</h2>
             <DayPicker 
               mode="single" 
@@ -352,20 +394,26 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
               }} 
               locale={de} 
               hidden={[{ before: today }]} 
-              className="flex justify-center"
+              className="flex justify-center bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)]"
+              modifiersClassNames={{
+                selected: 'bg-gold-500 text-black font-bold rounded-full'
+              }}
               />
-            <div className="mt-4">
-              {isLoading && <p>Lade freie Termine...</p>}
+            <div className="mt-6">
+              {isLoading && (
+                  <div className="flex items-center justify-center py-8 text-gold-500">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
+                  </div>
+              )}
+              
               {!isLoading && selectedDate && availableSlots.length > 0 && (
-                <>
-
-                  <div className="grid grid-cols-4 gap-2">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-6">
                     {availableSlots.map(slot => (
                       <button 
                         key={slot} 
                         onClick={() => setSelectedSlot(slot)}
-                        className={`p-2 rounded-lg transition-colors ${selectedSlot === slot ? 'bg-green-500 text-white' : 'hover:bg-gold-500 hover:text-black'}`}
-                        style={{ backgroundColor: selectedSlot !== slot ? 'var(--color-surface)' : '' }}
+                        className={`py-2 px-1 rounded-lg text-sm font-medium transition-all duration-200 ${selectedSlot === slot ? 'bg-green-500 text-white shadow-lg scale-105' : 'bg-[var(--color-surface-2)] hover:bg-gold-500 hover:text-black hover:scale-105'}`}
                       >
                         {format(new Date(slot), 'HH:mm')}
                       </button>
@@ -373,34 +421,39 @@ export default function BookingForm({ barbers, services, hasFreeAppointment  }: 
                   </div>
 
                   {hasFreeAppointment && (
-                    <div className="mt-6 border-t border-neutral-700 pt-6">
-                      <label className="flex items-center space-x-3 cursor-pointer">
+                    <div className="mt-6 border-t border-[var(--color-border)] pt-6">
+                      <label className="flex items-center space-x-3 cursor-pointer group">
+                        <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${useFreeAppointment ? 'bg-gold-500 border-gold-500' : 'border-neutral-500 group-hover:border-gold-500'}`}>
+                            {useFreeAppointment && <span className="text-black font-bold">✓</span>}
+                        </div>
                         <input 
                           type="checkbox"
                           checked={useFreeAppointment}
                           onChange={(e) => setUseFreeAppointment(e.target.checked)}
-                          className="h-5 w-5 rounded text-gold-500 focus:ring-gold-500"
-                          style={{ backgroundColor: 'var(--color-background)', borderColor: 'var(--color-border)' }}
+                          className="hidden"
                         />
-                        <span className="font-bold text-green-400">Gratis-Termin einlösen</span>
+                        <span className="font-bold text-green-400 group-hover:text-green-300 transition-colors">Gratis-Termin einlösen</span>
                       </label>
                     </div>
                   )}
 
                   {selectedSlot && (
-                    <div className="mt-6 text-center">
-                      <button onClick={handleBooking} disabled={isBooking} className="bg-green-600 text-white font-bold px-8 py-3 rounded-full hover:bg-green-500 w-full disabled:bg-neutral-600 disabled:cursor-not-allowed">
-                        {isBooking ? 'Bitte warten...' : `Termin um ${format(new Date(selectedSlot), 'HH:mm')} Uhr ${useFreeAppointment ? ' (Gratis)' : ''} bestätigen`}
+                    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="mt-6 text-center">
+                      <button onClick={handleBooking} disabled={isBooking} className="bg-gold-500 text-black font-bold px-8 py-4 rounded-xl hover:bg-gold-400 w-full disabled:bg-neutral-600 disabled:cursor-not-allowed shadow-lg shadow-gold-500/20 transform transition-transform active:scale-95">
+                        {isBooking ? 'Bitte warten...' : `Termin bestätigen`}
                       </button>
-                    </div>
+                      <p className="mt-2 text-xs opacity-60">
+                         {format(new Date(selectedSlot), 'HH:mm')} Uhr • {selectedService?.name} • {selectedBarber?.name}
+                      </p>
+                    </motion.div>
                   )}
-                </>
+                </motion.div>
               )}
               {!isLoading && selectedDate && availableSlots.length === 0 && (
-                <p style={{ color: 'var(--color-text-muted)' }}>Für diesen Tag sind leider keine Termine mehr verfügbar.</p>
+                <p className="text-center py-8 opacity-60">Für diesen Tag sind leider keine Termine mehr verfügbar.</p>
               )}
               {!isLoading && !selectedDate && step >= 3 && (
-                  <p style={{ color: 'var(--color-text-muted)' }}>Bitte wähle ein Datum aus.</p>
+                  <p className="text-center py-8 opacity-60">Bitte wähle ein Datum aus.</p>
               )}
             </div>
           </div>

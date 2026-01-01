@@ -73,6 +73,8 @@ model User {
   blockedTimes BlockedTime[] @relation("BarberBlockedTimes")
 
   isBlocked Boolean @default(false)
+
+  locations Location[] @relation("UserLocations")
 }
 
 model BlockedEmail {
@@ -106,6 +108,9 @@ model Availability {
   barberId  String
   barber    User     @relation(fields: [barberId], references: [id])
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
   @@index([barberId, dayOfWeek])
 }
 
@@ -115,6 +120,11 @@ model Service {
   duration    Int
   price       Float
 
+  locationId  String?
+  location    Location? @relation(fields: [locationId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
   appointments Appointment[]
 }
 
@@ -124,6 +134,7 @@ model Appointment {
   startTime DateTime
   endTime   DateTime
   createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   customerId String
   customer   User   @relation("CustomerAppointments", fields: [customerId], references: [id])
@@ -139,6 +150,9 @@ model Appointment {
   reminderSentAt DateTime?
 
   reviewEmailSentAt DateTime?
+
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id])
 
   @@index([barberId, startTime])
   @@index([customerId, startTime])
@@ -177,6 +191,45 @@ model BlockedTime {
   barber    User    @relation("BarberBlockedTimes", fields: [barberId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@index([barberId, startTime, endTime])
+}
+
+model Location {
+  id        String  @id @default(cuid())
+  name      String
+  slug      String  @unique
+  address   String
+  city      String
+  postalCode String
+  phone     String?  
+  email     String?
+  googleMapsUrl String?
+  galleryImages String[]
+
+  heroImage String?
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  users     User[]  @relation("UserLocations")
+  appointments Appointment[]
+  services  Service[]
+  teamMembers TeamMember[] @relation("TeamMemberLocations")
+}
+
+model TeamMember {
+  id        String  @id @default(cuid())
+  name      String
+  role      String
+  bio       String?
+  image     String?
+  sortOrder Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  locations Location[] @relation("TeamMemberLocations")
 }

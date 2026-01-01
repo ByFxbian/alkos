@@ -26,7 +26,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     console.log("API Route /api/appointments: Request body:", body);
     logger.info("API Route /api/appointments: Request body:", { body });
-    const { barberId, serviceId, startTime, useFreeAppointment  } = body;
+    const { serviceId, startTime, useFreeAppointment, locationId } = body;
+    let { barberId } = body;
     const customerId = session.user.id;
 
     const service = await prisma.service.findUnique({ where: { id: serviceId } });
@@ -51,6 +52,70 @@ export async function POST(req: Request) {
     const appointmentStartTime = new Date(startTime);
     const appointmentEndTime = new Date(appointmentStartTime.getTime() + service.duration * 60000);
 
+    // Logic for 'Any Barber'
+    if (barberId === 'any') {
+      if (!locationId) {
+        return NextResponse.json({ error: 'Standort ID erforderlich für automatische Zuweisung.' }, { status: 400 });
+      }
+
+      // Find potential barbers at this location
+      const potentialBarbers = await prisma.user.findMany({
+        where: {
+          locations: { some: { id: locationId } },
+          role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] }
+        }
+      });
+
+      // Find one who is free
+      let assignedBarberId: string | null = null;
+
+      for (const barber of potentialBarbers) {
+        // Check Availability
+        const dayOfWeek = appointmentStartTime.getDay();
+        const availability = await prisma.availability.findFirst({
+          where: { barberId: barber.id, dayOfWeek }
+        });
+
+        if (!availability) continue;
+
+        // Check bounds (simple check, assuming startTime is correct date)
+        // Ideally we convert to Vienna time to compare hours
+        // For now, relying on availability check logic similar to GET availability
+        // But simplified: Just check if *start* and *end* of appointment are within availability hours
+        // And no conflicts.
+
+        // To be precise, we reuse the conflict check logic:
+
+        const hasConflict = await prisma.appointment.findFirst({
+          where: {
+            barberId: barber.id,
+            OR: [
+              { startTime: { lt: appointmentEndTime }, endTime: { gt: appointmentStartTime } }
+            ]
+          }
+        });
+
+        const hasBlock = await prisma.blockedTime.findFirst({
+          where: {
+            barberId: barber.id,
+            OR: [
+              { startTime: { lt: appointmentEndTime }, endTime: { gt: appointmentStartTime } }
+            ]
+          }
+        });
+
+        if (!hasConflict && !hasBlock) {
+          assignedBarberId = barber.id;
+          break; // Found one!
+        }
+      }
+
+      if (!assignedBarberId) {
+        return NextResponse.json({ error: 'Kein Barber mehr verfügbar für diese Zeit.' }, { status: 409 });
+      }
+      barberId = assignedBarberId;
+    }
+
     const now = new Date();
     const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
@@ -63,8 +128,8 @@ export async function POST(req: Request) {
       },
     });
 
-    if(existingAppointment) {
-      return NextResponse.json({ error: 'Dieser Zeitslot wurde gerade eben gebucht oder ist bereits belegt.'}, { status: 409 });
+    if (existingAppointment) {
+      return NextResponse.json({ error: 'Dieser Zeitslot wurde gerade eben gebucht oder ist bereits belegt.' }, { status: 409 });
     }
     const newAppointment = await prisma.appointment.create({
       data: {
@@ -75,6 +140,7 @@ export async function POST(req: Request) {
         serviceId,
         isFree: useFreeAppointment || false,
         reminderSentAt: isLastMinuteBooking ? new Date() : null,
+        locationId: locationId || null,
       },
       include: {
         customer: true,
@@ -98,13 +164,13 @@ export async function POST(req: Request) {
           host: 'ALKOS'
         }),
       });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (emailError: any) {
       logger.error("API Route /api/appointments: Error when sending confirmation email.", emailError);
       console.error('Fehler beim Senden der Bestätigungs-E-Mail:', emailError);
     }
     response = NextResponse.json(newAppointment, { status: 201 });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     logger.error('API Route /api/appointments - Booking error:', error);
     console.error('API Route /api/appointments - Booking error:', error);

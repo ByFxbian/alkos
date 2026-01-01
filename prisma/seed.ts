@@ -3,65 +3,64 @@ const prisma = new PrismaClient();
 import bcrypt from 'bcrypt';
 
 async function main() {
-    console.log(`Start seeding ...`);
+  console.log("📍 Prüfe/Erstelle Location 'Wien'...")
 
-    await prisma.service.deleteMany();
+  const wien = await prisma.location.upsert({
+    where: { slug: 'wien' },
+    update: {},
+    create: {
+      name: 'ALKOS',
+      slug: 'wien',
+      address: 'Wiedner Gürtel 12',
+      city: 'Wien',
+      postalCode: '1040',
+      phone: '+43 660 5783966',
+      description: 'Dein Go-To Barbershop in Wien',
+      heroImage: '/images/hero-bg.jpeg', 
+    },
+  })
+  console.log(`✅ Location Wien ID: ${wien.id}`)
 
-  const service1 = await prisma.service.create({
-    data: {
-      name: 'Haarschnitt',
-      duration: 20,
-      price: 28.00,
-    },
-  });
+  console.log("🔄 Migriere Services...")
+  await prisma.service.updateMany({
+    where: { locationId: null },
+    data: { locationId: wien.id }
+  })
 
-  const service2 = await prisma.service.create({
-    data: {
-      name: 'Bart',
-      duration: 15,
-      price: 17.00,
-    },
-  });
+  console.log("🔄 Verbinde Mitarbeiter mit Wien...")
+  const staff = await prisma.user.findMany({
+    where: {
+      role: { in: [Role.BARBER, Role.HEADOFBARBER, Role.ADMIN] },
+      locations: { none: {} }
+    }
+  })
 
-   const service3 = await prisma.service.create({
-    data: {
-      name: 'Combo',
-      duration: 30,
-      price: 45.00,
-    },
-  });
+  for (const user of staff) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        locations: {
+          connect: { id: wien.id }
+        }
+      }
+    })
+    console.log(`   👤 ${user.name} -> Wien`)
+  }
 
-  const service4 = await prisma.service.create({
-    data: {
-      name: 'Augenbrauen',
-      duration: 15,
-      price: 7.00,
-    },
-  });
-  const service5 = await prisma.service.create({
-    data: {
-      name: 'Dauerwelle',
-      duration: 120,
-      price: 145.00,
-    },
-  });
-  const service6 = await prisma.service.create({
-    data: {
-      name: 'Traditionelle Rasur',
-      duration: 20,
-      price: 15.00,
-    },
-  });
-  const service7 = await prisma.service.create({
-    data: {
-      name: 'ALKOS VIP Paket',
-      duration: 90,
-      price: 75.00,
-    },
-  });
+  const baden = await prisma.location.upsert({
+    where: { slug: 'baden' },
+    update: {},
+    create: {
+        name: 'Ghost Barber',
+        slug: 'baden',
+        address: 'Hauptplatz 1',
+        city: 'Baden',
+        postalCode: '2500',
+        heroImage: '/images/baden-bg.jpg', 
+    }
+  })
 
-  console.log(`Seeding finished.`);
-  console.log({ service1, service2, service3, service4, service5, service6, service7 });
+  console.log("✅ Migration & Seed abgeschlossen.")
 }
 
 main()

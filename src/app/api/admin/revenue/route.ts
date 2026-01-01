@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { startOfDay, subDays, subMonths, startOfYear, format } from "date-fns";
 import { de } from 'date-fns/locale'
+import { cookies } from 'next/headers';
 
 export async function GET(req:Request) {
     const session = await getServerSession(authOptions);
@@ -14,6 +15,26 @@ export async function GET(req:Request) {
     const { searchParams } = new URL(req.url);
     const range = searchParams.get('range') || '7d'
     const barberId = searchParams.get('barberId') || 'all';
+
+    const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        include: { locations: true }
+    });
+
+    const allowedLocationIds = session.user.role === 'ADMIN'
+        ? (await prisma.location.findMany()).map(l => l.id)
+        : dbUser?.locations.map(l => l.id) || [];
+
+    const cookieStore = await cookies();
+    const filterId = cookieStore.get('admin_location_filter')?.value || 'ALL';
+
+    let queryLocationIds = allowedLocationIds;
+
+    if (filterId !== 'ALL') {
+        if (allowedLocationIds.includes(filterId)) {
+            queryLocationIds = [filterId];
+        }
+    }
 
     const now = new Date();
     let startDate = new Date();
@@ -60,6 +81,7 @@ export async function GET(req:Request) {
                 },
                 ...(barberId !== 'all' ? { barberId } : {}),
                 isFree: false,
+                locationId: { in: queryLocationIds }
             },
             include: {
                 service: {

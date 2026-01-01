@@ -10,7 +10,47 @@ const serviceSchema = z.object({
   name: z.string().min(1, "Name ist erforderlich"),
   duration: z.coerce.number().int().positive("Dauer muss positiv sein"),
   price: z.coerce.number().positive("Preis muss positiv sein"),
+  locationId: z.string().nullable().optional(), // FIX: Global services use null
 });
+
+export async function GET(req: Request) {
+  const session = await getServerSession(authOptions);
+
+  // Authorization Check
+  if (!session || !['ADMIN', 'HEADOFBARBER', 'BARBER'].includes(session.user.role)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Role-Based Filtering
+  const isAdmin = session.user.role === 'ADMIN';
+  const userLocs = !isAdmin ? await prisma.user.findUnique({ where: { id: session.user.id }, include: { locations: true } }) : null;
+  const allowedIds = userLocs?.locations.map(l => l.id) || [];
+
+  // Filter Logic:
+  // ADMIN: All.
+  // OTHERS: Global (null) OR Assigned IDs.
+
+  let whereClause: any = {};
+  if (!isAdmin) {
+    if (allowedIds.length > 0) {
+      whereClause = {
+        OR: [
+          { locationId: null },
+          { locationId: { in: allowedIds } }
+        ]
+      };
+    } else {
+      whereClause = { locationId: null };
+    }
+  }
+
+  const services = await prisma.service.findMany({
+    where: whereClause,
+    include: { location: { select: { name: true } } },
+    orderBy: { price: 'asc' }
+  });
+  return NextResponse.json(services);
+}
 
 export async function POST(req: Request) {
   logger.info("API Route /api/admin/services POST called");
@@ -33,13 +73,32 @@ export async function POST(req: Request) {
       return response;
     }
 
-    const { name, duration, price } = validation.data;
+    const { name, duration, price, locationId } = validation.data;
+
+    // SECURITY: If not Admin, ensure target locationId belongs to User
+    if (session.user.role !== 'ADMIN') {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        include: { locations: { select: { id: true } } }
+      });
+
+      // If trying to create Global Service (null) -> Only Admin!
+      if (!locationId) {
+        return NextResponse.json({ error: 'Nur Admins können globale Services erstellen.' }, { status: 403 });
+      }
+
+      const isAssigned = user?.locations.some(l => l.id === locationId);
+      if (!isAssigned) {
+        return NextResponse.json({ error: 'Nicht berechtigt für diesen Standort.' }, { status: 403 });
+      }
+    }
 
     const newService = await prisma.service.create({
       data: {
         name,
         duration,
         price,
+        locationId: locationId || null
       },
     });
 
