@@ -109,11 +109,10 @@ export async function GET(req: Request) {
             if (!locationId) {
                 return NextResponse.json({ error: 'Location ID required for random barber selection' }, { status: 400 });
             }
-            // Find all barbers at this location
             const barbers = await prisma.user.findMany({
                 where: {
                     locations: { some: { id: locationId } },
-                    role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] } // Include all who might work
+                    role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] }
                 },
                 select: { id: true }
             });
@@ -124,13 +123,11 @@ export async function GET(req: Request) {
 
         const allSlotsSet = new Set<string>();
 
-        // We fetch slots for ALL relevant barbers
         for (const bId of targetBarberIds) {
             const slots = await getSlotsForBarber(bId, date, service.duration);
             slots.forEach(s => allSlotsSet.add(s.toISOString()));
         }
 
-        // Sort unique slots
         const sortedSlots = Array.from(allSlotsSet).sort();
 
         response = NextResponse.json(sortedSlots);

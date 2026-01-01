@@ -20,18 +20,15 @@ export default function GatewayPage() {
   const [savedLocationSlug, setSavedLocationSlug] = useState<string | null>(null);
 
   useEffect(() => {
-    // 1. Check existing session / localstorage preference
     const saved = localStorage.getItem('alkos-location');
     if (saved) {
         setSavedLocationSlug(saved);
     }
 
-    // 2. Fetch locations
     fetch('/api/public/location-data')
       .then(res => res.json())
       .then(data => {
         setLocations(data.locations);
-        // Artificial delay for premium feel
         setTimeout(() => setLoading(false), 800);
       });
   }, []);
@@ -63,14 +60,12 @@ export default function GatewayPage() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-black flex flex-col items-center justify-center p-4">
-      {/* Background with slight pulse for "breathing" effect */}
       <div className="absolute inset-0 opacity-40">
          <Image src="/images/hero-bg.jpeg" alt="Background" fill className="object-cover blur-md scale-110 animate-pulse-slow" />
       </div>
       
       <div className="relative z-10 w-full max-w-5xl">
         
-        {/* Intelligent Welcome Banner */}
         <AnimatePresence>
             {savedLocationObj && (
                 <motion.div
@@ -105,7 +100,7 @@ export default function GatewayPage() {
                 ALKOS <span className="text-gold-500">BARBER</span>
             </h1>
             <p className="text-xl md:text-2xl text-neutral-300 uppercase tracking-widest font-light">
-                Choose your Location
+                Wähle deine Location
             </p>
         </motion.div>
 

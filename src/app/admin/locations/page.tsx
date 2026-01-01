@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import LoadingModal from '@/components/LoadingModal';
 import { useSession } from 'next-auth/react';
 
-// Enhanced Type Definition
 type Location = {
   id: string;
   name: string;
@@ -31,9 +30,6 @@ export default function AdminLocationsPage() {
     name: '', slug: '', address: '', city: '', postalCode: '', phone: '', email: '', description: '', heroImage: ''
   });
 
-  // SECURITY: Authorization Check
-  // ADMIN: Can Create, Edit, Delete ALL.
-  // HEADOFBARBER: Can ONLY Edit their assigned location. Cannot Create/Delete.
   const isAdmin = session?.user?.role === 'ADMIN';
 
   useEffect(() => {
@@ -41,7 +37,6 @@ export default function AdminLocationsPage() {
   }, []);
 
   const fetchLocations = async () => {
-    // API logic should already return filtered locations for HeadOfBarber
     const res = await fetch('/api/admin/locations');
     if (!res.ok) return;
     const data = await res.json();
@@ -53,7 +48,6 @@ export default function AdminLocationsPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // SECURITY: Prevent HeadOfBarber from Creating new locations if accidental exposure
     if (!isEditing && !isAdmin) {
         alert("Nur Administratoren können neue Standorte anlegen.");
         setIsLoading(false);
@@ -92,14 +86,13 @@ export default function AdminLocationsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if(!isAdmin) return; // Strict Client Check
+    if(!isAdmin) return;
     if(!confirm("Location wirklich löschen? Das kann zu Fehlern führen, wenn noch Termine verknüpft sind!")) return;
     setIsLoading(true);
     await fetch(`/api/admin/locations/${id}`, { method: 'DELETE' });
     fetchLocations();
   };
 
-  // Prevent flicker
   if (!locations && isLoading) return <LoadingModal message="Lade Standorte..." />;
 
   return (
@@ -114,12 +107,6 @@ export default function AdminLocationsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Editor Form - Only visible if Admin OR if actively editing */}
-        {/* HeadOfBarber sees this only when they click "Edit" on their location list item, or is it better to always show?
-            If HeadOfBarber has 1 location, we could auto-select it. 
-            For now, standard UX: Select from list -> Edit form appears.
-            EXCEPTION: Admins see always "Create New" form by default.
-        */}
         {(isAdmin || isEditing) && (
             <div className="lg:col-span-1 bg-[var(--color-surface-2)] p-6 rounded-xl border border-[var(--color-border)] h-fit shadow-sm">
                 <h2 className="text-xl font-bold mb-4 text-[var(--color-text)]">
@@ -131,7 +118,6 @@ export default function AdminLocationsPage() {
                         <input required placeholder="z.B. Alkos Wien" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} 
                             className="w-full p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)] focus:ring-2 focus:ring-[var(--color-gold-500)] outline-none" />
                     </div>
-                    {/* Slug only editable by Admin usually, but let's allow it if careful. Maybe disable for Head? */}
                     <div>
                          <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Slug (URL)</label>
                         <input required disabled={!isAdmin && isEditing !== null} placeholder="z.B. wien" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value.toLowerCase()})} 
@@ -197,7 +183,6 @@ export default function AdminLocationsPage() {
             {locations.map(loc => (
                 <div key={loc.id} className="p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:border-[var(--color-gold-500)]/30 transition-colors">
                     <div className="flex items-start gap-4">
-                        {/* Thumbnail if available */}
                         <div className="w-16 h-16 rounded-lg bg-[var(--color-surface)] flex-shrink-0 overflow-hidden border border-[var(--color-border)]">
                              {loc.heroImage ? (
                                  <img src={loc.heroImage} alt={loc.name} className="w-full h-full object-cover" />

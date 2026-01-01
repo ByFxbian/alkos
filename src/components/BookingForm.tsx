@@ -301,7 +301,6 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
       {showBookingProcessing && <BookingProcessingModal />}  
       <div className="container mx-auto py-8 px-4">
         
-        {/* Progress Bar */}
         <div className="max-w-4xl mx-auto mb-12">
              <div className="flex items-center justify-between mb-2 text-sm font-bold uppercase tracking-widest text-[var(--color-text-muted)]">
                  <span className={step >= 1 ? 'text-gold-500' : ''}>Service</span>
@@ -358,7 +357,6 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
             <h2 className="text-2xl font-semibold mb-4 text-gold-500">Barber</h2>
             <div className="space-y-2">
               
-              {/* ANY BARBER BUTTON */}
               <button 
                 onClick={() => { setSelectedBarber({ id: 'any', name: 'Beliebiger Barber' }); setSelectedDate(today); setStep(3); }} 
                 disabled={step < 2} 

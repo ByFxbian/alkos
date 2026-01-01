@@ -52,13 +52,11 @@ export async function POST(req: Request) {
     const appointmentStartTime = new Date(startTime);
     const appointmentEndTime = new Date(appointmentStartTime.getTime() + service.duration * 60000);
 
-    // Logic for 'Any Barber'
     if (barberId === 'any') {
       if (!locationId) {
         return NextResponse.json({ error: 'Standort ID erforderlich für automatische Zuweisung.' }, { status: 400 });
       }
 
-      // Find potential barbers at this location
       const potentialBarbers = await prisma.user.findMany({
         where: {
           locations: { some: { id: locationId } },
@@ -66,25 +64,15 @@ export async function POST(req: Request) {
         }
       });
 
-      // Find one who is free
       let assignedBarberId: string | null = null;
 
       for (const barber of potentialBarbers) {
-        // Check Availability
         const dayOfWeek = appointmentStartTime.getDay();
         const availability = await prisma.availability.findFirst({
           where: { barberId: barber.id, dayOfWeek }
         });
 
         if (!availability) continue;
-
-        // Check bounds (simple check, assuming startTime is correct date)
-        // Ideally we convert to Vienna time to compare hours
-        // For now, relying on availability check logic similar to GET availability
-        // But simplified: Just check if *start* and *end* of appointment are within availability hours
-        // And no conflicts.
-
-        // To be precise, we reuse the conflict check logic:
 
         const hasConflict = await prisma.appointment.findFirst({
           where: {
@@ -106,7 +94,7 @@ export async function POST(req: Request) {
 
         if (!hasConflict && !hasBlock) {
           assignedBarberId = barber.id;
-          break; // Found one!
+          break;
         }
       }
 

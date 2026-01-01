@@ -31,12 +31,7 @@ export default function AdminWebTeamPage() {
 
   const isAdmin = session?.user?.role === 'ADMIN';
 
-  // Fetch Logic
   useEffect(() => {
-    // We fetch everything, but API should ideally filter. 
-    // Since this is a public website team list, maybe it's fine to see all?
-    // Prompt says: "Store Manager für Baden... Service, Mitarbeiter... bearbeitet".
-    // So distinct lists per location is better.
     Promise.all([
         fetch('/api/admin/team').then(r => r.json()),
         fetch('/api/admin/locations').then(r => r.json())
@@ -56,9 +51,6 @@ export default function AdminWebTeamPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Filter Logic for non-admin: Can only assign to own locations?
-    // For simplicity here in Client: If not Admin, we trust the API to validate 'locationIds' ownership.
-    
     const url = isEditing ? `/api/admin/team/${isEditing}` : '/api/admin/team';
     const method = isEditing ? 'PUT' : 'POST';
 
@@ -75,7 +67,6 @@ export default function AdminWebTeamPage() {
   };
 
   const handleEdit = (m: TeamMember) => {
-    // SECURITY: If strict mode, check if User is allowed to edit this member (has shared location)
     setIsEditing(m.id);
     setFormData({
         name: m.name,
@@ -119,7 +110,6 @@ export default function AdminWebTeamPage() {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Editor Form */}
         <div className="bg-[var(--color-surface-2)] p-6 rounded-xl border border-[var(--color-border)] h-fit shadow-sm">
             <h2 className="text-xl font-bold mb-4 text-[var(--color-text)]">
                 {isEditing ? 'Mitglied bearbeiten' : 'Neues Mitglied'}
@@ -187,7 +177,6 @@ export default function AdminWebTeamPage() {
             </form>
         </div>
 
-        {/* Member List */}
         <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
             {members.map(m => (
                 <div key={m.id} className="p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] flex gap-4 hover:border-[var(--color-gold-500)]/30 transition-colors group">
@@ -206,7 +195,6 @@ export default function AdminWebTeamPage() {
                                 <h3 className="font-bold text-[var(--color-text)] truncate">{m.name}</h3>
                                 <p className="text-xs text-[var(--color-gold-500)] uppercase font-medium tracking-wide">{m.role}</p>
                              </div>
-                             {/* Actions visible on hover or always on mobile? Keeping always visible for usability */}
                              <div className="flex gap-1">
                                 <button onClick={() => handleEdit(m)} className="p-1.5 rounded-md hover:bg-[var(--color-surface-3)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors" title="Edit">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>

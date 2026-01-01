@@ -20,12 +20,10 @@ export async function GET() {
     const allowedIds = user?.locations.map(l => l.id) || [];
 
     if (allowedIds.length === 0) {
-      // If no location assigned, show nothing? Or generic global if any?
-      // Safest: Show nothing.
+
       return NextResponse.json([]);
     }
 
-    // Show members that are associated with AT LEAST ONE of the user's allowed locations.
     whereClause = {
       locations: {
         some: { id: { in: allowedIds } }
@@ -50,7 +48,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const { name, role, bio, image, sortOrder, locationIds } = body;
 
-  // SECURITY: Validate Location Access
+
   if (session.user.role !== 'ADMIN') {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -58,7 +56,6 @@ export async function POST(req: Request) {
     });
     const allowedIds = user?.locations.map(l => l.id) || [];
 
-    // Check if ALL requested locationIds are allowed.
     const isValid = locationIds.every((id: string) => allowedIds.includes(id));
     if (!isValid) {
       return NextResponse.json({ error: "Forbidden: You cannot assign members to locations you do not manage." }, { status: 403 });

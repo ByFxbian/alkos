@@ -74,7 +74,6 @@ export default function Navbar({ locationSlug }: NavbarProps) {
           ALKOS
         </Link>
 
-        {/* Desktop Menu */}
         <div className="hidden md:flex items-center space-x-6">
           <div className="relative group py-4">
                 <button className="flex items-center gap-1 font-bold text-sm uppercase hover:text-gold-500 transition-colors">
@@ -173,7 +172,6 @@ export default function Navbar({ locationSlug }: NavbarProps) {
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {isMobileMenuOpen && (
             <motion.div 

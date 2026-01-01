@@ -10,25 +10,19 @@ const serviceSchema = z.object({
   name: z.string().min(1, "Name ist erforderlich"),
   duration: z.coerce.number().int().positive("Dauer muss positiv sein"),
   price: z.coerce.number().positive("Preis muss positiv sein"),
-  locationId: z.string().nullable().optional(), // FIX: Global services use null
+  locationId: z.string().nullable().optional(),
 });
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
 
-  // Authorization Check
   if (!session || !['ADMIN', 'HEADOFBARBER', 'BARBER'].includes(session.user.role)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Role-Based Filtering
   const isAdmin = session.user.role === 'ADMIN';
   const userLocs = !isAdmin ? await prisma.user.findUnique({ where: { id: session.user.id }, include: { locations: true } }) : null;
   const allowedIds = userLocs?.locations.map(l => l.id) || [];
-
-  // Filter Logic:
-  // ADMIN: All.
-  // OTHERS: Global (null) OR Assigned IDs.
 
   let whereClause: any = {};
   if (!isAdmin) {
@@ -75,14 +69,12 @@ export async function POST(req: Request) {
 
     const { name, duration, price, locationId } = validation.data;
 
-    // SECURITY: If not Admin, ensure target locationId belongs to User
     if (session.user.role !== 'ADMIN') {
       const user = await prisma.user.findUnique({
         where: { id: session.user.id },
         include: { locations: { select: { id: true } } }
       });
 
-      // If trying to create Global Service (null) -> Only Admin!
       if (!locationId) {
         return NextResponse.json({ error: 'Nur Admins können globale Services erstellen.' }, { status: 403 });
       }

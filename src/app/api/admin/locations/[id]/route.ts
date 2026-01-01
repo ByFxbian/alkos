@@ -12,7 +12,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   const { id } = await params;
 
-  // SECURITY: Authorization Check for Head of Barber
   if (session.user.role === 'HEADOFBARBER') {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -27,9 +26,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   const body = await req.json();
 
-  // Sanitize Body: Head of Barber might not be allowed to change SLUG (URL).
-  // Admin can change everything.
-  // Ideally we should strip 'slug' from body if not admin.
   if (session.user.role !== 'ADMIN') {
     delete body.slug;
   }
@@ -47,7 +43,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
-  // STRICT: Only Admin can delete
   if (!session || session.user.role !== 'ADMIN') return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;

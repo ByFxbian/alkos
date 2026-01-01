@@ -9,10 +9,6 @@ export async function GET() {
   if (!session || !['ADMIN', 'HEADOFBARBER', 'BARBER'].includes(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  // Optimize: If ADMIN -> Fetch All.
-  // If HEADOFBARBER/BARBER -> Fetch only assigned.
-
   let whereClause = {};
 
   if (session.user.role !== 'ADMIN') {
@@ -23,7 +19,6 @@ export async function GET() {
 
     const assignedIds = user?.locations.map(l => l.id) || [];
 
-    // If no locations assigned, return empty (or handle as error)
     if (assignedIds.length === 0) {
       return NextResponse.json([]);
     }
@@ -44,7 +39,6 @@ export async function GET() {
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
 
-  // STRICT: Only ADMIN can create locations.
   if (!session || session.user.role !== 'ADMIN') {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
