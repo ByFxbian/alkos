@@ -228,7 +228,31 @@ export default function Navbar({ locationSlug }: NavbarProps) {
                              <div className="space-y-4">
                                  <p className="text-sm opacity-60">Hallo, {session.user?.name}</p>
                                  <Link href="/meine-termine" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>Meine Termine</Link>
-                                 <button onClick={() => { signOut({ callbackUrl: '/' }); setIsMobileMenuOpen(false); }} className="text-red-500 text-sm font-bold uppercase tracking-widest">Abmelden</button>
+                                 <Link href="/einstellungen" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>Einstellungen</Link>
+
+                                 {(session.user?.role === 'BARBER' || session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
+                                     <Link href="/admin/kalender" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>Terminkalender</Link>
+                                 )}
+                                 {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
+                                     <Link href="/admin/friseure" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>Nutzer verwalten</Link>
+                                 )}
+                                 {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
+                                   <Link href="/admin/services" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>Services verwalten</Link>
+                                 )}
+
+                                 {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
+                                     <Link href="/admin/dashboard" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
+                                 )}
+
+                                 {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
+                                     <Link href="/admin/web-team" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>Teammitglieder</Link>
+                                 )}
+
+                                 {(session.user?.role === 'ADMIN') && (
+                                     <Link href="/admin/locations" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>Locations</Link>
+                                 )}
+
+                                 <button onClick={() => { signOut({ callbackUrl: '/' }); setIsMobileMenuOpen(false); }} className="text-red-500 text-sm font-bold uppercase tracking-widest mt-4">Abmelden</button>
                              </div>
                          ) : (
                              <Link href="/login" className="block w-full py-4 bg-gold-500 text-black font-bold text-lg rounded-xl shadow-lg shadow-gold-500/20" onClick={() => setIsMobileMenuOpen(false)}>
