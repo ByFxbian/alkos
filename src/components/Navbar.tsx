@@ -181,9 +181,16 @@ export default function Navbar({ locationSlug }: NavbarProps) {
                 transition={{ duration: 0.3 }}
                 className="fixed inset-0 z-[100] bg-[var(--color-background)]/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 md:hidden h-dvh"
             >
-                <div className="space-y-6 text-center w-full max-w-sm">
+                <button 
+                  onClick={() => setIsMobileMenuOpen(false)} 
+                  className="absolute top-6 right-6 text-2xl p-2 rounded-full hover:bg-[var(--color-surface-2)] transition-colors"
+                >
+                  ✕
+                </button>
+
+                <div className="space-y-6 text-center w-full max-w-sm h-full overflow-y-auto py-12 px-4 no-scrollbar">
                     
-                    <div className="mb-8">
+                    <div className="mb-6">
                         <button 
                             onClick={() => setIsMobileLocationOpen(!isMobileLocationOpen)}
                             className="bg-[var(--color-surface-2)] p-4 rounded-xl w-full flex items-center justify-between border border-[var(--color-border)]"
@@ -217,42 +224,54 @@ export default function Navbar({ locationSlug }: NavbarProps) {
                         </AnimatePresence>
                     </div>
 
-                    <nav className="flex flex-col gap-4 text-2xl font-bold">
+                    <nav className="flex flex-col gap-3 text-2xl font-bold">
                         <Link href={getLink('/termine')} className="hover:text-gold-500 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Termine</Link>
                         <Link href={getLink('/team')} className="hover:text-gold-500 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Team</Link>
                         <Link href={getLink('/gallerie')} className="hover:text-gold-500 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Gallerie</Link>
                     </nav>
 
-                    <div className="pt-8 border-t border-[var(--color-border)] w-full">
+                    <div className="pt-6 border-t border-[var(--color-border)] w-full">
                          {status === 'authenticated' ? (
-                             <div className="space-y-4">
+                             <div className="space-y-3">
                                  <p className="text-sm opacity-60">Hallo, {session.user?.name}</p>
-                                 <Link href="/meine-termine" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>Meine Termine</Link>
-                                 <Link href="/einstellungen" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>Einstellungen</Link>
+                                 <Link href="/meine-termine" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Meine Termine</Link>
+                                 <Link href="/einstellungen" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Einstellungen</Link>
 
                                  {(session.user?.role === 'BARBER' || session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
-                                     <Link href="/admin/kalender" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>Terminkalender</Link>
-                                 )}
-                                 {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
-                                     <Link href="/admin/friseure" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>Nutzer verwalten</Link>
-                                 )}
-                                 {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
-                                   <Link href="/admin/services" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>Services verwalten</Link>
+                                     <div className="mt-4 border-t border-[var(--color-border)] pt-4">
+                                         <p className="text-xs uppercase tracking-widest text-[var(--color-text-muted)] mb-3 font-bold">Verwaltung</p>
+                                         <div className="grid grid-cols-2 gap-2">
+                                             <Link href="/admin/kalender" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                                 📅 <span>Kalender</span>
+                                             </Link>
+                                             
+                                             {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
+                                                 <>
+                                                    <Link href="/admin/dashboard" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                                        📊 <span>Dashboard</span>
+                                                    </Link>
+                                                    <Link href="/admin/friseure" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                                        👥 <span>Nutzer</span>
+                                                    </Link>
+                                                    <Link href="/admin/web-team" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                                        ✂️ <span>Team</span>
+                                                    </Link>
+                                                    <Link href="/admin/services" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                                        🏷️ <span>Services</span>
+                                                    </Link>
+                                                 </>
+                                             )}
+
+                                             {(session.user?.role === 'ADMIN') && (
+                                                 <Link href="/admin/locations" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                                     📍 <span>Locations</span>
+                                                 </Link>
+                                             )}
+                                         </div>
+                                     </div>
                                  )}
 
-                                 {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
-                                     <Link href="/admin/dashboard" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
-                                 )}
-
-                                 {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
-                                     <Link href="/admin/web-team" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>Teammitglieder</Link>
-                                 )}
-
-                                 {(session.user?.role === 'ADMIN') && (
-                                     <Link href="/admin/locations" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold" onClick={() => setIsMobileMenuOpen(false)}>Locations</Link>
-                                 )}
-
-                                 <button onClick={() => { signOut({ callbackUrl: '/' }); setIsMobileMenuOpen(false); }} className="text-red-500 text-sm font-bold uppercase tracking-widest mt-4">Abmelden</button>
+                                 <button onClick={() => { signOut({ callbackUrl: '/' }); setIsMobileMenuOpen(false); }} className="w-full text-red-500 text-sm font-bold uppercase tracking-widest py-4 hover:bg-red-500/10 rounded-lg transition-colors mt-2">Abmelden</button>
                              </div>
                          ) : (
                              <Link href="/login" className="block w-full py-4 bg-gold-500 text-black font-bold text-lg rounded-xl shadow-lg shadow-gold-500/20" onClick={() => setIsMobileMenuOpen(false)}>
@@ -261,7 +280,7 @@ export default function Navbar({ locationSlug }: NavbarProps) {
                          )}
                     </div>
 
-                    <div className="absolute bottom-8 left-0 w-full text-center">
+                    <div className="pt-8 w-full text-center pb-8">
                         <Link href={getLink('/fehler-melden')} className="text-xs text-red-400 hover:text-red-300" onClick={() => setIsMobileMenuOpen(false)}>Fehler melden</Link>
                     </div>
 
