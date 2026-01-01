@@ -179,7 +179,7 @@ export default function Navbar({ locationSlug }: NavbarProps) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="fixed inset-0 z-40 bg-[var(--color-bg)]/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 md:hidden"
+                className="fixed inset-0 z-[100] bg-[var(--color-background)]/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 md:hidden h-dvh"
             >
                 <div className="space-y-6 text-center w-full max-w-sm">
                     
