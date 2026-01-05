@@ -24,8 +24,13 @@ export default function Navbar({ locationSlug }: NavbarProps) {
   const pathname = usePathname();
 
   const [isMobileLocationOpen, setIsMobileLocationOpen] = useState(false);
+  const [savedLocation, setSavedLocation] = useState<string>("");
 
   useEffect(() => {
+    // Restore saved location for navigation fallback
+    const saved = localStorage.getItem('alkos-location');
+    if (saved) setSavedLocation(saved);
+
     fetch('/api/public/location-data')
       .then(r => r.json())
       .then(d => {
@@ -37,6 +42,7 @@ export default function Navbar({ locationSlug }: NavbarProps) {
 
   const handleLocationSwitch = (slug: string) => {
     localStorage.setItem('alkos-location', slug);
+    setSavedLocation(slug);
     setIsMobileMenuOpen(false);
     if (locationSlug) {
         const newPath = pathname.replace(`/${locationSlug}`, `/${slug}`);
@@ -47,8 +53,9 @@ export default function Navbar({ locationSlug }: NavbarProps) {
   };
 
   const getLink = (path: string) => {
-        if (!locationSlug) return path;
-        return `/${locationSlug}${path}`;
+        const targetSlug = locationSlug || savedLocation;
+        if (!targetSlug) return '/';
+        return `/${targetSlug}${path}`;
     };
 
   useEffect(() => {
