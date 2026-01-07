@@ -16,8 +16,8 @@ Built with a focus on **speed, SEO, and clean UX**.
 
 ## Local Setup
 ```bash
-pnpm install
-pnpm dev
+npm install
+npm dev
 ```
 
 ## Notes
