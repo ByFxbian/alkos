@@ -18,6 +18,7 @@ export default function GatewayPage() {
   const [locations, setLocations] = useState<SimpleLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [savedLocationSlug, setSavedLocationSlug] = useState<string | null>(null);
+  const [hoveredLocation, setHoveredLocation] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('alkos-location');
@@ -40,6 +41,12 @@ export default function GatewayPage() {
 
   const savedLocationObj = locations.find(l => l.slug === savedLocationSlug);
 
+  const isRedTheme = hoveredLocation === 'baden';
+  const themeStyle = isRedTheme ? {
+      '--color-gold-500': '#ef4444',
+      '--color-gold-400': '#f87171',
+  } as React.CSSProperties : {};
+
   if (loading) return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center z-50">
           <motion.div 
@@ -59,9 +66,9 @@ export default function GatewayPage() {
   );
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-black flex flex-col items-center justify-center p-4">
+    <div className="relative min-h-screen w-full overflow-hidden bg-black flex flex-col items-center justify-center p-4 transition-colors duration-500" style={themeStyle}>
       <div className="absolute inset-0 opacity-40">
-         <Image src="/images/hero-bg.jpeg" alt="Background" fill className="object-cover blur-md scale-110 animate-pulse-slow" />
+         <Image src="/images/hero-bg.jpeg" alt="Background" fill className="object-cover blur-md scale-110 animate-pulse [animation-duration:7s]" />
       </div>
       
       <div className="relative z-10 w-full max-w-5xl">
@@ -97,7 +104,7 @@ export default function GatewayPage() {
             className="text-center mb-16"
         >
             <h1 className="text-5xl md:text-8xl font-extrabold text-white mb-6 tracking-tighter drop-shadow-2xl">
-                ALKOS <span className="text-gold-500">BARBER</span>
+                ALKOS <span className="text-gold-500 transition-colors duration-500">BARBER</span>
             </h1>
             <p className="text-xl md:text-2xl text-neutral-300 uppercase tracking-widest font-light">
                 Wähle deine Location
@@ -114,7 +121,9 @@ export default function GatewayPage() {
                     whileHover={{ y: -10, scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleSelect(loc.slug)}
-                    className="group cursor-pointer relative h-72 md:h-96 rounded-3xl overflow-hidden border border-white/10 hover:border-gold-500 transition-all duration-500 shadow-2xl"
+                    onMouseEnter={() => setHoveredLocation(loc.slug)}
+                    onMouseLeave={() => setHoveredLocation(null)}
+                    className="group cursor-pointer relative h-72 md:h-96 rounded-3xl overflow-hidden border border-white/10 hover:border-gold-500 transition-colors duration-500 shadow-2xl"
                 >
                     <Image 
                         src={loc.heroImage || '/images/hero-bg.jpeg'} 
