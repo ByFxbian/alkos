@@ -1,7 +1,5 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import AdminLocationFilter from "@/components/AdminLocationFilter";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,19 +8,9 @@ import { SignOutButton } from "@/components/SignOutButton";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
 
+
   if (!session || !['ADMIN', 'HEADOFBARBER', 'BARBER'].includes(session.user.role)) {
       redirect('/api/auth/signin');
-  }
-
-  let availableLocations: {id: string, name: string}[] = [];
-  if (session.user.role === 'ADMIN') {
-      availableLocations = await prisma.location.findMany({ select: { id: true, name: true } });
-  } else {
-      const user = await prisma.user.findUnique({
-          where: { id: session.user.id },
-          include: { locations: { select: { id: true, name: true } } }
-      });
-      availableLocations = user?.locations || [];
   }
 
   return (
@@ -86,12 +74,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                    <span className="text-xs font-mono text-[var(--color-text-muted)] hidden lg:inline-block">
                        {new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                    </span>
-                   
-                   {availableLocations.length > 1 && (
-                       <div className="relative z-20">
-                           <AdminLocationFilter locations={availableLocations} />
-                       </div>
-                   )}
                </div>
           </header>
           

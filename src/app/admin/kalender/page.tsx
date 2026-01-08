@@ -7,6 +7,7 @@ import BarberSchedule from '@/components/BarberSchedule';
 import { Role } from '@/generated/prisma';
 import { BlockedTimeManager } from '@/components/BlockedTimeManager';
 import { cookies } from 'next/headers';
+import AdminLocationFilter from '@/components/AdminLocationFilter';
 
 export const revalidate = 0;
 
@@ -20,17 +21,24 @@ export default async function KalenderAdminPage() {
 
   const dbUser = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { locations: true }
+      include: { locations: { select: { id: true, name: true } } }
   });
 
   if (!dbUser) {
       redirect('/api/auth/signin');
   }
-
+  
   const isGlobalAdmin = dbUser.role === 'ADMIN';
   
+  let availableLocations: {id: string, name: string}[] = [];
+  if (isGlobalAdmin) {
+      availableLocations = await prisma.location.findMany({ select: { id: true, name: true } });
+  } else {
+      availableLocations = dbUser.locations;
+  }
+
   const allowedLocationIds = isGlobalAdmin
-      ? (await prisma.location.findMany({ select: { id: true } })).map(l => l.id)
+      ? availableLocations.map(l => l.id)
       : dbUser.locations.map(l => l.id);
 
   const cookieStore = await cookies();
@@ -143,11 +151,18 @@ export default async function KalenderAdminPage() {
                     Kommende Buchungen für {queryLocationIds.length > 1 ? 'alle Standorte' : 'den gewählten Standort'}.
                 </p>
              </div>
-             {queryLocationIds.length === 1 && (
-                 <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold">
-                     Gefiltert
-                 </span>
-             )}
+             <div className="flex items-center gap-4">
+                 {queryLocationIds.length === 1 && (
+                     <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold hidden md:inline-block">
+                         Gefiltert
+                     </span>
+                 )}
+                 {availableLocations.length > 1 && isAdminOrHead && (
+                     <div className="relative z-20">
+                         <AdminLocationFilter locations={availableLocations} />
+                     </div>
+                 )}
+             </div>
         </div>
 
         <div className="bg-[var(--color-surface-2)] p-6 rounded-xl border border-[var(--color-border)] shadow-sm">

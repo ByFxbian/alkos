@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma';
 import StatCard from '@/components/StatCard';
 import RevenueChart from '@/components/RevenueChart';
 import Image from 'next/image';
+import AdminLocationFilter from '@/components/AdminLocationFilter';
+import { cookies } from 'next/headers';
 
 export const revalidate = 60;
 
@@ -17,18 +19,29 @@ export default async function AdminDashboardPage() {
 
   const currentUser = await prisma.user.findUnique({
     where: { email: session.user.email },
-    include: { locations: true },
+    include: { locations: { select: { id: true, name: true } } },
   });
 
   if (!currentUser) {
     redirect('/api/auth/signin');
   }
 
+  let availableLocations: {id: string, name: string}[] = [];
+  if (currentUser.role === 'ADMIN') {
+      availableLocations = await prisma.location.findMany({ select: { id: true, name: true } });
+  } else {
+      availableLocations = currentUser.locations;
+  }
+
+  const userAllowedLocationIds = currentUser.role === 'ADMIN' 
+    ? availableLocations.map(l => l.id)
+    : currentUser.locations.map(loc => loc.id);
+
   const authorizedLocationIds = currentUser.role === 'ADMIN' 
     ? undefined 
     : currentUser.locations.map(loc => loc.id);
-  
-  if (currentUser.role === 'HEADOFBARBER' && (!authorizedLocationIds || authorizedLocationIds.length === 0)) {
+
+  if (currentUser.role === 'HEADOFBARBER' && (!userAllowedLocationIds || userAllowedLocationIds.length === 0)) {
      return (
         <div className="p-8 text-center text-red-500">
             <h1 className="text-xl font-bold">Kein Standort zugewiesen</h1>
@@ -37,18 +50,26 @@ export default async function AdminDashboardPage() {
      );
   }
 
+  const cookieStore = await cookies();
+  const filterId = cookieStore.get('admin_location_filter')?.value;
+
+  let effectiveLocationIds = userAllowedLocationIds;
+
+  if (filterId && filterId !== 'ALL') {
+      if (userAllowedLocationIds.includes(filterId)) {
+        effectiveLocationIds = [filterId];
+      }
+  }
+
+  const isFiltered = filterId && filterId !== 'ALL';
+
   const now = new Date();
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  const locationFilter = authorizedLocationIds 
-    ? { locationId: { in: authorizedLocationIds } } 
-    : {};
-  
-  const userLocationFilter = authorizedLocationIds
-    ? { locations: { some: { id: { in: authorizedLocationIds } } } }
-    : {};
+  const locationFilter = { locationId: { in: effectiveLocationIds } };
+  const userLocationFilter = { locations: { some: { id: { in: effectiveLocationIds } } } };
 
   const [
     barbers,
@@ -77,7 +98,7 @@ export default async function AdminDashboardPage() {
           select: { price: true, name: true }
         },
         barber: {
-          select: { id: true, name: true }
+          select: { id: true, name: true, image: true }
         },
         location: { 
             select: { name: true }
@@ -136,15 +157,23 @@ export default async function AdminDashboardPage() {
   }
 
   const barberStatsMap: Record<string, { name: string, image: string | null, appointments: number, revenue: number }> = {};
+
   barbers.forEach(b => {
       barberStatsMap[b.id] = { name: b.name || 'Unbekannt', image: b.image, appointments: 0, revenue: 0 };
   });
 
   for (const app of appointmentsNext7Days) {
-     if (barberStatsMap[app.barberId]) {
-         barberStatsMap[app.barberId].appointments++;
-         barberStatsMap[app.barberId].revenue += app.service.price;
+     if (!barberStatsMap[app.barberId]) {
+         barberStatsMap[app.barberId] = {
+             name: app.barber.name || 'Ehemalig / Unbekannt',
+             image: app.barber.image,
+             appointments: 0,
+             revenue: 0
+         };
      }
+
+     barberStatsMap[app.barberId].appointments++;
+     barberStatsMap[app.barberId].revenue += app.service.price;
   }
 
   const barberStatsArray = Object.values(barberStatsMap).sort((a,b) => b.revenue - a.revenue);
@@ -159,14 +188,21 @@ export default async function AdminDashboardPage() {
             <h1 className="text-4xl font-bold tracking-tight text-[var(--color-text)]">Dashboard</h1>
             <p className="mt-2 text-[var(--color-text-muted)]">
                 Willkommen zurück, {session.user.name}.
-                {authorizedLocationIds ? ' Standort-Ansicht.' : ' Gesamtübersicht.'}
+                {isFiltered ? ' Gefilterte Ansicht.' : ' Gesamtübersicht.'}
             </p>
         </div>
-        {authorizedLocationIds && (
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                Gefiltert: {authorizedLocationIds.length} Standort(e)
-            </span>
-        )}
+        <div className="flex items-center gap-4">
+            {isFiltered && (
+                <span className="hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    Gefiltert: {effectiveLocationIds.length} Standort(e)
+                </span>
+            )}
+            {availableLocations.length > 1 && (
+                <div className="relative z-20">
+                    <AdminLocationFilter locations={availableLocations} />
+                </div>
+            )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -267,7 +303,7 @@ export default async function AdminDashboardPage() {
         <div className="lg:col-span-2 space-y-6">
              <h2 className="text-2xl font-bold tracking-tight text-[var(--color-text)]">Umsatzverlauf</h2>
              <div className="p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm min-h-[300px]">
-                 <RevenueChart barbers={barbers} />
+                 <RevenueChart key={filterId || 'all'} barbers={barbers} />
              </div>
         </div>
       </div>

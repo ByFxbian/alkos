@@ -113,9 +113,25 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   }
 
   try {
+    const appointmentCount = await prisma.appointment.count({
+      where: {
+        OR: [
+          { customerId: targetUserId },
+          { barberId: targetUserId }
+        ]
+      }
+    });
+
+    if (appointmentCount > 0) {
+      return NextResponse.json(
+        {
+          error: 'Datenintegrität geschützt: Dieser Benutzer hat eine Terminhistorie. Bitte ändern Sie die Rolle zu "KUNDE" oder sperren Sie den Account, anstatt ihn zu löschen.'
+        },
+        { status: 400 }
+      );
+    }
+
     await prisma.$transaction([
-      prisma.appointment.deleteMany({ where: { customerId: targetUserId } }),
-      prisma.appointment.deleteMany({ where: { barberId: targetUserId } }),
       prisma.availability.deleteMany({ where: { barberId: targetUserId } }),
       prisma.blockedTime.deleteMany({ where: { barberId: targetUserId } }),
       prisma.account.deleteMany({ where: { userId: targetUserId } }),
