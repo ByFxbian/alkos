@@ -77,6 +77,10 @@ export default function Navbar() {
                   {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
                       <Link href="/admin/dashboard" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Dashboard</Link>
                   )}
+
+                  {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
+                      <Link href="/admin/einstellungen" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Walk-In Einstellungen</Link>
+                  )}
                   
                   <hr className=" my-1" style={{ borderColor: 'var(--color-border)' }}/>
                   <button onClick={() => signOut({ callbackUrl: '/' })} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-red-500 hover:text-white">

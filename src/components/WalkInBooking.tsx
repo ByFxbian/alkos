@@ -29,6 +29,7 @@ type Step = 'pin' | 'name' | 'service' | 'booking' | 'confirmation';
 export default function WalkInBooking({ services }: WalkInBookingProps) {
   const [step, setStep] = useState<Step>('pin');
   const [pin, setPin] = useState('');
+  const [pinLength, setPinLength] = useState(4);
   const [pinError, setPinError] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [customerName, setCustomerName] = useState('');
@@ -44,10 +45,19 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
         setStep('name');
       }
     }
+
+    fetch('/api/walkin/info')
+      .then(res => res.json())
+      .then(data => {
+        if (data.pinLength) {
+          setPinLength(data.pinLength);
+        }
+      })
+      .catch(console.error);
   }, []);
 
   const handlePinInput = (digit: string) => {
-    if (pin.length < 8) {
+    if (pin.length < pinLength) {
       setPin(prev => prev + digit);
       setPinError(false);
     }
@@ -64,7 +74,7 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
   };
 
   const verifyPin = async () => {
-    if (pin.length < 4) {
+    if (pin.length < pinLength) {
       setPinError(true);
       return;
     }
@@ -160,7 +170,7 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
               transition={{ duration: 0.4 }}
               className="flex justify-center gap-3 mb-8"
             >
-              {[...Array(6)].map((_, i) => (
+              {[...Array(pinLength)].map((_, i) => (
                 <div
                   key={i}
                   className={`w-4 h-4 rounded-full transition-all duration-200 ${
