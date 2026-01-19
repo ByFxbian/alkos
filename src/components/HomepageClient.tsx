@@ -35,13 +35,6 @@ const teamMembers = [
         imageUrl: 'https://srtkhlfsd31dcfzp.public.blob.vercel-storage.com/ADAM.png',
         bio: ''
     },
-    {
-        id: 4,
-        name: 'Simon',
-        role: 'Barber',
-        imageUrl: 'https://srtkhlfsd31dcfzp.public.blob.vercel-storage.com/SIMON.png',
-        bio: ''
-    },
 ]
 
 const salonImages = [
