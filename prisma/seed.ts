@@ -3,9 +3,9 @@ const prisma = new PrismaClient();
 import bcrypt from 'bcrypt';
 
 async function main() {
-    console.log(`Start seeding ...`);
+  console.log(`Start seeding ...`);
 
-    await prisma.service.deleteMany();
+  await prisma.service.deleteMany();
 
   const service1 = await prisma.service.create({
     data: {
@@ -23,7 +23,7 @@ async function main() {
     },
   });
 
-   const service3 = await prisma.service.create({
+  const service3 = await prisma.service.create({
     data: {
       name: 'Combo',
       duration: 30,
@@ -59,6 +59,28 @@ async function main() {
       price: 75.00,
     },
   });
+
+  const walkInUser = await prisma.user.upsert({
+    where: { email: 'walkin@alkosbarber.at' },
+    update: {},
+    create: {
+      email: 'walkin@alkosbarber.at',
+      name: 'Walk-In Kunde',
+      role: 'KUNDE',
+      emailVerified: new Date(),
+    },
+  });
+  console.log('Walk-In User created:', walkInUser.id);
+
+  const walkInPinSetting = await prisma.settings.upsert({
+    where: { key: 'walkin_pin' },
+    update: {},
+    create: {
+      key: 'walkin_pin',
+      value: '1234',
+    },
+  });
+  console.log('Walk-In PIN setting created:', walkInPinSetting.key);
 
   console.log(`Seeding finished.`);
   console.log({ service1, service2, service3, service4, service5, service6, service7 });

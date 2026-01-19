@@ -125,6 +125,8 @@ model Appointment {
   endTime   DateTime
   createdAt DateTime @default(now())
 
+  walkInName String?  // Name des Walk-In Kunden (nur für Walk-Ins ausgefüllt)
+
   customerId String
   customer   User   @relation("CustomerAppointments", fields: [customerId], references: [id])
 
@@ -179,4 +181,11 @@ model BlockedTime {
   createdAt DateTime @default(now())
 
   @@index([barberId, startTime, endTime])
+}
+
+model Settings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
 }

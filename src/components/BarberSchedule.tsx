@@ -25,6 +25,7 @@ type FullAppointment = {
   id: string;
   startTime: Date;
   isFree: boolean;
+  walkInName?: string | null;
   service: { name: string };
   customer: CustomerDataForSchedule;
   barber: { name: string | null };
@@ -182,8 +183,9 @@ export default function BarberSchedule({ appointments, isAdmin }: BarberSchedule
                                                 <div className='min-w-0'>
                                                     <p className="font-bold text-lg truncate">{app.service.name}</p>
                                                     {app.isFree && <span className="text-xs font-bold uppercase text-green-400 bg-green-950 px-2 py-1 rounded truncate">Stempelpass</span>}
+                                                    {app.walkInName && <span className="text-xs font-bold uppercase text-blue-400 bg-blue-950 px-2 py-1 rounded truncate ml-1">Walk-In</span>}
                                                     <p  className="text-sm truncate" style={{ color: 'var(--color-text-muted)' }}>
-                                                        Kunde: {app.customer.name}
+                                                        Kunde: {app.walkInName || app.customer.name}
                                                     </p>
                                                     {isAdmin && (
                                                         <p className="text-sm truncate" style={{ color: 'var(--color-text-muted)' }}>
