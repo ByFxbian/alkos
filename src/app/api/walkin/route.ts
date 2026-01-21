@@ -98,7 +98,7 @@ async function findNextAvailableSlot(serviceId: string): Promise<AvailableSlot |
 
 export async function POST(req: Request) {
     try {
-        const { customerName, serviceId } = await req.json();
+        const { customerName, serviceId, barberId, startTime } = await req.json();
 
         if (!customerName || typeof customerName !== 'string' || customerName.trim().length < 2) {
             return NextResponse.json({ error: 'Bitte gib deinen Namen ein (mind. 2 Zeichen)' }, { status: 400 });
@@ -122,7 +122,19 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Service nicht gefunden' }, { status: 404 });
         }
 
-        const nextSlot = await findNextAvailableSlot(serviceId);
+        let nextSlot: AvailableSlot | null = null;
+
+        if (barberId && startTime) {
+            const requestedTime = new Date(startTime);
+            nextSlot = {
+                slot: requestedTime,
+                barberId: barberId,
+                barberName: 'Selected Barber'
+            };
+        } else {
+            nextSlot = await findNextAvailableSlot(serviceId);
+        }
+
         if (!nextSlot) {
             return NextResponse.json({ error: 'Heute sind leider keine Termine mehr frei' }, { status: 404 });
         }

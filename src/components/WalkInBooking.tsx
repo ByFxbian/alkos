@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import Image from 'next/image';
 
 interface Service {
   id: string;
@@ -24,7 +25,15 @@ interface BookingResult {
   barberName: string;
 }
 
-type Step = 'pin' | 'name' | 'service' | 'booking' | 'confirmation';
+interface BarberSlot {
+  barberId: string;
+  barberName: string;
+  barberImage: string | null;
+  slot: string;
+  isEarliest: boolean;
+}
+
+type Step = 'pin' | 'name' | 'service' | 'slot-selection' | 'booking' | 'confirmation';
 
 export default function WalkInBooking({ services }: WalkInBookingProps) {
   const [step, setStep] = useState<Step>('pin');
@@ -34,6 +43,8 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
   const [isVerifying, setIsVerifying] = useState(false);
   const [customerName, setCustomerName] = useState('');
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [availableSlots, setAvailableSlots] = useState<BarberSlot[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [bookingResult, setBookingResult] = useState<BookingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +113,29 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
     }
   };
 
-  const handleBooking = async () => {
+  const handleServiceSelect = async (service: Service) => {
+    setSelectedService(service);
+    setIsLoadingSlots(true);
+    setError(null);
+    
+    try {
+      const res = await fetch(`/api/walkin/slots?serviceId=${service.id}`);
+      const data = await res.json();
+      
+      if (res.ok && data.slots && data.slots.length > 0) {
+        setAvailableSlots(data.slots);
+        setStep('slot-selection');
+      } else {
+        setError(data.error || 'Momentan keine Termine frei.');
+      }
+    } catch {
+      setError('Fehler beim Laden der Termine.');
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  };
+
+  const handleBooking = async (barberId?: string, startTime?: string) => {
     if (!selectedService || !customerName.trim()) return;
 
     setIsBooking(true);
@@ -110,13 +143,20 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
     setStep('booking');
 
     try {
+      const body: any = {
+        customerName: customerName.trim(),
+        serviceId: selectedService.id,
+      };
+
+      if (barberId && startTime) {
+        body.barberId = barberId;
+        body.startTime = startTime;
+      }
+
       const res = await fetch('/api/walkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customerName: customerName.trim(),
-          serviceId: selectedService.id,
-        }),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
@@ -126,11 +166,11 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
         setStep('confirmation');
       } else {
         setError(data.error || 'Buchung fehlgeschlagen');
-        setStep('service');
+        setStep('slot-selection');
       }
     } catch {
       setError('Netzwerkfehler. Bitte versuche es erneut.');
-      setStep('service');
+      setStep('slot-selection');
     } finally {
       setIsBooking(false);
     }
@@ -139,6 +179,7 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
   const resetForNextCustomer = () => {
     setCustomerName('');
     setSelectedService(null);
+    setAvailableSlots([]);
     setBookingResult(null);
     setError(null);
     setStep('name');
@@ -149,7 +190,6 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <AnimatePresence mode="wait">
-        {/* PIN Screen */}
         {step === 'pin' && (
           <motion.div
             key="pin"
@@ -288,7 +328,8 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
               {services.map((service) => (
                 <button
                   key={service.id}
-                  onClick={() => setSelectedService(service)}
+                  onClick={() => handleServiceSelect(service)}
+                  disabled={isLoadingSlots && selectedService?.id === service.id}
                   className={`p-6 rounded-xl text-left transition-all ${
                     selectedService?.id === service.id
                       ? 'bg-gold-500 text-black scale-105 shadow-xl'
@@ -299,6 +340,9 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
                   <p className={`text-sm ${selectedService?.id === service.id ? 'text-black/70' : 'text-neutral-400'}`}>
                     {service.duration} Min • {service.price}€
                   </p>
+                  {isLoadingSlots && selectedService?.id === service.id && (
+                    <div className="mt-2 text-sm animate-pulse">Lade Termine...</div>
+                  )}
                 </button>
               ))}
             </div>
@@ -306,17 +350,91 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
             <div className="flex gap-4">
               <button
                 onClick={() => setStep('name')}
+                disabled={isLoadingSlots}
                 className="flex-1 py-5 rounded-xl font-bold text-lg bg-neutral-800 hover:bg-neutral-700 transition-all"
               >
                 Zurück
               </button>
+            </div>
+          </motion.div>
+        )}
+
+        {step === 'slot-selection' && (
+          <motion.div
+            key="slot-selection"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            className="w-full max-w-4xl"
+          >
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--color-gold-500)' }}>
+                Wähle deinen Barber
+              </h1>
+              <p className="text-neutral-400">Wann möchtest du dran kommen?</p>
+            </div>
+
+            {error && (
+              <div className="bg-red-500/20 border border-red-500 text-red-400 p-4 rounded-xl mb-6 text-center">
+                {error}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                <button
+                  onClick={() => handleBooking()}
+                  className="p-6 rounded-xl text-left transition-all bg-green-900/30 hover:bg-green-900/50 border border-green-500/50 group"
+                >
+                  <h3 className="text-xl font-bold text-green-400 mb-2">Schnellster Termin</h3>
+                  <div className="text-4xl font-bold text-white mb-2">
+                    {availableSlots[0] && format(new Date(availableSlots[0].slot), "HH:mm")}
+                  </div>
+                   <p className="text-sm text-green-300/70">Automatische Zuweisung</p>
+                </button>
+
+                {availableSlots.map(slot => (
+                     <button
+                     key={slot.barberId}
+                     onClick={() => handleBooking(slot.barberId, slot.slot)}
+                     className="p-6 rounded-xl text-left transition-all bg-neutral-800 hover:bg-neutral-700 flex flex-col"
+                   >
+                     <div className="flex items-center gap-4 mb-4">
+                        <div className="relative w-12 h-12 rounded-full overflow-hidden bg-neutral-700">
+                             {slot.barberImage ? (
+                                 <Image 
+                                    src={slot.barberImage} 
+                                    alt={slot.barberName} 
+                                    fill 
+                                    className="object-cover"
+                                 />
+                             ) : (
+                                <div className="w-full h-full flex items-center justify-center text-xl font-bold text-neutral-400">
+                                    {slot.barberName.charAt(0)}
+                                </div>
+                             )}
+                        </div>
+                        <div>
+                             <p className="font-bold text-lg">{slot.barberName}</p>
+                             {slot.isEarliest && <span className="text-xs text-green-400 bg-green-900/30 px-2 py-0.5 rounded">Frühester</span>}
+                        </div>
+                     </div>
+                     
+                     <div className="mt-auto">
+                       <p className="text-3xl font-bold text-gold-500">
+                         {format(new Date(slot.slot), "HH:mm")}
+                       </p>
+                       <p className="text-sm text-neutral-500">Uhr</p>
+                     </div>
+                   </button>
+                ))}
+            </div>
+
+            <div className="flex gap-4">
               <button
-                onClick={handleBooking}
-                disabled={!selectedService || isBooking}
-                className="flex-1 py-5 rounded-xl font-bold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: 'var(--color-gold-500)', color: 'black' }}
+                onClick={() => setStep('service')}
+                className="flex-1 py-5 rounded-xl font-bold text-lg bg-neutral-800 hover:bg-neutral-700 transition-all"
               >
-                Termin buchen
+                Zurück
               </button>
             </div>
           </motion.div>
