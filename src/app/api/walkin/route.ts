@@ -17,7 +17,8 @@ async function findNextAvailableSlot(serviceId: string): Promise<AvailableSlot |
     if (!service) return null;
 
     const serviceDuration = service.duration;
-    const nowInVienna = toZonedTime(new Date(), timeZone);
+    const now = new Date();
+    const nowInVienna = toZonedTime(now, timeZone);
     const today = startOfDay(nowInVienna);
     const dateStr = format(today, 'yyyy-MM-dd');
     const dayOfWeek = today.getDay();
@@ -62,7 +63,7 @@ async function findNextAvailableSlot(serviceId: string): Promise<AvailableSlot |
             const slotStart = new Date(currentTime);
             const slotEnd = new Date(slotStart.getTime() + serviceDuration * 60000);
 
-            if (slotStart < nowInVienna) {
+            if (slotStart < now) {
                 currentTime.setMinutes(currentTime.getMinutes() + 20);
                 continue;
             }
