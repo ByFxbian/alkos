@@ -11,6 +11,7 @@ const serviceSchema = z.object({
   name: z.string().min(1, "Name ist erforderlich"),
   duration: z.coerce.number().int().positive("Dauer muss positiv sein"),
   price: z.coerce.number().positive("Preis muss positiv sein"),
+  locationId: z.string().nullable().optional(),
 });
 
 export async function PUT(req: NextRequest) {
@@ -39,11 +40,11 @@ export async function PUT(req: NextRequest) {
       return response;
     }
 
-    const { name, duration, price } = validation.data;
+    const { name, duration, price, locationId } = validation.data;
 
     const updatedService = await prisma.service.update({
       where: { id: serviceId },
-      data: { name, duration, price },
+      data: { name, duration, price, locationId: locationId || null },
     });
 
     revalidatePath('/termine');

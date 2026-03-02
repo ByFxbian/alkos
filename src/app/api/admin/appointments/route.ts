@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cookies } from 'next/headers';
 
-export async function GET(req: Request) {
+export async function GET() {
     const session = await getServerSession(authOptions);
     if (!session || !['ADMIN', 'HEADOFBARBER'].includes(session.user.role)) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -17,19 +17,21 @@ export async function GET(req: Request) {
     const allowedLocationIds = session.user.role === 'ADMIN'
         ? (await prisma.location.findMany()).map(l => l.id)
         : dbUser?.locations.map(l => l.id) || [];
-    
+
     const cookieStore = await cookies();
     const filterId = cookieStore.get('admin_location_filter')?.value || 'ALL';
-    
+
     let queryLocationIds = allowedLocationIds;
     if (filterId !== 'ALL' && allowedLocationIds.includes(filterId)) {
         queryLocationIds = [filterId];
     }
 
+    const locationFilter = filterId === 'ALL'
+        ? { OR: [{ locationId: { in: queryLocationIds } }, { locationId: null }] }
+        : { locationId: { in: queryLocationIds } };
+
     const appointments = await prisma.appointment.findMany({
-        where: {
-            locationId: { in: queryLocationIds }
-        },
+        where: locationFilter,
         include: {
             customer: true,
             barber: true,

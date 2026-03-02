@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
@@ -63,12 +64,17 @@ export default async function KalenderAdminPage() {
 
   const isAdminOrHead = ['ADMIN', 'HEADOFBARBER'].includes(dbUser.role);
 
+  const includeNullLocations = !filterId || filterId === 'ALL';
+  const locationCondition = includeNullLocations
+      ? { OR: [{ locationId: { in: queryLocationIds } }, { locationId: null }] }
+      : { locationId: { in: queryLocationIds } };
+
   const AppointmentWhereClause: any = {
       startTime: {
         gte: today,
         lt: endViewDate,
       },
-      locationId: { in: queryLocationIds }
+      ...locationCondition
   };
 
   if (!isAdminOrHead) {

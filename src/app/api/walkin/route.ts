@@ -58,7 +58,7 @@ async function findNextAvailableSlot(serviceId: string): Promise<AvailableSlot |
             },
         });
 
-        let currentTime = new Date(availabilityStart);
+        const currentTime = new Date(availabilityStart);
         while (currentTime < availabilityEnd) {
             const slotStart = new Date(currentTime);
             const slotEnd = new Date(slotStart.getTime() + serviceDuration * 60000);
