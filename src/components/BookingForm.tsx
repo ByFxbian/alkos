@@ -19,6 +19,7 @@ type BookingFormProps = {
   services: Service[];
   hasFreeAppointment: boolean;
   currentLocationId: string;
+  locationSlug?: string;
 };
 
 type ConfirmedAppointmentData = {
@@ -38,12 +39,16 @@ function BookingProcessingModal() {
   );
 }
 
-export default function BookingForm({ barbers, services, hasFreeAppointment, currentLocationId  }: BookingFormProps) {
+export default function BookingForm({ barbers, services, hasFreeAppointment, currentLocationId, locationSlug }: BookingFormProps) {
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedBarber, setSelectedBarber] = useState<User | { id: string, name: string } | null>(null);
   const today = useMemo(() => startOfDay(new Date()), []);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  
+  const badenStartDate = useMemo(() => new Date('2026-03-07T00:00:00'), []);
+  const isBaden = locationSlug === 'baden';
+  const minDate = isBaden && today < badenStartDate ? badenStartDate : today;
   
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,7 +83,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
 
     const title = encodeURIComponent(`Termin bei ALKOS (${service.name})`);
     const details = encodeURIComponent(`Barber: ${barber.name}\nService: ${service.name}`);
-    const location = encodeURIComponent("Wiedner Gürtel 12, 1040 Wien");
+    const location = encodeURIComponent("ALKOS");
     
     const formatTime = (date: Date) => date.toISOString().replace(/-|:|\.\d\d\d/g, "");
     
@@ -104,7 +109,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
       duration: { minutes: service.duration },
       title: `Termin bei ALKOS (${service.name})`,
       description: `Barber: ${barber.name}\nService: ${service.name}`,
-      location: 'Wiedner Gürtel 12, 1040 Wien',
+      location: 'ALKOS',
       status: 'CONFIRMED',
       busyStatus: 'BUSY',
       url: 'https://alkosbarber.at',
@@ -188,9 +193,9 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
 
   useEffect(() => {
     if(step === 3 && !selectedDate) {
-      setSelectedDate(today);
+      setSelectedDate(minDate);
     }
-  }, [step, selectedDate, today]);
+  }, [step, selectedDate, minDate]);
 
   useEffect(() => {
     if(selectedService && selectedBarber && selectedDate) {
@@ -358,7 +363,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
             <div className="space-y-2">
               
               <button 
-                onClick={() => { setSelectedBarber({ id: 'any', name: 'Beliebiger Barber' }); setSelectedDate(today); setStep(3); }} 
+                onClick={() => { setSelectedBarber({ id: 'any', name: 'Beliebiger Barber' }); setSelectedDate(minDate); setStep(3); }} 
                 disabled={step < 2} 
                 className={`w-full text-left p-4 rounded-lg border transition-all duration-300 group ${selectedBarber?.id === 'any' ? 'bg-gold-500 text-black border-gold-500 scale-105 shadow-xl' : 'border-[var(--color-border)] hover:border-gold-500 hover:bg-[var(--color-surface-2)]'}`}
               >
@@ -383,7 +388,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
 
           <div className={`transition-opacity duration-500 ${step >= 3 ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
             <h2 className="text-2xl font-semibold mb-4 text-gold-500">Datum & Uhrzeit</h2>
-            <DayPicker 
+              <DayPicker 
               mode="single" 
               selected={selectedDate} 
               onSelect={(date) => {
@@ -391,7 +396,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
                 setSelectedSlot(null);
               }} 
               locale={de} 
-              hidden={[{ before: today }]} 
+              hidden={[{ before: minDate }]} 
               className="flex justify-center bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)]"
               modifiersClassNames={{
                 selected: 'bg-gold-500 text-black font-bold rounded-full'

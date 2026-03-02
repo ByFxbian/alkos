@@ -35,6 +35,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Service nicht gefunden' }, { status: 404 });
     }
 
+    let locationData = null;
+    if (locationId) {
+      locationData = await prisma.location.findUnique({ where: { id: locationId } });
+      if (locationData?.slug === 'baden') {
+        const appointmentStart = new Date(startTime);
+        const badenStartDateTime = new Date('2026-03-07T11:00:00+01:00');
+        if (appointmentStart < badenStartDateTime) {
+          return NextResponse.json({ error: 'Termine für diesen Standort sind erst ab dem 07.03.2026 um 11:00 Uhr buchbar.' }, { status: 400 });
+        }
+      }
+    }
+
     if (useFreeAppointment) {
       const customer = await prisma.user.findUnique({ where: { id: customerId } });
       if (!customer?.hasFreeAppointment) {
@@ -149,7 +161,9 @@ export async function POST(req: Request) {
           serviceName: newAppointment.service.name,
           barberName: newAppointment.barber.name || '',
           startTime: newAppointment.startTime,
-          host: 'ALKOS'
+          host: 'ALKOS',
+          locationName: locationData?.name,
+          locationAddress: locationData?.address,
         }),
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

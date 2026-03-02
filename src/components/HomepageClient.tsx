@@ -15,30 +15,6 @@ type HomepageClientProps = {
     teamMembers: any[];
 };
 
-const teamMembers = [
-    {
-        id: 1,
-        name: 'ALKO',
-        role: 'Head of Barber',
-        imageUrl: 'https://srtkhlfsd31dcfzp.public.blob.vercel-storage.com/ALKOS.png',
-        bio: ''
-    },
-    {
-        id: 2,
-        name: 'Tina',
-        role: 'Managing Partner',
-        imageUrl: 'https://srtkhlfsd31dcfzp.public.blob.vercel-storage.com/TINA.png',
-        bio: ''
-    },
-    {
-        id: 3,
-        name: 'Adam',
-        role: 'Barber',
-        imageUrl: 'https://srtkhlfsd31dcfzp.public.blob.vercel-storage.com/ADAM.png',
-        bio: ''
-    },
-]
-
 const salonImages = [
   { id: 1, src: '/images/gallery-1.jpeg', alt: 'Waschbereich' },
   { id: 2, src: '/images/gallery-2.jpeg', alt: 'Schneidebereich Neon Sign' },
@@ -177,7 +153,7 @@ export default function HomepageClient({ location, teamMembers }: HomepageClient
                         </div>
 
                         <div className="text-center mt-12">
-                            <Link href="/gallerie" className="inline-flex items-center text-gold-500 font-bold hover:text-gold-400 transition-colors group">
+                            <Link href={`/${location.slug}/gallerie`} className="inline-flex items-center text-gold-500 font-bold hover:text-gold-400 transition-colors group">
                                 Zur ganzen Gallerie
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -210,7 +186,7 @@ export default function HomepageClient({ location, teamMembers }: HomepageClient
                                     <BarberCard
                                         name={member.name}
                                         role={member.role}
-                                        image={member.imageUrl}
+                                        image={member.image || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
                                         bio={member.bio || ''}
                                     />
                                 </motion.div>

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import LoadingModal from '@/components/LoadingModal';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
+import ImageUpload from '@/components/ImageUpload';
 
 type TeamMember = {
   id: string;
@@ -132,8 +133,11 @@ export default function AdminWebTeamPage() {
                 </div>
                 <div>
                      <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Bild URL</label>
-                    <input placeholder="https://..." value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} 
-                        className="w-full p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)] outline-none focus:border-[var(--color-gold-500)]" />
+                     <div className="flex gap-2 mt-1">
+                        <input placeholder="https://..." value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} 
+                            className="flex-1 p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)] outline-none focus:border-[var(--color-gold-500)]" />
+                        <ImageUpload onUploadComplete={(url) => setFormData({...formData, image: url})} buttonText="Upload" />
+                     </div>
                 </div>
                 <div>
                      <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Sortierung (0-99)</label>

@@ -44,7 +44,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { name, slug, address, city, postalCode, phone, email, description, heroImage } = body;
+  const { name, slug, address, city, postalCode, phone, email, description, heroImage, galleryImages } = body;
 
   try {
     const location = await prisma.location.create({
@@ -57,7 +57,8 @@ export async function POST(req: Request) {
         phone,
         email,
         description,
-        heroImage
+        heroImage,
+        galleryImages: galleryImages || []
       }
     });
     return NextResponse.json(location);

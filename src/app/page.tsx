@@ -43,8 +43,8 @@ export default function GatewayPage() {
 
   const isRedTheme = hoveredLocation === 'baden';
   const themeStyle = isRedTheme ? {
-      '--color-gold-500': '#ef4444',
-      '--color-gold-400': '#f87171',
+      '--color-gold-500': '#facc15',
+      '--color-gold-400': '#fde047',
   } as React.CSSProperties : {};
 
   if (loading) return (

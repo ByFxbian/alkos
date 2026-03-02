@@ -75,9 +75,9 @@ export default function RootLayout({
                 <SpeedInsights />
                 <Analytics/>
               </main>
-              <Footer />
+              {/*<Footer />*/}
               <FloatingScannerButton />
-              <StickyBookingButton />
+              {/*<StickyBookingButton />*/}
             </div>
           </ThemeProvider>
         </Providers>

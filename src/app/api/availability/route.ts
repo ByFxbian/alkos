@@ -128,7 +128,17 @@ export async function GET(req: Request) {
             slots.forEach(s => allSlotsSet.add(s.toISOString()));
         }
 
-        const sortedSlots = Array.from(allSlotsSet).sort();
+        let sortedSlots = Array.from(allSlotsSet).sort();
+
+        if (locationId) {
+            const location = await prisma.location.findUnique({
+                where: { id: locationId }
+            });
+            if (location?.slug === 'baden') {
+                const badenStartDateTime = new Date('2026-03-07T11:00:00+01:00');
+                sortedSlots = sortedSlots.filter(s => new Date(s) >= badenStartDateTime);
+            }
+        }
 
         response = NextResponse.json(sortedSlots);
     } catch (error) {

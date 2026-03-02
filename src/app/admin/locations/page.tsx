@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import LoadingModal from '@/components/LoadingModal';
 import { useSession } from 'next-auth/react';
+import ImageUpload from '@/components/ImageUpload';
 
 type Location = {
   id: string;
@@ -17,6 +18,7 @@ type Location = {
   email?: string;
   description?: string;
   heroImage?: string;
+  galleryImages: string[];
 };
 
 export default function AdminLocationsPage() {
@@ -27,7 +29,7 @@ export default function AdminLocationsPage() {
 
   const [isEditing, setIsEditing] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: '', slug: '', address: '', city: '', postalCode: '', phone: '', email: '', description: '', heroImage: ''
+    name: '', slug: '', address: '', city: '', postalCode: '', phone: '', email: '', description: '', heroImage: '', galleryImages: [] as string[]
   });
 
   const isAdmin = session?.user?.role === 'ADMIN';
@@ -67,7 +69,7 @@ export default function AdminLocationsPage() {
     });
 
     if (res.ok) {
-        setFormData({ name: '', slug: '', address: '', city: '', postalCode: '', phone: '', email: '', description: '', heroImage: '' });
+        setFormData({ name: '', slug: '', address: '', city: '', postalCode: '', phone: '', email: '', description: '', heroImage: '', galleryImages: [] });
         setIsEditing(null);
         fetchLocations();
     } else {
@@ -81,7 +83,8 @@ export default function AdminLocationsPage() {
     setFormData({
         name: loc.name, slug: loc.slug, address: loc.address, city: loc.city,
         postalCode: loc.postalCode, phone: loc.phone || '', email: loc.email || '',
-        description: loc.description || '', heroImage: loc.heroImage || ''
+        description: loc.description || '', heroImage: loc.heroImage || '',
+        galleryImages: loc.galleryImages || []
     });
   };
 
@@ -152,8 +155,35 @@ export default function AdminLocationsPage() {
 
                     <div>
                         <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Hero Bild (URL)</label>
-                        <input placeholder="https://..." value={formData.heroImage} onChange={e => setFormData({...formData, heroImage: e.target.value})} 
-                            className="w-full p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)]" />
+                        <div className="flex gap-2 mt-1">
+                            <input placeholder="https://..." value={formData.heroImage} onChange={e => setFormData({...formData, heroImage: e.target.value})} 
+                                className="flex-1 p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)]" />
+                            <ImageUpload onUploadComplete={(url) => setFormData({...formData, heroImage: url})} buttonText="Upload" />
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Galerie Bilder</label>
+                        <div className="space-y-2 mt-1">
+                            {formData.galleryImages.map((img, idx) => (
+                                <div key={idx} className="flex gap-2 items-center">
+                                    <input value={img} onChange={e => {
+                                        const newImages = [...formData.galleryImages];
+                                        newImages[idx] = e.target.value;
+                                        setFormData({...formData, galleryImages: newImages});
+                                    }} className="flex-1 p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)] text-sm" />
+                                    <button type="button" onClick={() => {
+                                        const newImages = [...formData.galleryImages];
+                                        newImages.splice(idx, 1);
+                                        setFormData({...formData, galleryImages: newImages});
+                                    }} className="p-2 text-red-500 hover:bg-red-500/10 rounded-md">✕</button>
+                                </div>
+                            ))}
+                            <ImageUpload 
+                                onUploadComplete={(url) => setFormData({...formData, galleryImages: [...formData.galleryImages, url]})} 
+                                buttonText="Galerie Bild hinzufügen" 
+                            />
+                        </div>
                     </div>
                     
                     <div className="flex gap-2 pt-4">
@@ -163,7 +193,7 @@ export default function AdminLocationsPage() {
                         {isEditing && (
                             <button type="button" onClick={() => {
                                 setIsEditing(null); 
-                                setFormData({ name: '', slug: '', address: '', city: '', postalCode: '', phone: '', email: '', description: '', heroImage: '' })
+                                setFormData({ name: '', slug: '', address: '', city: '', postalCode: '', phone: '', email: '', description: '', heroImage: '', galleryImages: [] })
                             }} className="px-4 py-2 bg-[var(--color-surface)] text-[var(--color-text)] rounded border border-[var(--color-border)] hover:bg-[var(--color-surface-3)]">
                                 Abbrechen
                             </button>

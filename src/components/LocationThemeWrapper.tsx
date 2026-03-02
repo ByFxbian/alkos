@@ -18,8 +18,8 @@ export default function LocationThemeWrapper({ children, locationSlug }: Props) 
     <div
       style={
         {
-          '--color-gold-500': '#ef4444',
-          '--color-gold-400': '#f87171',
+          '--color-gold-500': '#facc15',
+          '--color-gold-400': '#fde047',
         } as React.CSSProperties
       }
       className="contents"
