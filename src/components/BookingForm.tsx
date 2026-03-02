@@ -51,6 +51,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
   const minDate = isBaden && today < badenStartDate ? badenStartDate : today;
   
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [availableDates, setAvailableDates] = useState<Set<string> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const { data: session } = useSession();
@@ -196,6 +197,27 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
       setSelectedDate(minDate);
     }
   }, [step, selectedDate, minDate]);
+
+  // Fetch available days when barber changes
+  useEffect(() => {
+    if (selectedBarber && currentLocationId) {
+      setAvailableDates(null);
+      const query = new URLSearchParams({
+        barberId: selectedBarber.id,
+        locationId: currentLocationId,
+        days: '60',
+      }).toString();
+
+      fetch(`/api/availability/days?${query}`)
+        .then(res => res.json())
+        .then(data => {
+          const dates = new Set<string>(data.availableDates || []);
+          setAvailableDates(dates);
+        });
+    } else {
+      setAvailableDates(null);
+    }
+  }, [selectedBarber, currentLocationId]);
 
   useEffect(() => {
     if(selectedService && selectedBarber && selectedDate) {
@@ -400,6 +422,15 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
               className="flex justify-center bg-[var(--color-surface)] p-4 rounded-xl border border-[var(--color-border)]"
               modifiersClassNames={{
                 selected: 'bg-gold-500 text-black font-bold rounded-full'
+              }}
+              disabled={(date) => {
+                if (date < minDate) return true;
+                if (!availableDates) return false;
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                const dateStr = `${y}-${m}-${d}`;
+                return !availableDates.has(dateStr);
               }}
               />
             <div className="mt-6">
