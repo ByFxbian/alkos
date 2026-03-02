@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import Link from 'next/link';
@@ -10,32 +11,9 @@ import TikTokCarousel from '@/components/TikTokCarousel';
 import LocationMap from './LocationMap';
 
 type HomepageClientProps = {
-  barbers: User[];
+    location: any;
+    teamMembers: any[];
 };
-
-const teamMembers = [
-    {
-        id: 1,
-        name: 'ALKO',
-        role: 'Head of Barber',
-        imageUrl: 'https://srtkhlfsd31dcfzp.public.blob.vercel-storage.com/ALKOS.png',
-        bio: ''
-    },
-    {
-        id: 2,
-        name: 'Tina',
-        role: 'Managing Partner',
-        imageUrl: 'https://srtkhlfsd31dcfzp.public.blob.vercel-storage.com/TINA.png',
-        bio: ''
-    },
-    {
-        id: 3,
-        name: 'Adam',
-        role: 'Barber',
-        imageUrl: 'https://srtkhlfsd31dcfzp.public.blob.vercel-storage.com/ADAM.png',
-        bio: ''
-    },
-]
 
 const salonImages = [
   { id: 1, src: '/images/gallery-1.jpeg', alt: 'Waschbereich' },
@@ -66,8 +44,12 @@ const itemVariants:Variants = {
     }
 };
 
-export default function HomepageClient() {
+export default function HomepageClient({ location, teamMembers }: HomepageClientProps) {
     const [opacity, setOpacity] = useState(1);
+
+    const galleryImages = location.galleryImages && location.galleryImages.length > 0 
+        ? location.galleryImages.map((src: string, i: number) => ({ src, alt: `Atmosphere ${i+1}` })) 
+        : salonImages;
 
     useEffect(() => {
         const handleScroll = () => {
@@ -85,8 +67,8 @@ export default function HomepageClient() {
             <main>
                 <div className="fixed top-0 left-0 w-full h-screen -z-10" style={{ opacity }}>
                     <Image
-                    src="/images/hero-bg.jpeg"
-                    alt="Hintergrund ALKOS Barbershop"
+                    src={location.heroImage || "/images/hero-bg.jpeg"}
+                    alt={`Hintergrund ${location.name}`}
                     fill
                     style={{ objectFit: 'cover' }}
                     quality={90}
@@ -107,7 +89,7 @@ export default function HomepageClient() {
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ duration: 0.8, delay: 0.2 }}
                         >
-                            ALKOS
+                            {location.name}
                         </motion.h1>
                         <motion.p 
                             className="text-xl md:text-2xl max-w-2xl mx-auto text-neutral-200 font-medium drop-shadow-lg shadow-black"
@@ -115,7 +97,7 @@ export default function HomepageClient() {
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.8, delay: 0.5 }}
                         >
-                            Dein Go-To Barbershop.
+                            Dein Go-To Barbershop in {location.city}.
                         </motion.p>
                         
                         <motion.div 
@@ -124,7 +106,7 @@ export default function HomepageClient() {
                             whileTap={{ scale: 0.95 }}
                         >
                             <Link
-                            href="/termine"
+                            href={`/${location.slug}/termine`}
                             className="bg-gold-500 text-black font-bold text-lg px-10 py-4 rounded-full hover:bg-gold-400 transition-colors shadow-xl inline-block">
                             Jetzt Termin buchen
                             </Link>
@@ -149,7 +131,7 @@ export default function HomepageClient() {
                         </motion.div>
 
                         <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-                            {salonImages.map((img, index) => (
+                            {galleryImages.slice(0, 6).map((img: any, index: number) => (
                                <motion.div 
                                     key={index} 
                                     className={`relative h-48 md:h-72 rounded-2xl overflow-hidden group shadow-lg border border-white/5 cursor-pointer`}
@@ -171,7 +153,7 @@ export default function HomepageClient() {
                         </div>
 
                         <div className="text-center mt-12">
-                            <Link href="/gallerie" className="inline-flex items-center text-gold-500 font-bold hover:text-gold-400 transition-colors group">
+                            <Link href={`/${location.slug}/gallerie`} className="inline-flex items-center text-gold-500 font-bold hover:text-gold-400 transition-colors group">
                                 Zur ganzen Gallerie
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -189,7 +171,7 @@ export default function HomepageClient() {
                             viewport={{ once: true }}
                             className='text-4xl md:text-5xl font-bold text-center mb-16'
                         >
-                            Die Crew
+                            Die Crew ({location.city})
                         </motion.h2>
                         <motion.div 
                             className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 justify-center'
@@ -198,16 +180,22 @@ export default function HomepageClient() {
                             whileInView="visible"
                             viewport={{ once: true, margin: "-100px" }}
                         >
-                            {teamMembers.map((barber) => (
-                                <motion.div key={barber.id} variants={itemVariants}>
+                            {teamMembers.length > 0 ? (
+                                teamMembers.map((member) => (
+                                <motion.div key={member.id} variants={itemVariants}>
                                     <BarberCard
-                                        name={barber.name}
-                                        role={barber.role}
-                                        image={barber.imageUrl}
-                                        bio={barber.bio}
+                                        name={member.name}
+                                        role={member.role}
+                                        image={member.image || 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'}
+                                        bio={member.bio || ''}
                                     />
                                 </motion.div>
-                            ))}
+                            ))
+                            ) : (
+                                <p className="text-center col-span-full text-neutral-500">
+                                    Noch keine Teammitglieder für diesen Standort eingetragen.
+                                </p>
+                            )}
                         </motion.div>
                     </div>
                 </section>
@@ -218,7 +206,7 @@ export default function HomepageClient() {
                             <div>
                                 <h2 className="text-4xl font-bold mb-6">Hier findest du uns</h2>
                                 <p className="text-lg text-neutral-400 mb-8">
-                                    Zentral am Wiedner Gürtel. Perfekt erreichbar, entspannte Parkplatzsituation und direkt im Geschehen.
+                                    Zentral in {location.city}. Perfekt erreichbar, entspannte Parkplatzsituation und direkt im Geschehen.
                                 </p>
                                 <div className="space-y-4 text-neutral-300">
                                     <div className="flex items-center gap-4">
@@ -227,21 +215,28 @@ export default function HomepageClient() {
                                         </div>
                                         <div>
                                             <p className="font-bold text-white">Adresse</p>
-                                            <p>Wiedner Gürtel 12, 1040 Wien</p>
+                                            <p>{location.address}, {location.postalCode} {location.city}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 bg-gold-500/10 rounded-full flex items-center justify-center text-gold-500">
-                                            🚃
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-white">Öffis</p>
-                                            <p>Hauptbahnhof / Südtiroler Platz (U1, S-Bahn)</p>
-                                        </div>
-                                    </div>
+                                    {location.slug === 'wien' && (
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-gold-500/10 rounded-full flex items-center justify-center text-gold-500">
+                                                🚃
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-white">Öffis</p>
+                                                <p>Hauptbahnhof / Südtiroler Platz (U1, S-Bahn)</p>
+                                            </div>
+                                        </div>  
+                                    )}               
                                 </div>
                             </div>
-                            <LocationMap />
+                            <LocationMap 
+                                googleMapsUrl={location.googleMapsUrl} 
+                                address={location.address} 
+                                city={location.city} 
+                                postalCode={location.postalCode}
+                            />
                         </div>
                     </div>
                 </section>

@@ -6,11 +6,16 @@ import { useState, useMemo } from 'react';
 import CustomerDetailsModal from "./CustomerDetailsModal";
 import Image from "next/image";
 
-type UserWithBlock = User & { isBlocked: boolean };
+type UserWithDetails = User & { 
+    isBlocked: boolean;
+    locations: { id: string; name: string }[];
+};
 
 type UserManagementProps = {
-  allUsers: UserWithBlock[];
+  allUsers: UserWithDetails[];
   currentUserId: string;
+  availableLocations: Location[];
+  currentUserRole: string;
 };
 
 type CustomerDataForModal = {
@@ -21,14 +26,15 @@ type CustomerDataForModal = {
   completedAppointments: number;
 }
 
+type Location = { id: string; name: string; slug?: string; };
+
 const PLACEHOLDER_IMAGE = 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';
 
-export default function UserManagement({ allUsers, currentUserId }: UserManagementProps) {
+export default function UserManagement({ allUsers, currentUserId, availableLocations, currentUserRole }: UserManagementProps) {
   const router = useRouter();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<Role | 'ALL'>('ALL');
-
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerDataForModal | null>(null);
 
   const filteredUsers = useMemo(() => {
@@ -48,6 +54,24 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ role: newRole }),
+    });
+    router.refresh();
+  };
+
+  const handleLocationToggle = async (user: UserWithDetails, locationId: string) => {
+    const isAssigned = user.locations.some(l => l.id === locationId);
+    let newLocationIds: string[] = [];
+
+    if (isAssigned) {
+        newLocationIds = user.locations.filter(l => l.id !== locationId).map(l => l.id);
+    } else {
+        newLocationIds = [...user.locations.map(l => l.id), locationId];
+    }
+
+    await fetch(`/api/admin/users/${user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locationIds: newLocationIds })
     });
     router.refresh();
   };
@@ -139,19 +163,21 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
                       onClick={() => handleShowDetails(user)}
                       className="text-left hover:text-gold-500 transition-colors"
                     >
-                      <Image
-                        src={user.image || PLACEHOLDER_IMAGE}
-                        alt={user.name || 'Profilbild'}
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover w-10 h-10"
-                      />
-                      <div> 
-                        <div className="text-sm font-medium">
-                          {user.name}
-                          {user.isBlocked && <span className="ml-2 text-xs text-red-500 font-bold">(BLOCKIERT)</span>}
+                      <div className="flex items-center gap-3">
+                        <Image
+                            src={user.image || PLACEHOLDER_IMAGE}
+                            alt={user.name || 'Profilbild'}
+                            width={40}
+                            height={40}
+                            className="rounded-full object-cover w-10 h-10"
+                        />
+                        <div> 
+                            <div className="text-sm font-medium">
+                            {user.name}
+                            {user.isBlocked && <span className="ml-2 text-xs text-red-500 font-bold">(BLOCKIERT)</span>}
+                            </div>
+                            <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{user.email}</div>
                         </div>
-                        <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{user.email}</div>
                       </div>
                     </button>
                   </td>
@@ -160,7 +186,7 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
                       value={user.role}
                       onChange={(e) => handleRoleChange(user.id, e.target.value as Role)}
                       disabled={isRowDisabled}
-                      className="text-sm rounded-lg p-2"
+                      className="text-sm rounded-lg p-2 mr-2"
                       style={{ backgroundColor: 'var(--color-surface-3)', border: '1px solid var(--color-border)' }}
                     >
                       <option value="KUNDE">Kunde</option>
@@ -168,6 +194,28 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
                       <option value="HEADOFBARBER">Head Of Barber</option>
                       <option value="ADMIN">Admin</option>
                     </select>
+
+                    {['BARBER', 'HEADOFBARBER'].includes(user.role) && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                            {availableLocations.map(loc => {
+                                const isAssigned = user.locations.some(l => l.id === loc.id);
+                                return (
+                                    <button
+                                        key={loc.id}
+                                        onClick={() => handleLocationToggle(user, loc.id)}
+                                        disabled={isRowDisabled}
+                                        className={`text-[10px] px-2 py-1 rounded border transition-colors ${
+                                            isAssigned 
+                                            ? 'bg-gold-500 text-black border-gold-500 font-bold' 
+                                            : 'border-neutral-400 text-neutral-500 hover:border-gold-500'
+                                        }`}
+                                    >
+                                        {loc.name}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                     <button onClick={() => handleBlock(user.id, user.isBlocked)} disabled={isRowDisabled} 
@@ -224,6 +272,27 @@ export default function UserManagement({ allUsers, currentUserId }: UserManageme
                   {user.isBlocked ? '🔓 Entsperren' : '🔒 Blockieren'}
                 </button>
               </div>
+
+              {['BARBER', 'HEADOFBARBER'].includes(user.role) && (
+                  <div className="mb-4">
+                      <label className="text-xs font-bold opacity-60 mb-1 block">Standorte</label>
+                      <div className="flex flex-wrap gap-2">
+                        {availableLocations.map(loc => {
+                            const isAssigned = user.locations.some(l => l.id === loc.id);
+                            return (
+                                <button
+                                    key={loc.id}
+                                    onClick={() => handleLocationToggle(user, loc.id)}
+                                    disabled={isRowDisabled}
+                                    className={`text-xs px-3 py-2 rounded border ${isAssigned ? 'bg-gold-500 text-black border-gold-500 font-bold' : 'border-neutral-500'}`}
+                                >
+                                    {loc.name}
+                                </button>
+                            )
+                        })}
+                      </div>
+                  </div>
+              )}
 
               <div className="grid grid-cols-2 gap-2">
                 <button onClick={() => handleDelete(user.id)} disabled={isRowDisabled} className="bg-red-100 dark:bg-red-900/20 text-red-500 p-2 rounded text-sm">Löschen</button>

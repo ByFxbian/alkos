@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from '@/lib/prisma';
 import { Resend } from "resend";
-import { addHours, subHours, startOfDay, endOfDay } from "date-fns";
+import { addHours, subHours } from "date-fns";
 import { logger } from "@/lib/logger";
 import ReminderEmail from "@/emails/ReminderEmail";
 import ReviewEmail from "@/emails/ReviewEmail";
@@ -12,7 +12,7 @@ const GOOGLE_REVIEW_LINK = "https://search.google.com/local/writereview?placeid=
 
 export async function GET(request: Request) {
     const authHeader = request.headers.get('authorization');
-    if(authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
         return new Response('Unauthorized', { status: 401 });
     }
 
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     try {
         const now = new Date();
 
-        const reminderStart = addHours(now, 20); 
+        const reminderStart = addHours(now, 20);
         const reminderEnd = addHours(now, 48);
 
         const appointmentsReminders = await prisma.appointment.findMany({
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
                 startTime: { gte: reminderStart, lt: reminderEnd },
                 reminderSentAt: null,
             },
-            include: { customer: true, barber: true, service: true }
+            include: { customer: true, barber: true, service: true, location: true }
         });
 
         for (const app of appointmentsReminders) {
@@ -45,10 +45,12 @@ export async function GET(request: Request) {
                             serviceName: app.service.name,
                             barberName: app.barber.name || '',
                             startTime: app.startTime,
-                            host: 'ALKOS'
+                            host: 'ALKOS',
+                            locationName: app.location?.name,
+                            locationAddress: app.location?.address
                         }),
                     });
-                    
+
                     await prisma.appointment.update({
                         where: { id: app.id },
                         data: { reminderSentAt: new Date() }
@@ -101,7 +103,7 @@ export async function GET(request: Request) {
 
         logger.info("CRON Daily: Finished.", results);
         await logger.flush();
-        
+
         return NextResponse.json({ success: true, ...results });
 
     } catch (error) {

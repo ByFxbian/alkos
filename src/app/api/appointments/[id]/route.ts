@@ -34,6 +34,7 @@ export async function DELETE(
       include: {
         customer: true,
         service: true,
+        location: true,
       },
     });
 
@@ -56,14 +57,16 @@ export async function DELETE(
 
     try {
       await resend.emails.send({
-        from: 'ALKOS <contact@alkosbarber.at>', 
+        from: 'ALKOS <contact@alkosbarber.at>',
         to: appointment.customer.email,
         subject: 'Dein Termin wurde storniert',
         react: CancellationEmail({
           customerName: appointment.customer.name || '',
           serviceName: appointment.service.name,
           startTime: appointment.startTime,
-          host: 'ALKOS'
+          host: 'ALKOS',
+          locationName: appointment.location?.name,
+          locationAddress: appointment.location?.address,
         }),
       });
       logger.info("API Route /api/appointments/[id] DELETE: Cancellation email sent.", { to: appointment.customer.email, appointmentId });
@@ -86,7 +89,7 @@ export async function DELETE(
     logger.info("API Route /api/appointments/[id] DELETE: Flushing logs.");
     await logger.flush();
   }
-  if(!response!) {
+  if (!response!) {
     logger.error("API Route /api/appointments/[id] DELETE: Reached end without setting a response.");
     response = NextResponse.json({ error: 'Interner Serverfehler' }, { status: 500 });
     await logger.flush();

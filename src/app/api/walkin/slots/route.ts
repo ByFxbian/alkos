@@ -76,7 +76,7 @@ export async function GET(req: Request) {
             });
 
             // Iterate 20-min slots to find the FIRST available one for this barber
-            let currentTime = new Date(availabilityStart);
+            const currentTime = new Date(availabilityStart);
             let foundSlot: Date | null = null;
 
             while (currentTime < availabilityEnd) {

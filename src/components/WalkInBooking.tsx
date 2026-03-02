@@ -143,6 +143,7 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
     setStep('booking');
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const body: any = {
         customerName: customerName.trim(),
         serviceId: selectedService.id,

@@ -1,12 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Service } from '@/generated/prisma';
 import LoadingModal from './LoadingModal';
 
+type ServiceWithLocation = Service & {
+  locationId: string | null;
+  location: { name: string } | null;
+};
+
+type Location = { id: string; name: string };
+
 type ServiceManagementProps = {
-  services: Service[];
+  services: ServiceWithLocation[];
+  availableLocations: Location[];
+  currentUserRole?: string;
 };
 
 const emptyForm = {
@@ -14,23 +23,36 @@ const emptyForm = {
   name: '',
   duration: 30,
   price: 45,
+  locationId: '',
 };
 
-export default function ServiceManagement({ services }: ServiceManagementProps) {
+export default function ServiceManagement({ services: initialServices, availableLocations }: ServiceManagementProps) {
   const router = useRouter();
+  const [services, setServices] = useState<ServiceWithLocation[]>(initialServices);
+  
   const [formData, setFormData] = useState<{
     id: string | null;
     name: string;
-    duration: number | string; // Erlaube String für leere Eingabe
-    price: number | string;    // Erlaube String für leere Eingabe
+    duration: number | string;
+    price: number | string;
+    locationId: string;
   }>(emptyForm);
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    if(availableLocations.length > 0 && !formData.locationId && !formData.id) {
+    }
+  }, [availableLocations, formData.id, formData.locationId]);
+
+  useEffect(() => {
+    setServices(initialServices);
+  }, [initialServices]);
+
   const isEditing = formData.id !== null;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -39,12 +61,14 @@ export default function ServiceManagement({ services }: ServiceManagementProps) 
   };
 
   const handleSelectForEdit = (service: Service) => {
-    setFormData(service);
-    window.scrollTo(0, 0); // Nach oben scrollen zum Formular
-  };
-
-  const clearForm = () => {
-    setFormData(emptyForm);
+    setFormData({
+        id: service.id,
+        name: service.name,
+        duration: service.duration,
+        price: service.price,
+        locationId: service.locationId || ''
+    });
+    window.scrollTo(0, 0);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,12 +87,13 @@ export default function ServiceManagement({ services }: ServiceManagementProps) 
           name: formData.name,
           duration: Number(formData.duration),
           price: Number(formData.price),
+          locationId: formData.locationId || null
         }),
       });
 
       if (res.ok) {
-        clearForm();
         router.refresh();
+        setFormData({ ...emptyForm });
       } else {
         const data = await res.json();
         setError(data.error || 'Ein Fehler ist aufgetreten.');
@@ -106,92 +131,124 @@ export default function ServiceManagement({ services }: ServiceManagementProps) 
   };
 
   return (
-    <>
+    <div className="bg-[var(--color-surface)] p-6 rounded-xl border border-[var(--color-border)]">
       {isLoading && <LoadingModal message="Speichere..." />}
 
-      <div className="p-6 rounded-lg mb-8" style={{ backgroundColor: 'var(--color-surface)' }}>
-        <h3 className="text-xl font-semibold mb-4">{isEditing ? 'Service bearbeiten' : 'Neuen Service hinzufügen'}</h3>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <h3 className="font-bold text-xl mb-6 text-[var(--color-text)]">{isEditing ? 'Service bearbeiten' : 'Neuen Service anlegen'}</h3>
+
+      {error && <div className="bg-red-100 dark:bg-red-900/20 text-red-500 p-3 rounded mb-4">{error}</div>}
+
+      <form onSubmit={handleSubmit} className="space-y-4 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold opacity-70 mb-1 text-[var(--color-text-muted)]">Name</label>
+            <input
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="z.B. Haarschnitt"
+              required
+              className="w-full p-3 rounded border bg-transparent border-[var(--color-border)] text-[var(--color-text)] outline-none focus:border-[var(--color-gold-500)]"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs font-bold opacity-70 mb-1 text-[var(--color-text-muted)]">Standort</label>
+          <select
+              name="locationId"
+              value={formData.locationId}
+              onChange={handleChange}
+              className="w-full p-3 rounded border bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text)] outline-none focus:border-[var(--color-gold-500)]"
+          >
+              <option value="">Global (Alle Standorte)</option>
+              {availableLocations.map(loc => (
+                  <option key={loc.id} value={loc.id}>{loc.name}</option>
+              ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-bold opacity-70 mb-1 text-[var(--color-text-muted)]">Dauer (Minuten)</label>
           <input
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="Name (z.B. Haarschnitt)"
-            required
-            className="md:col-span-2 p-2 rounded border"
-            style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}
-          />
-          <input
-            name="duration"
             type="number"
+            name="duration"
             value={formData.duration}
             onChange={handleChange}
-            placeholder="Dauer (in Min.)"
             required
-            className="p-2 rounded border"
-            style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}
+            className="w-full p-3 rounded border bg-transparent border-[var(--color-border)] text-[var(--color-text)] outline-none focus:border-[var(--color-gold-500)]"
           />
+        </div>
+        <div>
+          <label className="block text-xs font-bold opacity-70 mb-1 text-[var(--color-text-muted)]">Preis (€)</label>
           <input
-            name="price"
             type="number"
-            step="0.01"
+            name="price"
             value={formData.price}
             onChange={handleChange}
-            placeholder="Preis (z.B. 45.00)"
             required
-            className="p-2 rounded border"
-            style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}
+            className="w-full p-3 rounded border bg-transparent border-[var(--color-border)] text-[var(--color-text)] outline-none focus:border-[var(--color-gold-500)]"
           />
-          
-          <div className="md:col-span-4 flex justify-end gap-4">
-            {error && <p className="text-red-500 text-sm self-center">{error}</p>}
-            {isEditing && (
-              <button
-                type="button"
-                onClick={clearForm}
-                className="px-4 py-2 rounded-md font-semibold"
-                style={{ backgroundColor: 'var(--color-surface-3)'}}
-              >
-                Abbrechen
-              </button>
-            )}
+        </div>
+        
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="bg-[var(--color-gold-500)] text-black font-bold py-3 px-6 rounded hover:brightness-110 transition-all shadow-md"
+          >
+            {isEditing ? 'Änderungen speichern' : 'Erstellen'}
+          </button>
+          {isEditing && (
             <button
-              type="submit"
-              disabled={isLoading}
-              className="bg-gold-500 text-black font-bold px-6 py-2 rounded-md hover:bg-gold-400 disabled:opacity-50"
+              type="button"
+              onClick={() => {
+                  setFormData({ ...emptyForm });
+                  setError('');
+              }}
+              className="bg-[var(--color-surface-3)] text-[var(--color-text)] font-bold py-3 px-6 rounded hover:bg-[var(--color-border)] transition-colors border border-[var(--color-border)]"
             >
-              {isEditing ? 'Speichern' : 'Hinzufügen'}
+              Abbrechen
             </button>
-          </div>
-        </form>
-      </div>
-      <div className="rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--color-surface)' }}>
-        <table className="min-w-full divide-y" style={{ borderColor: 'var(--color-border)' }}>
-          <thead style={{ backgroundColor: 'var(--color-surface-3)'}}>
+          )}
+        </div>
+      </form>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-[var(--color-border)]">
+          <thead className="bg-[var(--color-surface-3)]">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Dauer</th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Preis</th>
-              <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Aktionen</th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Standort</th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Dauer</th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Preis</th>
+              <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-[var(--color-text-muted)]">Aktionen</th>
             </tr>
           </thead>
-          <tbody className="divide-y " style={{ borderColor: 'var(--color-border)' }}>
+          <tbody className="divide-y divide-[var(--color-border)]">
             {services.map((service) => (
-              <tr key={service.id}>
-                <td className="px-6 py-4 whitespace-nowrap font-medium">{service.name}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{service.duration} Min.</td>
-                <td className="px-6 py-4 whitespace-nowrap">{service.price.toFixed(2)} €</td>
+              <tr key={service.id} className="hover:bg-[var(--color-surface-2)] transition-colors">
+                <td className="px-6 py-4 whitespace-nowrap font-medium text-[var(--color-text)]">{service.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                    {service.location ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-surface-3)] text-[var(--color-text)] border border-[var(--color-border)]">
+                            {service.location.name}
+                        </span>
+                    ) : (
+                        <span className="text-xs font-bold text-[var(--color-gold-500)] uppercase tracking-wider">Global</span>
+                    )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-[var(--color-text-muted)]">{service.duration} Min.</td>
+                <td className="px-6 py-4 whitespace-nowrap text-[var(--color-text)]">{service.price.toFixed(2)} €</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
                   <button
                     onClick={() => handleSelectForEdit(service)}
-                    className="text-gold-500 hover:text-gold-400"
+                    className="text-[var(--color-gold-500)] hover:text-[var(--color-text)] transition-colors"
                     disabled={isLoading}
                   >
                     Bearbeiten
                   </button>
                   <button
                     onClick={() => handleDelete(service.id)}
-                    className="text-red-500 hover:text-red-400"
+                    className="text-red-500 hover:text-red-400 transition-colors"
                     disabled={isLoading}
                   >
                     Löschen
@@ -202,6 +259,6 @@ export default function ServiceManagement({ services }: ServiceManagementProps) 
           </tbody>
         </table>
       </div>
-    </>
+    </div>
   );
 }

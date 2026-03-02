@@ -1,4 +1,4 @@
-import { format, formatInTimeZone } from 'date-fns-tz';
+import { formatInTimeZone } from 'date-fns-tz';
 import { de } from 'date-fns/locale';
 import React from 'react';
 
@@ -7,13 +7,15 @@ interface CancellationEmailProps {
   serviceName: string;
   startTime: Date;
   host: string;
+  locationName?: string | null;
+  locationAddress?: string | null;
 }
 
 const formatDate = (date: Date) => {
   return formatInTimeZone(new Date(date), 'Europe/Vienna', "EEEE, dd. MMMM yyyy 'um' HH:mm 'Uhr'", { locale: de });
 };
 
-export default function CancellationEmail({ customerName, serviceName, startTime, host }: CancellationEmailProps) {
+export default function CancellationEmail({ customerName, serviceName, startTime, host, locationName, locationAddress }: CancellationEmailProps) {
   return (
     <div style={{ fontFamily: 'sans-serif', padding: '20px', lineHeight: '1.6' }}>
       <h1 style={{ color: '#f59e0b' }}>Termin storniert</h1>
@@ -27,8 +29,8 @@ export default function CancellationEmail({ customerName, serviceName, startTime
         Schade, dass es nicht geklappt hat. Du kannst jederzeit einen neuen Termin über unsere Webseite buchen.
       </p>
       <p style={{ color: '#999', fontSize: '12px', marginTop: '30px' }}>
-        {host} <br />
-        Wiedner Gürtel 12, 1040 Wien
+        {host} {locationName ? `- ${locationName}` : ''}
+        {locationAddress && <><br />{locationAddress}</>}
       </p>
     </div>
   );

@@ -4,12 +4,59 @@ import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
 import ThemeToggle from './ThemeToggle';
+import { usePathname, useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 
-export default function Navbar() {
+type NavbarProps = {
+    locationSlug?: string;
+};
+
+type SimpleLoc = { slug: string; name: string; city: string; };
+
+export default function Navbar({ locationSlug }: NavbarProps) {
   const { data: session, status } = useSession();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const [locations, setLocations] = useState<SimpleLoc[]>([]);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [isMobileLocationOpen, setIsMobileLocationOpen] = useState(false);
+  const [savedLocation, setSavedLocation] = useState<string>("");
+
+  useEffect(() => {
+    // Restore saved location for navigation fallback
+    const saved = localStorage.getItem('alkos-location');
+    if (saved) setSavedLocation(saved);
+
+    fetch('/api/public/location-data')
+      .then(r => r.json())
+      .then(d => {
+        const locs = d.locations || d;
+        if(Array.isArray(locs)) setLocations(locs);
+      })
+      .catch(e => console.error("Nav Load Error", e));
+  }, []);
+
+  const handleLocationSwitch = (slug: string) => {
+    localStorage.setItem('alkos-location', slug);
+    setSavedLocation(slug);
+    setIsMobileMenuOpen(false);
+    if (locationSlug) {
+        const newPath = pathname.replace(`/${locationSlug}`, `/${slug}`);
+        router.push(newPath);
+    } else {
+        router.push(`/${slug}`);
+    }
+  };
+
+  const getLink = (path: string) => {
+        const targetSlug = locationSlug || savedLocation;
+        if (!targetSlug) return '/';
+        return `/${targetSlug}${path}`;
+    };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -21,21 +68,46 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
 
+  const activeLocation = locations.find(l => l.slug === locationSlug);
+  const activeLocationName = activeLocation ? activeLocation.city : "Standort";
+
   return (
     <header className="backdrop-blur-sm sticky top-0 z-50 border-b" style={{
         backgroundColor: `var(--color-surface-rgb)`,
         borderColor: 'var(--color-border)'
       }}>
       <nav className="container mx-auto flex items-center justify-between p-4">
-        <Link href="/" className="text-xl font-bold  hover:text-gold-500 transition-colors">
+        <Link href={locationSlug ? `/${locationSlug}` : '/'} className="text-xl font-bold  hover:text-gold-500 transition-colors">
           ALKOS
         </Link>
 
         <div className="hidden md:flex items-center space-x-6">
-          <Link href="/termine" className="hover:text-gold-500 transition-colors">Termine</Link>
-          <Link href="/team" className="hover:text-gold-500 transition-colors">Team</Link>
-           <Link href="/gallerie" className="hover:text-gold-500 transition-colors">Gallerie</Link>
-           <Link href="/fehler-melden" className="text-sm hover:text-gold-500 transition-colors text-red-400">Fehler melden</Link>
+          <div className="relative group py-4">
+                <button className="flex items-center gap-1 font-bold text-sm uppercase hover:text-gold-500 transition-colors">
+                    📍 {activeLocationName}
+                    <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+
+                <div className="absolute top-full left-1/2 -translate-x-1/2 w-48 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-all duration-200 transform origin-top pt-2">
+                    <div className="py-1">
+                        {locations.map(loc => (
+                            <button 
+                                key={loc.slug}
+                                onClick={() => handleLocationSwitch(loc.slug)}
+                                className={`block w-full text-left px-4 py-3 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors ${locationSlug === loc.slug ? 'text-gold-500 font-bold' : ''}`}
+                            >
+                                {loc.city} 
+                                <span className="block text-[10px] text-neutral-500 font-normal">{loc.name}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+          <Link href={getLink('/termine')} className="hover:text-gold-500 transition-colors">Termine</Link>
+          <Link href={getLink('/team')} className="hover:text-gold-500 transition-colors">Team</Link>
+          <Link href={getLink('/gallerie')} className="hover:text-gold-500 transition-colors">Gallerie</Link>
+          <Link href={getLink('/fehler-melden')} className="text-sm hover:text-gold-500 transition-colors text-red-400">Fehler melden</Link>
         </div>
 
         <div className="flex items-center space-x-4">
@@ -79,6 +151,14 @@ export default function Navbar() {
                   )}
 
                   {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
+                      <Link href="/admin/web-team" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Teammitglieder</Link>
+                  )}
+
+                  {(session.user?.role === 'ADMIN') && (
+                      <Link href="/admin/locations" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Locations</Link>
+                  )}
+
+                  {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
                       <Link href="/admin/einstellungen" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Walk-In Einstellungen</Link>
                   )}
                   
@@ -92,58 +172,133 @@ export default function Navbar() {
           </div>
 
           <div className="md:hidden">
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} aria-label="Menü öffnen">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" /></svg>
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} aria-label="Menü öffnen" className="relative z-50 p-2">
+               {isMobileMenuOpen ? (
+                   <span className="text-2xl font-bold">✕</span>
+               ) : (
+                   <svg className="w-8 h-8 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" /></svg>
+               )}
             </button>
           </div>
         </div>
       </nav>
 
-      <div 
-        className={`md:hidden absolute w-full backdrop-blur-lg transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`} 
-        style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)'}} >
-        <div className="flex flex-col items-center space-y-4 py-6 border-t"style={{
-          borderColor: 'var(--color-border)'
-        }}
-        >
-          <Link href="/termine" className="hover:text-gold-500" onClick={() => setIsMobileMenuOpen(false)}>Termine</Link>
-          <Link href="/team" className="hover:text-gold-500" onClick={() => setIsMobileMenuOpen(false)}>Team</Link>
-          <Link href="/gallerie" className="hover:text-gold-500" onClick={() => setIsMobileMenuOpen(false)}>Gallerie</Link>
-          <Link href="/fehler-melden" className="hover:text-gold-500 text-red-400" onClick={() => setIsMobileMenuOpen(false)}>Fehler melden</Link>
-          <hr className="w-48" style={{ borderColor: 'var(--color-border)' }} />
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+            <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="fixed inset-0 z-[100] bg-[var(--color-background)]/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 md:hidden h-dvh"
+            >
+                <button 
+                  onClick={() => setIsMobileMenuOpen(false)} 
+                  className="absolute top-6 right-6 text-2xl p-2 rounded-full hover:bg-[var(--color-surface-2)] transition-colors"
+                >
+                  ✕
+                </button>
 
-          {status === 'unauthenticated' && (
-            <Link href="/login" className="bg-gold-500 text-black font-semibold px-4 py-2 rounded-md" onClick={() => setIsMobileMenuOpen(false)}>
-              Login
-            </Link>
-          )}
-          {status === 'authenticated' && (
-            <>
-              <Link href="/meine-termine" className="hover:bg-gold-500 hover:text-black" onClick={() => setIsMobileMenuOpen(false)}>Meine Termine</Link>
-              <Link href="/einstellungen" className="hover:bg-gold-500 hover:text-black" onClick={() => setIsMobileMenuOpen(false)}>Einstellungen</Link>
+                <div className="space-y-6 text-center w-full max-w-sm h-full overflow-y-auto py-12 px-4 no-scrollbar">
+                    
+                    <div className="mb-6">
+                        <button 
+                            onClick={() => setIsMobileLocationOpen(!isMobileLocationOpen)}
+                            className="bg-[var(--color-surface-2)] p-4 rounded-xl w-full flex items-center justify-between border border-[var(--color-border)]"
+                        >
+                            <span className="font-bold text-lg uppercase flex items-center gap-2">
+                                📍 {activeLocationName}
+                            </span>
+                            <span className={`transform transition-transform ${isMobileLocationOpen ? 'rotate-180' : ''}`}>▼</span>
+                        </button>
+                        
+                        <AnimatePresence>
+                            {isMobileLocationOpen && (
+                                <motion.div 
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden mt-2 space-y-2 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)]"
+                                >
+                                    {locations.map(loc => (
+                                        <button 
+                                            key={loc.slug}
+                                            onClick={() => handleLocationSwitch(loc.slug)}
+                                            className="w-full text-left px-4 py-3 border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-surface-2)] transition-colors"
+                                        >
+                                            <div className={`font-bold ${locationSlug === loc.slug ? 'text-gold-500' : ''}`}>{loc.city}</div>
+                                            <div className="text-xs opacity-60">{loc.name}</div>
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
 
-              {(session.user?.role === 'BARBER' || session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
-                <Link href="/admin/kalender" className="hover:bg-gold-500 hover:text-black">Terminkalender</Link>
-              )}
-              {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
-                <Link href="/admin/friseure" className="hover:bg-gold-500 hover:text-black">Nutzer verwalten</Link>
-              )}
+                    <nav className="flex flex-col gap-3 text-2xl font-bold">
+                        <Link href={getLink('/termine')} className="hover:text-gold-500 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Termine</Link>
+                        <Link href={getLink('/team')} className="hover:text-gold-500 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Team</Link>
+                        <Link href={getLink('/gallerie')} className="hover:text-gold-500 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Gallerie</Link>
+                    </nav>
 
-              {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
-                <Link href="/admin/services" className="hover:bg-gold-500 hover:text-black">Services verwalten</Link>
-              )}
+                    <div className="pt-6 border-t border-[var(--color-border)] w-full">
+                         {status === 'authenticated' ? (
+                             <div className="space-y-3">
+                                 <p className="text-sm opacity-60">Hallo, {session.user?.name}</p>
+                                 <Link href="/meine-termine" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Meine Termine</Link>
+                                 <Link href="/einstellungen" className="block w-full py-3 bg-[var(--color-surface-2)] rounded-lg font-bold hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Einstellungen</Link>
 
-              {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
-                <Link href="/admin/dashboard" className="hover:bg-gold-500 hover:text-black">Dashboard</Link>
-              )}
+                                 {(session.user?.role === 'BARBER' || session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
+                                     <div className="mt-4 border-t border-[var(--color-border)] pt-4">
+                                         <p className="text-xs uppercase tracking-widest text-[var(--color-text-muted)] mb-3 font-bold">Verwaltung</p>
+                                         <div className="grid grid-cols-2 gap-2">
+                                             <Link href="/admin/kalender" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                                 📅 <span>Kalender</span>
+                                             </Link>
+                                             
+                                             {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
+                                                 <>
+                                                    <Link href="/admin/dashboard" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                                        📊 <span>Dashboard</span>
+                                                    </Link>
+                                                    <Link href="/admin/friseure" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                                        👥 <span>Nutzer</span>
+                                                    </Link>
+                                                    <Link href="/admin/web-team" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                                        ✂️ <span>Team</span>
+                                                    </Link>
+                                                    <Link href="/admin/services" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                                        🏷️ <span>Services</span>
+                                                    </Link>
+                                                 </>
+                                             )}
 
-              <button onClick={() => { signOut({ callbackUrl: '/' }); setIsMobileMenuOpen(false); }} className="text-red-400 hover:bg-red-500 hover:text-white">
-                Abmelden
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+                                             {(session.user?.role === 'ADMIN') && (
+                                                 <Link href="/admin/locations" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                                     📍 <span>Locations</span>
+                                                 </Link>
+                                             )}
+                                         </div>
+                                     </div>
+                                 )}
+
+                                 <button onClick={() => { signOut({ callbackUrl: '/' }); setIsMobileMenuOpen(false); }} className="w-full text-red-500 text-sm font-bold uppercase tracking-widest py-4 hover:bg-red-500/10 rounded-lg transition-colors mt-2">Abmelden</button>
+                             </div>
+                         ) : (
+                             <Link href="/login" className="block w-full py-4 bg-gold-500 text-black font-bold text-lg rounded-xl shadow-lg shadow-gold-500/20" onClick={() => setIsMobileMenuOpen(false)}>
+                                 Login
+                             </Link>
+                         )}
+                    </div>
+
+                    <div className="pt-8 w-full text-center pb-8">
+                        <Link href={getLink('/fehler-melden')} className="text-xs text-red-400 hover:text-red-300" onClick={() => setIsMobileMenuOpen(false)}>Fehler melden</Link>
+                    </div>
+
+                </div>
+            </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

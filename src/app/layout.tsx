@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Manrope, Playfair_Display, Roboto, Syne } from "next/font/google";
+import JsonLd from '@/components/JsonLd';
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { Providers } from './providers';
@@ -36,10 +37,10 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "ALKOS | High-End Barber Vienna",
-  description: "Die beste Adresse für Haare und Bart am Wiedner Gürtel.",
+  title: "ALKOS | High-End Barber Vienna & Baden",
+  description: "Die beste Adresse für Haare und Bart in Wien und Baden.",
   openGraph: {
-    title: "ALKOS | High-End Barber Vienna",
+    title: "ALKOS | High-End Barber Vienna & Baden",
     description: "Buche deinen Termin beim besten Barber der Stadt.",
     url: "https://alkosbarber.at",
     siteName: "ALKOS",
@@ -63,19 +64,20 @@ export default function RootLayout({
   return (
     <html lang="de" className={`${syne.variable} ${manrope.variable}`}>
       <body className="font-sans antialiased selection:bg-gold-500 selection:text-black">
+        <JsonLd />
         <Providers>
           <ThemeProvider>
             <div className="flex flex-col min-h-screen relative">
               <InstagramBanner />
-              <Navbar />
+              {/*<Navbar />*/}
               <main className="flex-grow">
                 {children}
                 <SpeedInsights />
                 <Analytics/>
               </main>
-              <Footer />
+              {/*<Footer />*/}
               <FloatingScannerButton />
-              <StickyBookingButton />
+              {/*<StickyBookingButton />*/}
             </div>
           </ThemeProvider>
         </Providers>

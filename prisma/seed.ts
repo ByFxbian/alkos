@@ -5,85 +5,62 @@ import bcrypt from 'bcrypt';
 async function main() {
   console.log(`Start seeding ...`);
 
-  await prisma.service.deleteMany();
-
-  const service1 = await prisma.service.create({
-    data: {
-      name: 'Haarschnitt',
-      duration: 20,
-      price: 28.00,
-    },
-  });
-
-  const service2 = await prisma.service.create({
-    data: {
-      name: 'Bart',
-      duration: 15,
-      price: 17.00,
-    },
-  });
-
-  const service3 = await prisma.service.create({
-    data: {
-      name: 'Combo',
-      duration: 30,
-      price: 45.00,
-    },
-  });
-
-  const service4 = await prisma.service.create({
-    data: {
-      name: 'Augenbrauen',
-      duration: 15,
-      price: 7.00,
-    },
-  });
-  const service5 = await prisma.service.create({
-    data: {
-      name: 'Dauerwelle',
-      duration: 120,
-      price: 145.00,
-    },
-  });
-  const service6 = await prisma.service.create({
-    data: {
-      name: 'Traditionelle Rasur',
-      duration: 20,
-      price: 15.00,
-    },
-  });
-  const service7 = await prisma.service.create({
-    data: {
-      name: 'ALKOS VIP Paket',
-      duration: 90,
-      price: 75.00,
-    },
-  });
-
-  const walkInUser = await prisma.user.upsert({
-    where: { email: 'walkin@alkosbarber.at' },
+  const wien = await prisma.location.upsert({
+    where: { slug: 'wien' },
     update: {},
     create: {
-      email: 'walkin@alkosbarber.at',
-      name: 'Walk-In Kunde',
-      role: 'KUNDE',
-      emailVerified: new Date(),
+      name: 'ALKOS',
+      slug: 'wien',
+      address: 'Wiedner Gürtel 12',
+      city: 'Wien',
+      postalCode: '1040',
+      phone: '+43 660 5783966',
+      description: 'Dein Go-To Barbershop in Wien',
+      heroImage: '/images/hero-bg.jpeg',
     },
-  });
-  console.log('Walk-In User created:', walkInUser.id);
+  })
+  console.log(`✅ Location Wien ID: ${wien.id}`)
 
-  const walkInPinSetting = await prisma.settings.upsert({
-    where: { key: 'walkin_pin' },
+  console.log("🔄 Migriere Services...")
+  await prisma.service.updateMany({
+    where: { locationId: null },
+    data: { locationId: wien.id }
+  })
+
+  console.log("🔄 Verbinde Mitarbeiter mit Wien...")
+  const staff = await prisma.user.findMany({
+    where: {
+      role: { in: [Role.BARBER, Role.HEADOFBARBER, Role.ADMIN] },
+      locations: { none: {} }
+    }
+  })
+
+  for (const user of staff) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        locations: {
+          connect: { id: wien.id }
+        }
+      }
+    })
+    console.log(`   👤 ${user.name} -> Wien`)
+  }
+
+  const baden = await prisma.location.upsert({
+    where: { slug: 'baden' },
     update: {},
     create: {
-      key: 'walkin_pin',
-      value: '1234',
-    },
-  });
-  console.log('Walk-In PIN setting created:', walkInPinSetting.key);
+      name: 'Ghost Barber',
+      slug: 'baden',
+      address: 'Hauptplatz 1',
+      city: 'Baden',
+      postalCode: '2500',
+      heroImage: '/images/baden-bg.jpg',
+    }
+  })
 
-  console.log(`Seeding finished.`);
-  console.log({ service1, service2, service3, service4, service5, service6, service7 });
+  console.log("✅ Migration & Seed abgeschlossen.")
 }
 
 main()
