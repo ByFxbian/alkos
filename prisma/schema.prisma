@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -16,71 +10,60 @@ datasource db {
 }
 
 model Account {
-  id        String  @id @default(cuid())
-  userId    String
-  type      String
-  provider  String
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
   providerAccountId String
-  refresh_token String? @db.Text
-  access_token String? @db.Text
-  expires_at Int?
-  token_type String?
-  scope     String?
-  id_token  String? @db.Text
-  session_state String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
 
 model Session {
-  id        String  @id @default(cuid())
-  sessionToken String @unique
-  userId    String
-  expires   DateTime
-  user      User  @relation(fields: [userId], references: [id], onDelete:  Cascade)
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  emailVerified DateTime?
-  instagram String?
-  password  String?
-  name      String?
-  image     String?
-  bio       String?
-  role      Role     @default(KUNDE)
-
-  completedAppointments   Int       @default(0)
-  hasFreeAppointment      Boolean   @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  accounts Account[]
-  sessions Session[]
-
-  appointmentsAsCustomer Appointment[] @relation("CustomerAppointments")
-
-  appointmentsAsBarber   Appointment[] @relation("BarberAppointments")
-
-  availabilities Availability[]
-
-  passwordResetTokens PasswordResetToken[]
-
-  blockedTimes BlockedTime[] @relation("BarberBlockedTimes")
-
-  isBlocked Boolean @default(false)
-
-  locations Location[] @relation("UserLocations")
+  id                     String               @id @default(cuid())
+  email                  String               @unique
+  name                   String?
+  role                   Role                 @default(KUNDE)
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  instagram              String?
+  password               String?
+  emailVerified          DateTime?
+  completedAppointments  Int                  @default(0)
+  hasFreeAppointment     Boolean              @default(false)
+  bio                    String?
+  image                  String?
+  isBlocked              Boolean              @default(false)
+  accounts               Account[]
+  appointmentsAsBarber   Appointment[]        @relation("BarberAppointments")
+  appointmentsAsCustomer Appointment[]        @relation("CustomerAppointments")
+  availabilities         Availability[]
+  blockedTimes           BlockedTime[]        @relation("BarberBlockedTimes")
+  passwordResetTokens    PasswordResetToken[]
+  sessions               Session[]
+  locations              Location[]           @relation("UserLocations")
 }
 
 model BlockedEmail {
-  id    String  @id @default(cuid())
-  email String  @unique
-  reason String?
+  id        String   @id @default(cuid())
+  email     String   @unique
+  reason    String?
   createdAt DateTime @default(now())
 }
 
@@ -92,144 +75,133 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-enum Role {
-  KUNDE
-  HEADOFBARBER
-  BARBER
-  ADMIN
-}
-
 model Availability {
   id        String   @id @default(cuid())
-  dayOfWeek Int      // 0=Sonntag, 1=Montag, 2=Dienstag, etc.
-  startTime String   // "HH:mm", z.B. "09:00"
-  endTime   String   // "HH:mm", z.B. "18:00"
-
+  dayOfWeek Int
+  startTime String
+  endTime   String
   barberId  String
-  barber    User     @relation(fields: [barberId], references: [id])
-
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+  barber    User     @relation(fields: [barberId], references: [id])
 
   @@index([barberId, dayOfWeek])
 }
 
 model Service {
-  id          String   @id @default(cuid())
-  name        String
-  duration    Int
-  price       Float
-
-  locationId  String?
-  location    Location? @relation(fields: [locationId], references: [id])
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  id           String        @id @default(cuid())
+  name         String
+  duration     Int
+  price        Float
+  createdAt    DateTime      @default(now())
+  locationId   String?
+  updatedAt    DateTime      @default(now()) @updatedAt
   appointments Appointment[]
+  location     Location?     @relation(fields: [locationId], references: [id])
 }
 
 model Appointment {
-  id        String   @id @default(cuid())
-  isFree    Boolean  @default(false)
-  startTime DateTime
-  endTime   DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  customerId String
-  customer   User   @relation("CustomerAppointments", fields: [customerId], references: [id])
-
-  barberId   String
-  barber     User   @relation("BarberAppointments", fields: [barberId], references: [id])
-
-  serviceId String
-  service   Service  @relation(fields: [serviceId], references: [id])
-
-  stampToken StampToken?
-
-  reminderSentAt DateTime?
-
+  id                String      @id @default(cuid())
+  startTime         DateTime
+  endTime           DateTime
+  createdAt         DateTime    @default(now())
+  customerId        String
+  serviceId         String
+  barberId          String
+  isFree            Boolean     @default(false)
+  reminderSentAt    DateTime?
   reviewEmailSentAt DateTime?
-
-  locationId String?
-  location   Location? @relation(fields: [locationId], references: [id])
+  locationId        String?
+  updatedAt         DateTime    @default(now()) @updatedAt
+  walkInName        String?
+  barber            User        @relation("BarberAppointments", fields: [barberId], references: [id])
+  customer          User        @relation("CustomerAppointments", fields: [customerId], references: [id])
+  location          Location?   @relation(fields: [locationId], references: [id])
+  service           Service     @relation(fields: [serviceId], references: [id])
+  stampToken        StampToken?
 
   @@index([barberId, startTime])
   @@index([customerId, startTime])
 }
 
 model StampToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  appointmentId String @unique
-  appointment Appointment @relation(fields: [appointmentId], references: [id])
-
-  expiresAt DateTime
-  redeemedAt DateTime?
-  createdAt DateTime @default(now())
+  id            String      @id @default(cuid())
+  token         String      @unique
+  appointmentId String      @unique
+  expiresAt     DateTime
+  redeemedAt    DateTime?
+  createdAt     DateTime    @default(now())
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
 }
 
 model PasswordResetToken {
-  id       String   @id @default(cuid())
-  token    String   @unique
-  userId   String   
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
+  id         String    @id @default(cuid())
+  token      String    @unique
+  userId     String
+  expiresAt  DateTime
   redeemedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
 model BlockedTime {
-  id        String  @id() @default(cuid())
+  id        String   @id @default(cuid())
   startTime DateTime
   endTime   DateTime
   reason    String?
-
   barberId  String
-  barber    User    @relation("BarberBlockedTimes", fields: [barberId], references: [id], onDelete: Cascade)
-
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+  barber    User     @relation("BarberBlockedTimes", fields: [barberId], references: [id], onDelete: Cascade)
 
   @@index([barberId, startTime, endTime])
 }
 
 model Location {
-  id        String  @id @default(cuid())
-  name      String
-  slug      String  @unique
-  address   String
-  city      String
-  postalCode String
-  phone     String?  
-  email     String?
+  id            String        @id @default(cuid())
+  name          String
+  slug          String        @unique
+  address       String
+  city          String
+  postalCode    String
+  phone         String?
+  email         String?
   googleMapsUrl String?
+  heroImage     String?
+  description   String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @default(now()) @updatedAt
   galleryImages String[]
-
-  heroImage String?
-  description String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  users     User[]  @relation("UserLocations")
-  appointments Appointment[]
-  services  Service[]
-  teamMembers TeamMember[] @relation("TeamMemberLocations")
+  appointments  Appointment[]
+  services      Service[]
+  teamMembers   TeamMember[]  @relation("TeamMemberLocations")
+  users         User[]        @relation("UserLocations")
 }
 
 model TeamMember {
-  id        String  @id @default(cuid())
+  id        String     @id @default(cuid())
   name      String
   role      String
   bio       String?
   image     String?
-  sortOrder Int     @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
+  sortOrder Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now()) @updatedAt
   locations Location[] @relation("TeamMemberLocations")
+}
+
+model Settings {
+  id        String   @id
+  key       String   @unique
+  value     String
+  updatedAt DateTime @default(now())
+}
+
+enum Role {
+  KUNDE
+  HEADOFBARBER
+  BARBER
+  ADMIN
 }

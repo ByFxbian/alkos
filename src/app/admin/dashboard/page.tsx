@@ -137,7 +137,7 @@ export default async function AdminDashboardPage() {
     .slice(0, 3)
     .map(([name, count]) => ({ name, count }));
 
-  let appointmentsCountNext7Days = appointmentsNext7Days.length;
+  const appointmentsCountNext7Days = appointmentsNext7Days.length;
 
   const servicePopularity: Record<string, { count: number, name: string }> = {};
   for (const app of appointmentsNext7Days) {

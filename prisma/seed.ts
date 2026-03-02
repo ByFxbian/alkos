@@ -16,7 +16,7 @@ async function main() {
       postalCode: '1040',
       phone: '+43 660 5783966',
       description: 'Dein Go-To Barbershop in Wien',
-      heroImage: '/images/hero-bg.jpeg', 
+      heroImage: '/images/hero-bg.jpeg',
     },
   })
   console.log(`✅ Location Wien ID: ${wien.id}`)
@@ -51,12 +51,12 @@ async function main() {
     where: { slug: 'baden' },
     update: {},
     create: {
-        name: 'Ghost Barber',
-        slug: 'baden',
-        address: 'Hauptplatz 1',
-        city: 'Baden',
-        postalCode: '2500',
-        heroImage: '/images/baden-bg.jpg', 
+      name: 'Ghost Barber',
+      slug: 'baden',
+      address: 'Hauptplatz 1',
+      city: 'Baden',
+      postalCode: '2500',
+      heroImage: '/images/baden-bg.jpg',
     }
   })
 
