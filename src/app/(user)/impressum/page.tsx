@@ -7,9 +7,9 @@ export default function ImpressumPage() {
         <p>
           ALKOS (im folgenden: Verantwortlicher)<br />
           Geschäftsführer: Alen Mujic<br />
-          Wiedner Gürtel 12<br />
+          Wiedner Gürtel 12<br />
           A-1040 Wien<br />
-          Tel: +43 660 2231353<br />
+          Tel: +43 660 5783966<br />
           E-Mail: contact@alkosbarber.at<br />
           Instagram: alkosbarber
         </p>
@@ -18,7 +18,6 @@ export default function ImpressumPage() {
           Fabian Sopa<br />
           Tel: +43 664 2584080<br />
           E-Mail: sopa.fabian@gmx.net<br />
-          Instagram: fabian.s2702<br />
         </p>
       </div>
     </div>

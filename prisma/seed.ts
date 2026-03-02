@@ -3,7 +3,7 @@ const prisma = new PrismaClient();
 import bcrypt from 'bcrypt';
 
 async function main() {
-  console.log("📍 Prüfe/Erstelle Location 'Wien'...")
+  console.log(`Start seeding ...`);
 
   const wien = await prisma.location.upsert({
     where: { slug: 'wien' },

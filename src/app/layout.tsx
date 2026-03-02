@@ -10,6 +10,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
 import InstagramBanner from "@/components/InstagramBanner";
 import StickyBookingButton from "@/components/StickyBookingButton";
+import FloatingScannerButton from "@/components/FloatingScannerButton";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -74,8 +75,9 @@ export default function RootLayout({
                 <SpeedInsights />
                 <Analytics/>
               </main>
-              {/*<Footer />
-              <StickyBookingButton />*/}
+              <Footer />
+              <FloatingScannerButton />
+              <StickyBookingButton />
             </div>
           </ThemeProvider>
         </Providers>
