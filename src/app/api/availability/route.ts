@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { fromZonedTime, toZonedTime, format } from "date-fns-tz";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
 import { startOfDay, endOfDay } from "date-fns";
 import { logger } from "@/lib/logger";
 
@@ -15,21 +15,63 @@ const schema = z.object({
 
 const timeZone = 'Europe/Vienna';
 
-async function getSlotsForBarber(barberId: string, date: string, serviceDuration: number) {
+/**
+ * Get available time slots for a barber at a location on a given date.
+ * 
+ * Uses location opening hours (Availability with barberId=null) and checks
+ * for BarberShift overrides on specific dates, then filters out booked
+ * appointments and blocked times.
+ */
+async function getSlotsForBarber(barberId: string, date: string, serviceDuration: number, locationId?: string) {
     const requestedDate = new Date(date + 'T00:00:00');
     const dayOfWeek = requestedDate.getDay();
 
-    const barberAvailability = await prisma.availability.findFirst({
-        where: {
-            barberId: barberId,
-            dayOfWeek: dayOfWeek,
-        },
-    });
+    let startTime: string | undefined;
+    let endTime: string | undefined;
 
-    if (!barberAvailability) return [];
+    // Layer 1: Check for a BarberShift override for this barber on this specific date
+    if (locationId) {
+        const shift = await prisma.barberShift.findUnique({
+            where: {
+                barberId_date: {
+                    barberId: barberId,
+                    date: requestedDate,
+                }
+            }
+        });
 
-    const availabilityStartInVienna = fromZonedTime(`${date}T${barberAvailability.startTime}:00`, timeZone);
-    const availabilityEndInVienna = fromZonedTime(`${date}T${barberAvailability.endTime}:00`, timeZone);
+        if (shift) {
+            if (shift.locationId === locationId) {
+                // Barber is overridden to THIS location on this date
+                startTime = shift.startTime;
+                endTime = shift.endTime;
+            } else {
+                // Barber is overridden to a DIFFERENT location — not available here
+                return [];
+            }
+        }
+    }
+
+    // Layer 2: Fall back to location opening hours
+    if (!startTime || !endTime) {
+        if (!locationId) return [];
+
+        const locationHours = await prisma.availability.findFirst({
+            where: {
+                locationId: locationId,
+                dayOfWeek: dayOfWeek,
+                barberId: null, // Location-level hours
+            },
+        });
+
+        if (!locationHours) return [];
+
+        startTime = locationHours.startTime;
+        endTime = locationHours.endTime;
+    }
+
+    const availabilityStartInVienna = fromZonedTime(`${date}T${startTime}:00`, timeZone);
+    const availabilityEndInVienna = fromZonedTime(`${date}T${endTime}:00`, timeZone);
 
     const dayStart = startOfDay(availabilityStartInVienna);
     const dayEnd = endOfDay(availabilityStartInVienna);
@@ -109,14 +151,52 @@ export async function GET(req: Request) {
             if (!locationId) {
                 return NextResponse.json({ error: 'Location ID required for random barber selection' }, { status: 400 });
             }
-            const barbers = await prisma.user.findMany({
+
+            const requestedDate = new Date(date + 'T00:00:00');
+
+            // Find barbers available at this location:
+            // 1. Barbers permanently assigned to this location (UserLocations)
+            // 2. + Barbers with a BarberShift override to this location on this date
+            // 3. - Barbers who have a shift override to a DIFFERENT location on this date
+            const [permanentBarbers, shiftBarbers] = await Promise.all([
+                prisma.user.findMany({
+                    where: {
+                        locations: { some: { id: locationId } },
+                        role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] },
+                        isBlocked: false,
+                    },
+                    select: { id: true }
+                }),
+                prisma.barberShift.findMany({
+                    where: {
+                        locationId: locationId,
+                        date: requestedDate,
+                    },
+                    select: { barberId: true }
+                })
+            ]);
+
+            // Get barbers who have a shift override to a DIFFERENT location on this date
+            const overriddenBarbers = await prisma.barberShift.findMany({
                 where: {
-                    locations: { some: { id: locationId } },
-                    role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] }
+                    date: requestedDate,
+                    locationId: { not: locationId },
                 },
-                select: { id: true }
+                select: { barberId: true }
             });
-            targetBarberIds = barbers.map(b => b.id);
+            const overriddenBarberIds = new Set(overriddenBarbers.map(b => b.barberId));
+
+            const barberIdSet = new Set<string>();
+            // Add shift override barbers (explicitly assigned here today)
+            shiftBarbers.forEach(b => barberIdSet.add(b.barberId));
+            // Add permanent barbers, excluding those overridden to another location today
+            permanentBarbers.forEach(b => {
+                if (!overriddenBarberIds.has(b.id)) {
+                    barberIdSet.add(b.id);
+                }
+            });
+
+            targetBarberIds = Array.from(barberIdSet);
         } else {
             targetBarberIds = [barberId];
         }
@@ -124,7 +204,7 @@ export async function GET(req: Request) {
         const allSlotsSet = new Set<string>();
 
         for (const bId of targetBarberIds) {
-            const slots = await getSlotsForBarber(bId, date, service.duration);
+            const slots = await getSlotsForBarber(bId, date, service.duration, locationId);
             slots.forEach(s => allSlotsSet.add(s.toISOString()));
         }
 
@@ -149,4 +229,3 @@ export async function GET(req: Request) {
     }
     return response!;
 }
-

@@ -78,13 +78,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </header>
           
           <main className="flex-1 overflow-y-auto bg-[var(--color-bg)] text-[var(--color-text)] relative p-0 scroll-smooth">
-               <div className="md:hidden flex overflow-x-auto gap-2 p-2 border-b border-[var(--color-border)] bg-[var(--color-surface)]">
-                    <Link href="/admin/dashboard" className="px-3 py-1.5 text-xs border rounded">Dashboard</Link>
-                    <Link href="/admin/kalender" className="px-3 py-1.5 text-xs border rounded">Kalender</Link>
+               <div className="md:hidden flex overflow-x-auto gap-2 p-2 border-b border-[var(--color-border)] bg-[var(--color-surface)] no-scrollbar">
+                    <Link href="/admin/dashboard" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">📊 Dashboard</Link>
+                    <Link href="/admin/kalender" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">📅 Kalender</Link>
                     {(session.user.role === 'ADMIN' || session.user.role === 'HEADOFBARBER') && (
                         <>
-                            <Link href="/admin/friseure" className="px-3 py-1.5 text-xs border rounded">Team</Link>
-                            <Link href="/admin/locations" className="px-3 py-1.5 text-xs border rounded">Locations</Link>
+                            <Link href="/admin/friseure" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">👥 Team</Link>
+                            <Link href="/admin/services" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">✂️ Services</Link>
+                            <Link href="/admin/locations" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">📍 Standorte</Link>
+                            <Link href="/admin/web-team" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">🌐 Web-Team</Link>
+                            <Link href="/admin/einstellungen" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">⚙️ Walk-In</Link>
                         </>
                     )}
                </div>

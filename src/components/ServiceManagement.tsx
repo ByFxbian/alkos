@@ -212,7 +212,51 @@ export default function ServiceManagement({ services: initialServices, available
         </div>
       </form>
 
-      <div className="overflow-x-auto">
+      {/* Mobile card view */}
+      <div className="md:hidden space-y-3">
+        {services.map((service) => (
+          <div key={service.id} className="p-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)]">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <h4 className="font-bold text-sm text-[var(--color-text)]">{service.name}</h4>
+                {service.location ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--color-surface-3)] text-[var(--color-text)] border border-[var(--color-border)] mt-1">
+                    {service.location.name}
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold text-[var(--color-gold-500)] uppercase tracking-wider mt-1 inline-block">Global</span>
+                )}
+              </div>
+              <div className="text-right">
+                <div className="font-bold text-sm text-[var(--color-text)]">{service.price.toFixed(2)} €</div>
+                <div className="text-[10px] text-[var(--color-text-muted)]">{service.duration} Min.</div>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => handleSelectForEdit(service)}
+                className="flex-1 text-xs font-medium py-2 rounded border border-[var(--color-border)] text-[var(--color-gold-500)] hover:bg-[var(--color-surface-3)] transition-colors"
+                disabled={isLoading}
+              >
+                ✏️ Bearbeiten
+              </button>
+              <button
+                onClick={() => handleDelete(service.id)}
+                className="flex-1 text-xs font-medium py-2 rounded border border-red-500/20 text-red-500 hover:bg-red-500/10 transition-colors"
+                disabled={isLoading}
+              >
+                🗑 Löschen
+              </button>
+            </div>
+          </div>
+        ))}
+        {services.length === 0 && (
+          <p className="text-center text-sm text-[var(--color-text-muted)] py-8">Keine Services vorhanden.</p>
+        )}
+      </div>
+
+      {/* Desktop table view */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full divide-y divide-[var(--color-border)]">
           <thead className="bg-[var(--color-surface-3)]">
             <tr>

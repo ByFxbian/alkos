@@ -295,8 +295,8 @@ export default function UserManagement({ allUsers, currentUserId, availableLocat
               )}
 
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => handleDelete(user.id)} disabled={isRowDisabled} className="bg-red-100 dark:bg-red-900/20 text-red-500 p-2 rounded text-sm">Löschen</button>
-                <button onClick={() => handleBan(user.id)} disabled={isRowDisabled} className="bg-red-500 text-white p-2 rounded text-sm font-bold">BANNEN (Löschen+Sperren)</button>
+                <button onClick={() => handleDelete(user.id)} disabled={isRowDisabled} className="bg-red-100 dark:bg-red-900/20 text-red-500 p-2 rounded text-xs font-medium">🗑 Löschen</button>
+                <button onClick={() => handleBan(user.id)} disabled={isRowDisabled} className="bg-red-500 text-white p-2 rounded text-xs font-bold">🚫 Bannen</button>
               </div>
             </div>
           );

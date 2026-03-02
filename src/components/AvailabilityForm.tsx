@@ -8,11 +8,17 @@ type Availability = {
   dayOfWeek: number;
   startTime: string;
   endTime: string;
-  barberId: string;
+  locationId: string | null;
+};
+
+type Location = {
+  id: string;
+  name: string;
 };
 
 type AvailabilityFormProps = {
-  currentAvailabilities: Availability[];
+  availableLocations: Location[];
+  currentAvailabilities: Record<string, Availability[]>; // locationId -> availabilities
 };
 
 const daysOfWeek = [
@@ -25,21 +31,33 @@ const daysOfWeek = [
   { id: 0, name: 'Sonntag' },
 ];
 
-export default function AvailabilityForm({ currentAvailabilities }: AvailabilityFormProps) {
-  const [schedule, setSchedule] = useState(() => {
-    const initialSchedule = new Map<number, { startTime: string; endTime: string; isActive: boolean }>();
-    daysOfWeek.forEach(day => {
-      const currentDay = currentAvailabilities.find(a => a.dayOfWeek === day.id);
-      initialSchedule.set(day.id, {
-        startTime: currentDay?.startTime || '09:00',
-        endTime: currentDay?.endTime || '18:00',
-        isActive: !!currentDay,
-      });
-    });
-    return initialSchedule;
-  });
+type DaySchedule = { startTime: string; endTime: string; isActive: boolean };
+
+export default function AvailabilityForm({ availableLocations, currentAvailabilities }: AvailabilityFormProps) {
+  const [selectedLocationId, setSelectedLocationId] = useState(availableLocations[0]?.id || '');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  const buildScheduleForLocation = (locationId: string) => {
+    const locationAvails = currentAvailabilities[locationId] || [];
+    const schedule = new Map<number, DaySchedule>();
+    daysOfWeek.forEach(day => {
+      const existing = locationAvails.find(a => a.dayOfWeek === day.id);
+      schedule.set(day.id, {
+        startTime: existing?.startTime || '09:00',
+        endTime: existing?.endTime || '18:00',
+        isActive: !!existing,
+      });
+    });
+    return schedule;
+  };
+
+  const [schedule, setSchedule] = useState(() => buildScheduleForLocation(selectedLocationId));
+
+  const handleLocationSwitch = (locId: string) => {
+    setSelectedLocationId(locId);
+    setSchedule(buildScheduleForLocation(locId));
+  };
 
   const handleTimeChange = (dayId: number, field: 'startTime' | 'endTime', value: string) => {
     const newSchedule = new Map(schedule);
@@ -62,11 +80,14 @@ export default function AvailabilityForm({ currentAvailabilities }: Availability
     const res = await fetch('/api/availability/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(Object.fromEntries(schedule)),
+      body: JSON.stringify({
+        locationId: selectedLocationId,
+        schedule: Object.fromEntries(schedule),
+      }),
     });
 
     if (res.ok) {
-      alert('Arbeitszeiten erfolgreich gespeichert!');
+      alert('Öffnungszeiten erfolgreich gespeichert!');
       router.refresh();
     } else {
       alert('Ein Fehler ist aufgetreten.');
@@ -74,31 +95,55 @@ export default function AvailabilityForm({ currentAvailabilities }: Availability
     setIsLoading(false);
   };
 
+  const selectedLocation = availableLocations.find(l => l.id === selectedLocationId);
+
   return (
-    <form onSubmit={handleSubmit} className="p-6 rounded-lg max-w-2xl mx-auto" style={{ backgroundColor: 'var(--color-surface)' }}>
-      <div className="space-y-4">
+    <form onSubmit={handleSubmit} className="p-4 md:p-6 rounded-lg max-w-3xl mx-auto" style={{ backgroundColor: 'var(--color-surface)' }}>
+      {/* Location Tabs */}
+      <div className="flex gap-2 mb-6">
+        {availableLocations.map(loc => (
+          <button
+            key={loc.id}
+            type="button"
+            onClick={() => handleLocationSwitch(loc.id)}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+              selectedLocationId === loc.id
+                ? 'bg-[var(--color-gold-500)] text-black shadow-md'
+                : 'bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)]/80'
+            }`}
+          >
+            {loc.name}
+          </button>
+        ))}
+      </div>
+
+      <p className="text-xs text-[var(--color-text-muted)] mb-4">
+        Öffnungszeiten für <strong>{selectedLocation?.name}</strong>. Gilt für alle Barber an diesem Standort.
+      </p>
+
+      <div className="space-y-3">
         {daysOfWeek.map(day => {
           const daySchedule = schedule.get(day.id)!;
           return (
-            <div key={day.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-              <div className="flex items-center">
+            <div key={day.id} className="p-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)]">
+              <div className="flex items-center gap-3 mb-2">
                 <input
                   type="checkbox"
                   id={`active-${day.id}`}
                   checked={daySchedule.isActive}
                   onChange={(e) => handleIsActiveChange(day.id, e.target.checked)}
-                  className="h-5 w-5 rounded text-gold-500 focus:ring-gold-500"
+                  className="h-5 w-5 rounded text-gold-500 focus:ring-gold-500 flex-shrink-0"
                   style={{ backgroundColor: 'var(--color-background)', borderColor: 'var(--color-border)' }}
                 />
-                <label htmlFor={`active-${day.id}`} className="ml-3 text-lg font-medium">{day.name}</label>
+                <label htmlFor={`active-${day.id}`} className="text-sm md:text-base font-bold">{day.name}</label>
               </div>
-              <div className={`col-span-2 grid grid-cols-2 gap-4 ${!daySchedule.isActive ? 'opacity-50' : ''}`}>
+              <div className={`grid grid-cols-2 gap-2 ${!daySchedule.isActive ? 'opacity-30 pointer-events-none' : ''}`}>
                 <input
                   type="time"
                   value={daySchedule.startTime}
                   onChange={(e) => handleTimeChange(day.id, 'startTime', e.target.value)}
                   disabled={!daySchedule.isActive}
-                  className=" p-2 rounded w-full"
+                  className="p-2 rounded w-full text-sm"
                   style={{ backgroundColor: 'var(--color-background)', border: '1px solid var(--color-border)' }}
                 />
                 <input
@@ -106,7 +151,7 @@ export default function AvailabilityForm({ currentAvailabilities }: Availability
                   value={daySchedule.endTime}
                   onChange={(e) => handleTimeChange(day.id, 'endTime', e.target.value)}
                   disabled={!daySchedule.isActive}
-                  className="p-2 rounded w-full"
+                  className="p-2 rounded w-full text-sm"
                   style={{ backgroundColor: 'var(--color-background)', border: '1px solid var(--color-border)' }}
                 />
               </div>
@@ -114,7 +159,7 @@ export default function AvailabilityForm({ currentAvailabilities }: Availability
           );
         })}
       </div>
-      <div className="mt-8 text-right">
+      <div className="mt-6 text-right">
         <button
           type="submit"
           disabled={isLoading}

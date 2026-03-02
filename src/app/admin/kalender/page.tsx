@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import AvailabilityForm from '@/components/AvailabilityForm';
+import ShiftManager from '@/components/ShiftManager';
 import BarberSchedule from '@/components/BarberSchedule';
 import { Role } from '@/generated/prisma';
 import { BlockedTimeManager } from '@/components/BlockedTimeManager';
@@ -52,10 +53,22 @@ export default async function KalenderAdminPage() {
       }
   }
 
-  const availabilities = await prisma.availability.findMany({
-    where: { barberId: dbUser.id },
+  // Fetch location-level opening hours (barberId IS NULL)
+  const allLocationAvailabilities = await prisma.availability.findMany({
+    where: {
+      barberId: null,
+      locationId: { in: availableLocations.map(l => l.id) },
+    },
     orderBy: { dayOfWeek: 'asc' },
   });
+
+  // Group by locationId
+  const availabilitiesByLocation: Record<string, typeof allLocationAvailabilities> = {};
+  for (const a of allLocationAvailabilities) {
+    const locId = a.locationId || 'unknown';
+    if (!availabilitiesByLocation[locId]) availabilitiesByLocation[locId] = [];
+    availabilitiesByLocation[locId].push(a);
+  }
 
   const today = new Date();
   today.setHours(0,0,0,0);
@@ -134,18 +147,34 @@ export default async function KalenderAdminPage() {
   return (
     <div className="container mx-auto py-12 px-4 animate-in fade-in duration-700 space-y-16">
       
+      {isAdminOrHead && (
       <div>
         <div className="mb-8">
-            <h1 className="text-4xl font-bold tracking-tight text-[var(--color-text)]">Meine Arbeitszeiten</h1>
+            <h1 className="text-4xl font-bold tracking-tight text-[var(--color-text)]">Standort-Öffnungszeiten</h1>
             <p className="mt-2 text-[var(--color-text-muted)]">
-                Definiere hier deine regulären Wochenarbeitszeiten. Diese gelten allgemein für dich.
+                Definiere die Öffnungszeiten pro Standort. Gilt für alle Barber die dem Standort zugewiesen sind.
             </p>
         </div>
         
         <div className="bg-[var(--color-surface-2)] p-6 rounded-xl border border-[var(--color-border)] shadow-sm">
-             <AvailabilityForm currentAvailabilities={availabilities} />
+             <AvailabilityForm currentAvailabilities={availabilitiesByLocation} availableLocations={availableLocations} />
         </div>
       </div>
+      )}
+
+      {isAdminOrHead && (
+        <div>
+          <div className="mb-8">
+              <h2 className="text-3xl font-bold tracking-tight text-[var(--color-text)]">Schicht-Overrides</h2>
+              <p className="mt-2 text-[var(--color-text-muted)]">
+                  Einmalige Standort-Zuteilungen für bestimmte Tage (z.B. Barber X muss am 15.3. in Baden aushelfen).
+              </p>
+          </div>
+          <div className="bg-[var(--color-surface-2)] p-6 rounded-xl border border-[var(--color-border)] shadow-sm">
+              <ShiftManager availableLocations={availableLocations} allBarbers={allBarbers} />
+          </div>
+        </div>
+      )}
 
       <div>
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">

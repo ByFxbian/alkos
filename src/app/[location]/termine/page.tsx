@@ -34,9 +34,6 @@ export default async function TerminePage({ params }: { params: Promise<{ locati
             }
         }
         },
-        include: {
-            availabilities: true 
-        }
     });
 
     return (

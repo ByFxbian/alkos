@@ -54,6 +54,7 @@ model User {
   appointmentsAsBarber   Appointment[]        @relation("BarberAppointments")
   appointmentsAsCustomer Appointment[]        @relation("CustomerAppointments")
   availabilities         Availability[]
+  barberShifts           BarberShift[]
   blockedTimes           BlockedTime[]        @relation("BarberBlockedTimes")
   passwordResetTokens    PasswordResetToken[]
   sessions               Session[]
@@ -76,16 +77,35 @@ model VerificationToken {
 }
 
 model Availability {
-  id        String   @id @default(cuid())
-  dayOfWeek Int
-  startTime String
-  endTime   String
-  barberId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  barber    User     @relation(fields: [barberId], references: [id])
+  id         String    @id @default(cuid())
+  dayOfWeek  Int
+  startTime  String
+  endTime    String
+  barberId   String?
+  locationId String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now()) @updatedAt
+  barber     User?     @relation(fields: [barberId], references: [id])
+  location   Location? @relation(fields: [locationId], references: [id])
 
   @@index([barberId, dayOfWeek])
+  @@index([locationId])
+}
+
+model BarberShift {
+  id         String   @id @default(cuid())
+  barberId   String
+  locationId String
+  date       DateTime @db.Date
+  startTime  String
+  endTime    String
+  note       String?
+  createdAt  DateTime @default(now())
+  barber     User     @relation(fields: [barberId], references: [id])
+  location   Location @relation(fields: [locationId], references: [id])
+
+  @@unique([barberId, date])
+  @@index([barberId, date])
 }
 
 model Service {
@@ -174,10 +194,12 @@ model Location {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @default(now()) @updatedAt
   galleryImages String[]
-  appointments  Appointment[]
-  services      Service[]
-  teamMembers   TeamMember[]  @relation("TeamMemberLocations")
-  users         User[]        @relation("UserLocations")
+  appointments    Appointment[]
+  availabilities  Availability[]
+  barberShifts    BarberShift[]
+  services        Service[]
+  teamMembers     TeamMember[]  @relation("TeamMemberLocations")
+  users           User[]        @relation("UserLocations")
 }
 
 model TeamMember {

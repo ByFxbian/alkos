@@ -278,7 +278,13 @@ export default function Navbar({ locationSlug }: NavbarProps) {
                                                      📍 <span>Locations</span>
                                                  </Link>
                                              )}
-                                         </div>
+
+                                              {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
+                                                  <Link href="/admin/einstellungen" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                                      ⚙️ <span>Walk-In</span>
+                                                  </Link>
+                                              )}
+                                          </div>
                                      </div>
                                  )}
 

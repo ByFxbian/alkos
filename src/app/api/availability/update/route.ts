@@ -9,36 +9,47 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   let response: NextResponse;
 
-  if (!session ||!['ADMIN', 'BARBER', 'HEADOFBARBER'].includes(session.user.role)) {
+  if (!session || !['ADMIN', 'HEADOFBARBER'].includes(session.user.role)) {
     logger.warn("API Route /api/availability/update POST: Unauthorized access attempt.");
     response = NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
     return response;
   }
 
-  const barberId = session.user.id;
-  logger.info("API Route /api/availability/update POST: User authorized.", { userId: barberId, role: session.user.role });
-
   try {
-    const body: Record<string, { startTime: string; endTime: string; isActive: boolean }> = await req.json();
-    logger.info("API Route /api/availability/update POST: Received schedule data.", { userId: barberId, scheduleKeys: Object.keys(body) });
+    const body = await req.json();
+    const { locationId, schedule } = body as {
+      locationId: string;
+      schedule: Record<string, { startTime: string; endTime: string; isActive: boolean }>;
+    };
+
+    if (!locationId) {
+      return NextResponse.json({ error: 'Location ID fehlt' }, { status: 400 });
+    }
+
+    logger.info("API Route /api/availability/update POST: Saving location hours.", { locationId, scheduleKeys: Object.keys(schedule) });
 
     await prisma.$transaction(async (tx) => {
+      // Delete existing location-level availabilities (barberId IS NULL) for this location
       const deleted = await tx.availability.deleteMany({
-        where: { barberId: barberId },
+        where: {
+          locationId: locationId,
+          barberId: null,
+        },
       });
-      logger.info("API Route /api/availability/update POST: Deleted old availabilities.", { userId: barberId, count: deleted.count });
+      logger.info("API Route /api/availability/update POST: Deleted old location hours.", { locationId, count: deleted.count });
 
       const newAvailabilities = [];
-      for (const dayIdStr in body) {
+      for (const dayIdStr in schedule) {
         const dayId = parseInt(dayIdStr, 10);
-        const { startTime, endTime, isActive } = body[dayIdStr];
+        const { startTime, endTime, isActive } = schedule[dayIdStr];
 
         if (isActive) {
           newAvailabilities.push({
             dayOfWeek: dayId,
             startTime,
             endTime,
-            barberId,
+            locationId,
+            barberId: null,
           });
         }
       }
@@ -47,25 +58,17 @@ export async function POST(req: Request) {
         await tx.availability.createMany({
           data: newAvailabilities,
         });
-        logger.info("API Route /api/availability/update POST: Created new availabilities.", { userId: barberId, count: newAvailabilities.length });
-      } else {
-        logger.info("API Route /api/availability/update POST: No active days found, schedule cleared.", { userId: barberId });
+        logger.info("API Route /api/availability/update POST: Created new location hours.", { locationId, count: newAvailabilities.length });
       }
     });
 
-    response = NextResponse.json({ message: 'Arbeitszeiten aktualisiert' }, { status: 200 });
+    response = NextResponse.json({ message: 'Öffnungszeiten aktualisiert' }, { status: 200 });
   } catch (error) {
     logger.error('API Route /api/availability/update POST - Update availability error:', { userId: session?.user?.id, error });
     console.error('Update availability error:', error);
     response = NextResponse.json({ error: 'Fehler beim Speichern.' }, { status: 500 });
   } finally {
-     logger.info("API Route /api/availability/update POST: Flushing logs.");
     await logger.flush();
-  }
-  if (!response!) {
-      logger.error("API Route /api/availability/update POST: Reached end without setting a response.");
-      response = NextResponse.json({ error: 'Interner Serverfehler' }, { status: 500 });
-      await logger.flush();
   }
   return response!;
 }
