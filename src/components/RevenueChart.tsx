@@ -58,7 +58,7 @@ export default function RevenueChart({barbers}: RevenueChartProps) {
                     <h3 className="text-xl font-bold">Umsatzentwicklung</h3>
                     <p className="text-sm" style={{ color: 'var(--color-text-muted)'}}>
                         Gesamtumsatz im Zeitraum: <span className="text-gold-500 font-bold text-lg ml-1">{total.toFixed(2)} €</span>
-                        <span className="mx-2">|</span>
+                        <span className="mx-2"> |</span>
                         {count} Termine
                     </p>
                 </div>

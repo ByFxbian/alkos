@@ -20,6 +20,7 @@ type BookingFormProps = {
   hasFreeAppointment: boolean;
   currentLocationId: string;
   locationSlug?: string;
+  locationAddress?: string;
 };
 
 type ConfirmedAppointmentData = {
@@ -39,7 +40,7 @@ function BookingProcessingModal() {
   );
 }
 
-export default function BookingForm({ barbers, services, hasFreeAppointment, currentLocationId, locationSlug }: BookingFormProps) {
+export default function BookingForm({ barbers, services, hasFreeAppointment, currentLocationId, locationSlug, locationAddress }: BookingFormProps) {
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedBarber, setSelectedBarber] = useState<User | { id: string, name: string } | null>(null);
@@ -84,11 +85,18 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
 
     const title = encodeURIComponent(`Termin bei ALKOS (${service.name})`);
     const details = encodeURIComponent(`Barber: ${barber.name}\nService: ${service.name}`);
-    const location = encodeURIComponent("ALKOS");
+    const loc = encodeURIComponent(locationAddress || 'ALKOS');
     
-    const formatTime = (date: Date) => date.toISOString().replace(/-|:|\.\d\d\d/g, "");
+    const formatTime = (date: Date) => {
+      const y = date.getFullYear();
+      const mo = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      const h = String(date.getHours()).padStart(2, '0');
+      const mi = String(date.getMinutes()).padStart(2, '0');
+      return `${y}${mo}${d}T${h}${mi}00`;
+    };
     
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatTime(start)}/${formatTime(end)}&details=${details}&location=${location}`;
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formatTime(start)}/${formatTime(end)}&details=${details}&location=${loc}`;
   }
 
   const downloadIcsFile = () => {
@@ -110,7 +118,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
       duration: { minutes: service.duration },
       title: `Termin bei ALKOS (${service.name})`,
       description: `Barber: ${barber.name}\nService: ${service.name}`,
-      location: 'ALKOS',
+      location: locationAddress || 'ALKOS',
       status: 'CONFIRMED',
       busyStatus: 'BUSY',
       url: 'https://alkosbarber.at',

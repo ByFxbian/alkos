@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import StatCard from '@/components/StatCard';
 import RevenueChart from '@/components/RevenueChart';
+import BookingHeatmap from '@/components/BookingHeatmap';
 import Image from 'next/image';
 import AdminLocationFilter from '@/components/AdminLocationFilter';
 import { cookies } from 'next/headers';
@@ -71,11 +72,14 @@ export default async function AdminDashboardPage() {
   const locationFilter = { locationId: { in: effectiveLocationIds } };
   const userLocationFilter = { locations: { some: { id: { in: effectiveLocationIds } } } };
 
+
   const [
     barbers,
     appointmentsNext7Days,
     newCustomersLast30Days,
-    popularServices
+    popularServices,
+    appointmentsLast30Days,
+    returningCustomersResult,
   ] = await Promise.all([
     prisma.user.findMany({
       where: {
@@ -123,7 +127,33 @@ export default async function AdminDashboardPage() {
             ]
         },
         select: { id: true, name: true }
-    })
+    }),
+
+    // Past 30 days appointments for deeper stats
+    prisma.appointment.findMany({
+      where: {
+        startTime: {
+          gte: thirtyDaysAgo,
+          lt: now,
+        },
+        ...locationFilter,
+      },
+      select: {
+        startTime: true,
+        customerId: true,
+        service: { select: { price: true } },
+      },
+    }),
+
+    // Returning customers (2+ appointments, all time)
+    prisma.$queryRawUnsafe<{ count: bigint }[]>(
+      `SELECT COUNT(*) as count FROM (
+        SELECT "customerId" FROM "Appointment"
+        WHERE "locationId" = ANY($1::text[])
+        GROUP BY "customerId" HAVING COUNT(*) >= 2
+      ) as returning_customers`,
+      effectiveLocationIds
+    ),
   ]);
 
   const serviceCountMap: Record<string, number> = {};
@@ -180,6 +210,38 @@ export default async function AdminDashboardPage() {
 
   const mostPopularService = Object.values(servicePopularity).sort((a, b) => b.count - a.count)[0];
 
+  // New stats
+  const avgRevenuePerAppointment = totalAppointments > 0 
+    ? (totalRevenue / totalAppointments).toFixed(2) 
+    : '0.00';
+
+  // Busiest day of week from last 30 days
+  const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  const dayCounts: Record<number, number> = {};
+  for (const app of appointmentsLast30Days) {
+    const day = new Date(app.startTime).getDay();
+    dayCounts[day] = (dayCounts[day] || 0) + 1;
+  }
+  const busiestDayEntry = Object.entries(dayCounts).sort(([,a], [,b]) => b - a)[0];
+  const busiestDay = busiestDayEntry ? dayNames[parseInt(busiestDayEntry[0])] : '-';
+  const busiestDayCount = busiestDayEntry ? busiestDayEntry[1] : 0;
+
+  // Past 30 day revenue
+  const past30DayRevenue = appointmentsLast30Days.reduce((sum, a) => sum + a.service.price, 0);
+
+  // Returning customers
+  const returningCustomers = Number(returningCustomersResult[0]?.count ?? 0);
+
+  // Heatmap data: day-of-week × hour from last 30 days
+  const heatmapData: Record<string, number> = {};
+  let heatmapMax = 0;
+  for (const app of appointmentsLast30Days) {
+    const d = new Date(app.startTime);
+    const key = `${d.getDay()}-${d.getHours()}`;
+    heatmapData[key] = (heatmapData[key] || 0) + 1;
+    if (heatmapData[key] > heatmapMax) heatmapMax = heatmapData[key];
+  }
+
   return (
     <div className="container mx-auto py-12 px-4 animate-in fade-in duration-700 space-y-12">
       
@@ -228,11 +290,44 @@ export default async function AdminDashboardPage() {
         />
       </div>
 
+      {/* Extended Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard 
+          title="⌀ Umsatz/Termin" 
+          value={`${avgRevenuePerAppointment} €`} 
+          subtext="Nächste 7 Tage" 
+        />
+        <StatCard 
+          title="Stärkster Tag" 
+          value={busiestDay} 
+          subtext={busiestDayCount > 0 ? `${busiestDayCount} Termine (letzte 30 Tage)` : ''} 
+        />
+        <StatCard 
+          title="Umsatz (30 Tage)" 
+          value={`${past30DayRevenue.toFixed(2)} €`} 
+          subtext="Letzte 30 Tage" 
+        />
+        <StatCard 
+          title="Stammkunden" 
+          value={returningCustomers.toString()} 
+          subtext="Kunden mit 2+ Terminen" 
+        />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <div className="lg:col-span-1 space-y-6">
-            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-[var(--color-text)]">
-                Team Performance
+        <div className="lg:col-span-1 flex flex-col gap-8">
+            {/* Booking Heatmap */}
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold tracking-tight text-[var(--color-text)]">Buchungs-Heatmap <span className="text-xs font-normal text-[var(--color-text-muted)] ml-2">(letzte 30 Tage)</span></h2>
+              <div className="p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+                <BookingHeatmap data={heatmapData} maxCount={heatmapMax} />
+              </div>
+            </div>
+
+            <div className="space-y-6">
+                <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-[var(--color-text)]">
+                    Team Performance
                 <span className="text-xs font-normal text-[var(--color-text-muted)] ml-2">(7 Tage)</span>
             </h2>
 
@@ -299,10 +394,11 @@ export default async function AdminDashboardPage() {
                 ))}
             </div>
         </div>
+        </div>
 
         <div className="lg:col-span-2 space-y-6">
              <h2 className="text-2xl font-bold tracking-tight text-[var(--color-text)]">Umsatzverlauf</h2>
-             <div className="p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm min-h-[300px]">
+             <div className="p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm min-h-[300px]">
                  <RevenueChart key={filterId || 'all'} barbers={barbers} />
              </div>
         </div>

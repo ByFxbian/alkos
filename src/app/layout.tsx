@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     siteName: "ALKOS",
     images: [
       {
-        url: "/images/hero-bg.jpeg",
+        url: "https://alkosbarber.at/images/hero-bg.jpeg",
         width: 1200,
         height: 630,
       },

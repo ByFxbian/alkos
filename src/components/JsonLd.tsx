@@ -1,24 +1,35 @@
-export default function JsonLd() {
-  const schema = {
+import { prisma } from '@/lib/prisma';
+
+export default async function JsonLd() {
+  const locations = await prisma.location.findMany({
+    select: {
+      name: true,
+      slug: true,
+      address: true,
+      city: true,
+      postalCode: true,
+      phone: true,
+      email: true,
+      description: true,
+    },
+  });
+
+  const schemas = locations.map((loc) => ({
     "@context": "https://schema.org",
     "@type": "HairSalon",
-    "name": "ALKOS Barber",
+    "name": `ALKOS ${loc.name}`,
     "image": "https://alkosbarber.at/images/hero-bg.jpeg",
-    "description": "Premium Barber Shop in Wien. Buche jetzt deinen Termin online.",
+    "description": loc.description || `Premium Barber Shop in ${loc.city}. Buche jetzt deinen Termin online.`,
     "address": {
       "@type": "PostalAddress",
-      "streetAddress": "Wiedner Gürtel 12",
-      "addressLocality": "Wien",
-      "postalCode": "1040",
+      "streetAddress": loc.address,
+      "addressLocality": loc.city,
+      "postalCode": loc.postalCode,
       "addressCountry": "AT"
     },
-    "geo": {
-      "@type": "GeoCoordinates",
-      "latitude": 48.185, 
-      "longitude": 16.375 
-    },
-    "url": "https://alkosbarber.at",
-    "telephone": "+43123456789", 
+    "url": `https://alkosbarber.at/${loc.slug}`,
+    ...(loc.phone ? { "telephone": loc.phone } : {}),
+    ...(loc.email ? { "email": loc.email } : {}),
     "priceRange": "$$",
     "openingHoursSpecification": [
       {
@@ -34,12 +45,17 @@ export default function JsonLd() {
         "closes": "18:00"
       }
     ]
-  };
+  }));
 
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
+    <>
+      {schemas.map((schema, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
+    </>
   );
 }

@@ -69,6 +69,7 @@ export default async function TerminePage({ params }: { params: Promise<{ locati
                 hasFreeAppointment={false}
                 currentLocationId={locationObj.id}
                 locationSlug={locationObj.slug}
+                locationAddress={locationObj.address ? `ALKOS, ${locationObj.address}, ${locationObj.postalCode} ${locationObj.city}` : undefined}
             />
         </div>
     );
