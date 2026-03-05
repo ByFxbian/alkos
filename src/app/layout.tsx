@@ -9,6 +9,7 @@ import { ThemeProvider } from "./theme-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Analytics } from "@vercel/analytics/next"
 import InstagramBanner from "@/components/InstagramBanner";
+import PromoBanner from "@/components/PromoBanner";
 import StickyBookingButton from "@/components/StickyBookingButton";
 import FloatingScannerButton from "@/components/FloatingScannerButton";
 
@@ -69,6 +70,7 @@ export default function RootLayout({
           <ThemeProvider>
             <div className="flex flex-col min-h-screen relative">
               <InstagramBanner />
+              <PromoBanner />
               {/*<Navbar />*/}
               <main className="flex-grow">
                 {children}

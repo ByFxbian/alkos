@@ -40,9 +40,9 @@ export async function POST(req: Request) {
       locationData = await prisma.location.findUnique({ where: { id: locationId } });
       if (locationData?.slug === 'baden') {
         const appointmentStart = new Date(startTime);
-        const badenStartDateTime = new Date('2026-03-07T11:00:00+01:00');
+        const badenStartDateTime = new Date('2026-03-07T12:00:00+01:00');
         if (appointmentStart < badenStartDateTime) {
-          return NextResponse.json({ error: 'Termine für diesen Standort sind erst ab dem 07.03.2026 um 11:00 Uhr buchbar.' }, { status: 400 });
+          return NextResponse.json({ error: 'Termine für diesen Standort sind erst ab dem 07.03.2026 um 12:00 Uhr buchbar.' }, { status: 400 });
         }
       }
     }

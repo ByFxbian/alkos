@@ -8,8 +8,13 @@ type LocationMapProps = {
 };
 
 export default function LocationMap({ googleMapsUrl, address, city, postalCode }: LocationMapProps) {
-  const mapSrc = googleMapsUrl || "https://maps.google.com/maps?width=100%25&amp;height=600&amp;hl=en&amp;q=Wiedner%20G%C3%BCrtel%2012,%201040%20Wien+(ALKOS%20Barber)&amp;t=&amp;z=15&amp;ie=UTF8&amp;iwloc=B&amp;output=embed";
-  
+  // Build a proper embed URL from the address if no custom URL is provided
+  const encodedAddress = encodeURIComponent(`${address}, ${postalCode} ${city}`);
+  const mapSrc = googleMapsUrl || `https://maps.google.com/maps?width=100%25&height=600&hl=de&q=${encodedAddress}+(ALKOS+Barber)&t=&z=15&ie=UTF8&iwloc=B&output=embed`;
+
+  // Build directions link dynamically from the address
+  const directionsUrl = `https://www.google.com/maps/dir//${encodeURIComponent(`ALKOS Barber ${address} ${postalCode} ${city}`)}`;
+
   return (
     <div className="w-full h-[400px] relative rounded-xl overflow-hidden border border-neutral-800 shadow-2xl">
       <div className="absolute top-4 left-4 z-10 bg-black/80 backdrop-blur-md p-4 rounded-lg border border-white/10 max-w-xs">
@@ -19,7 +24,7 @@ export default function LocationMap({ googleMapsUrl, address, city, postalCode }
           {postalCode} {city}
         </p>
         <a 
-          href="https://www.google.com/maps/dir//ALKOS+Barber+Wiedner+Gürtel+12+1040+Wien" 
+          href={directionsUrl}
           target="_blank" 
           rel="noopener noreferrer"
           className="text-xs text-white underline mt-2 block hover:text-gold-500"

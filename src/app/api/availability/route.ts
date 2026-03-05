@@ -215,7 +215,7 @@ export async function GET(req: Request) {
                 where: { id: locationId }
             });
             if (location?.slug === 'baden') {
-                const badenStartDateTime = new Date('2026-03-07T11:00:00+01:00');
+                const badenStartDateTime = new Date('2026-03-07T12:00:00+01:00');
                 sortedSlots = sortedSlots.filter(s => new Date(s) >= badenStartDateTime);
             }
         }

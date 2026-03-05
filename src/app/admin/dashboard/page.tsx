@@ -105,7 +105,7 @@ export default async function AdminDashboardPage() {
           select: { id: true, name: true, image: true }
         },
         location: { 
-            select: { name: true }
+            select: { name: true, slug: true }
         }
       }
     }),
@@ -141,7 +141,8 @@ export default async function AdminDashboardPage() {
       select: {
         startTime: true,
         customerId: true,
-        service: { select: { price: true } },
+        service: { select: { price: true, name: true } },
+        location: { select: { slug: true } },
       },
     }),
 
@@ -178,12 +179,22 @@ export default async function AdminDashboardPage() {
     servicePopularity[sId].count++;
   }
 
+  // 5€ Promo helper: Baden haircuts on March 7th
+  const PROMO_DATE_STR = '2026-03-07';
+  const getEffectivePrice = (app: { startTime: Date; service: { price: number; name: string }; location?: { slug: string } | null }) => {
+    const dateStr = new Date(app.startTime).toLocaleDateString('en-CA');
+    if (dateStr === PROMO_DATE_STR && app.location?.slug === 'baden' && app.service.name.toLowerCase().includes('haarschnitt')) {
+      return 5;
+    }
+    return app.service.price;
+  };
+
   let totalAppointments = 0;
   let totalRevenue = 0;
 
   for (const app of appointmentsNext7Days) {
     totalAppointments++;
-    totalRevenue += app.service.price;
+    totalRevenue += getEffectivePrice(app);
   }
 
   const barberStatsMap: Record<string, { name: string, image: string | null, appointments: number, revenue: number }> = {};
@@ -203,7 +214,7 @@ export default async function AdminDashboardPage() {
      }
 
      barberStatsMap[app.barberId].appointments++;
-     barberStatsMap[app.barberId].revenue += app.service.price;
+     barberStatsMap[app.barberId].revenue += getEffectivePrice(app);
   }
 
   const barberStatsArray = Object.values(barberStatsMap).sort((a,b) => b.revenue - a.revenue);
@@ -227,7 +238,7 @@ export default async function AdminDashboardPage() {
   const busiestDayCount = busiestDayEntry ? busiestDayEntry[1] : 0;
 
   // Past 30 day revenue
-  const past30DayRevenue = appointmentsLast30Days.reduce((sum, a) => sum + a.service.price, 0);
+  const past30DayRevenue = appointmentsLast30Days.reduce((sum, a) => sum + getEffectivePrice(a), 0);
 
   // Returning customers
   const returningCustomers = Number(returningCustomersResult[0]?.count ?? 0);

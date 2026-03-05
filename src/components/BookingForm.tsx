@@ -68,6 +68,12 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
 
   const [confirmedAppointment, setConfirmedAppointment] = useState<ConfirmedAppointmentData | null>(null);
 
+  // 5€ Promo: March 7th Baden haircuts only
+  const PROMO_DATE = '2026-03-07';
+  const isPromoDay = selectedDate ? selectedDate.toLocaleDateString('en-CA') === PROMO_DATE : false;
+  const isPromoHaircut = (serviceName: string) => serviceName.toLowerCase().includes('haarschnitt');
+  const isPromoActive = isBaden && isPromoDay && selectedService ? isPromoHaircut(selectedService.name) : false;
+
   useEffect(() => {
     if (bookingSuccess) {
       setTimeout(() => {
@@ -370,12 +376,21 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
                 >
                   <div className="flex justify-between items-center">
                     <p className="font-bold">{service.name}</p>
-                    <p className={`font-semibold ${useFreeAppointment && selectedService?.id === service.id ? 'line-through opacity-50' : ''}`}>
-                      {service.price.toFixed(2)} €
-                    </p>
-                    {useFreeAppointment && selectedService?.id === service.id && (
-                      <p className="font-semibold text-green-400">0.00 €</p>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isBaden && isPromoDay && isPromoHaircut(service.name) && !useFreeAppointment ? (
+                        <>
+                          <p className={`font-semibold line-through ${selectedService?.id === service.id ? 'text-black/40' : 'opacity-50'}`}>{service.price.toFixed(2)} €</p>
+                          <p className={`font-bold ${selectedService?.id === service.id ? 'text-black' : 'text-yellow-400'}`}>5.00 €</p>
+                        </>
+                      ) : (
+                        <p className={`font-semibold ${useFreeAppointment && selectedService?.id === service.id ? 'line-through opacity-50' : ''}`}>
+                          {service.price.toFixed(2)} €
+                        </p>
+                      )}
+                      {useFreeAppointment && selectedService?.id === service.id && (
+                        <p className="font-semibold text-green-400">0.00 €</p>
+                      )}
+                    </div>
                   </div>
                   <p className="text-sm opacity-80">{service.duration} Minuten</p>
                   {service.name === 'Combo' && (
@@ -481,11 +496,23 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
 
                   {selectedSlot && (
                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="mt-6 text-center">
+                      {isPromoActive && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mb-4 p-4 rounded-xl bg-gradient-to-r from-amber-600/20 via-yellow-500/20 to-amber-600/20 border border-yellow-500/40"
+                        >
+                          <p className="text-yellow-400 font-bold text-lg">🎉 Eröffnungsangebot!</p>
+                          <p className="text-sm text-yellow-300/80 mt-1">
+                            Heute: Alle Haarschnitte nur <span className="font-black text-yellow-400">5€</span> bei ALKOS Baden!
+                          </p>
+                        </motion.div>
+                      )}
                       <button onClick={handleBooking} disabled={isBooking} className="bg-gold-500 text-black font-bold px-8 py-4 rounded-xl hover:bg-gold-400 w-full disabled:bg-neutral-600 disabled:cursor-not-allowed shadow-lg shadow-gold-500/20 transform transition-transform active:scale-95">
                         {isBooking ? 'Bitte warten...' : `Termin bestätigen`}
                       </button>
                       <p className="mt-2 text-xs opacity-60">
-                         {format(new Date(selectedSlot), 'HH:mm')} Uhr • {selectedService?.name} • {selectedBarber?.name}
+                         {format(new Date(selectedSlot), 'HH:mm')} Uhr • {selectedService?.name}{isPromoActive ? ' (5€ Aktion)' : ''} • {selectedBarber?.name}
                       </p>
                     </motion.div>
                   )}

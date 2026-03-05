@@ -130,11 +130,11 @@ export default function HomepageClient({ location, teamMembers }: HomepageClient
                             </p>
                         </motion.div>
 
-                        <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                        <div className='grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4'>
                             {galleryImages.slice(0, 6).map((img: any, index: number) => (
                                <motion.div 
                                     key={index} 
-                                    className={`relative h-48 md:h-72 rounded-2xl overflow-hidden group shadow-lg border border-white/5 cursor-pointer`}
+                                    className={`relative h-56 md:h-72 rounded-2xl overflow-hidden group shadow-lg border border-white/5 cursor-pointer`}
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     whileInView={{ opacity: 1, scale: 1 }}
                                     transition={{ duration: 0.5, delay: index * 0.1 }}
