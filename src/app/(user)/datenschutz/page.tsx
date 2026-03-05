@@ -12,7 +12,7 @@ export default function DatenschutzPage() {
           Geschäftsführer: Alen Mujic<br />
           Wiedner Gürtel 12, 1040 Wien<br />
           A-1040 Wien<br />
-          Tel: +43 660 2231353<br />
+          Tel: +43 660 5783966<br />
           E-Mail: contact@alkosbarber.at
         </p>
 
