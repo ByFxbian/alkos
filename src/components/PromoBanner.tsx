@@ -13,23 +13,22 @@ export default function PromoBanner() {
   const [timeLabel, setTimeLabel] = useState('');
   const pathname = usePathname();
 
-  // Don't show on walkin or admin pages
+
   const isHiddenRoute = pathname === '/walkin' || pathname.startsWith('/admin');
 
   useEffect(() => {
     if (isHiddenRoute) return;
-    // Check if dismissed this session
+
     if (sessionStorage.getItem(PROMO_STORAGE_KEY) === 'true') return;
 
     const now = new Date();
     const promoDate = new Date(PROMO_DATE + 'T00:00:00+01:00');
     const promoEnd = new Date(PROMO_DATE + 'T23:59:59+01:00');
 
-    // Don't show after promo day is over
+
     if (now > promoEnd) return;
 
-    // Determine label
-    const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
+    const todayStr = now.toLocaleDateString('en-CA');
     const tomorrowDate = new Date(now);
     tomorrowDate.setDate(tomorrowDate.getDate() + 1);
     const tomorrowStr = tomorrowDate.toLocaleDateString('en-CA');
@@ -41,7 +40,7 @@ export default function PromoBanner() {
     } else if (now < promoDate) {
       setTimeLabel('📅 Am 7. März');
     } else {
-      return; // Should not happen, but safety check
+      return;
     }
 
     setIsVisible(true);
@@ -63,7 +62,7 @@ export default function PromoBanner() {
           className="overflow-hidden"
         >
           <div className="relative bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-black">
-            {/* Animated shimmer effect */}
+
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
               <motion.div
                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -skew-x-12"

@@ -99,7 +99,7 @@ export default function AvailabilityForm({ availableLocations, currentAvailabili
 
   return (
     <form onSubmit={handleSubmit} className="p-4 md:p-6 rounded-lg max-w-3xl mx-auto" style={{ backgroundColor: 'var(--color-surface)' }}>
-      {/* Location Tabs */}
+
       <div className="flex gap-2 mb-6">
         {availableLocations.map(loc => (
           <button

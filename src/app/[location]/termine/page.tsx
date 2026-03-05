@@ -24,7 +24,7 @@ export default async function TerminePage({ params }: { params: Promise<{ locati
         orderBy: { price: 'asc' },
     });
 
-    // Get barbers permanently assigned to this location
+
     const permanentBarbers = await prisma.user.findMany({
         where: {
             role: { in: ['BARBER', 'HEADOFBARBER'] },
@@ -37,8 +37,7 @@ export default async function TerminePage({ params }: { params: Promise<{ locati
         },
     });
 
-    // Get barbers with upcoming shift overrides to this location
-    // (who are NOT already in the permanent list)
+
     const permanentBarberIds = new Set(permanentBarbers.map(b => b.id));
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -58,7 +57,7 @@ export default async function TerminePage({ params }: { params: Promise<{ locati
         .filter(s => !permanentBarberIds.has(s.barberId) && !s.barber.isBlocked)
         .map(s => s.barber);
 
-    // Combine: permanent barbers + shift-override barbers
+
     const allBarbers = [...permanentBarbers, ...shiftBarbers];
 
     return (

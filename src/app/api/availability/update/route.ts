@@ -29,7 +29,6 @@ export async function POST(req: Request) {
     logger.info("API Route /api/availability/update POST: Saving location hours.", { locationId, scheduleKeys: Object.keys(schedule) });
 
     await prisma.$transaction(async (tx) => {
-      // Delete existing location-level availabilities (barberId IS NULL) for this location
       const deleted = await tx.availability.deleteMany({
         where: {
           locationId: locationId,

@@ -11,7 +11,7 @@ export async function POST(request: Request): Promise<NextResponse> {
             body,
             request,
             onBeforeGenerateToken: async (pathname) => {
-                // Authenticate the user to ensure only admins/headofbarber can upload
+
                 const session = await getServerSession(authOptions);
 
                 if (!session?.user || (session.user.role !== 'ADMIN' && session.user.role !== 'HEADOFBARBER')) {
@@ -26,7 +26,7 @@ export async function POST(request: Request): Promise<NextResponse> {
                 };
             },
             onUploadCompleted: async ({ blob, tokenPayload }) => {
-                // Log that an upload was completed if needed
+
                 console.log('blob upload completed', blob, tokenPayload);
             },
         });

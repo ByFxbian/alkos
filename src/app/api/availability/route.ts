@@ -29,7 +29,7 @@ async function getSlotsForBarber(barberId: string, date: string, serviceDuration
     let startTime: string | undefined;
     let endTime: string | undefined;
 
-    // Layer 1: Check for a BarberShift override for this barber on this specific date
+
     if (locationId) {
         const shift = await prisma.barberShift.findUnique({
             where: {
@@ -42,17 +42,17 @@ async function getSlotsForBarber(barberId: string, date: string, serviceDuration
 
         if (shift) {
             if (shift.locationId === locationId) {
-                // Barber is overridden to THIS location on this date
+
                 startTime = shift.startTime;
                 endTime = shift.endTime;
             } else {
-                // Barber is overridden to a DIFFERENT location — not available here
+
                 return [];
             }
         }
     }
 
-    // Layer 2: Fall back to location opening hours
+
     if (!startTime || !endTime) {
         if (!locationId) return [];
 
@@ -154,10 +154,7 @@ export async function GET(req: Request) {
 
             const requestedDate = new Date(date + 'T00:00:00');
 
-            // Find barbers available at this location:
-            // 1. Barbers permanently assigned to this location (UserLocations)
-            // 2. + Barbers with a BarberShift override to this location on this date
-            // 3. - Barbers who have a shift override to a DIFFERENT location on this date
+
             const [permanentBarbers, shiftBarbers] = await Promise.all([
                 prisma.user.findMany({
                     where: {
@@ -176,7 +173,7 @@ export async function GET(req: Request) {
                 })
             ]);
 
-            // Get barbers who have a shift override to a DIFFERENT location on this date
+
             const overriddenBarbers = await prisma.barberShift.findMany({
                 where: {
                     date: requestedDate,
@@ -187,9 +184,9 @@ export async function GET(req: Request) {
             const overriddenBarberIds = new Set(overriddenBarbers.map(b => b.barberId));
 
             const barberIdSet = new Set<string>();
-            // Add shift override barbers (explicitly assigned here today)
+
             shiftBarbers.forEach(b => barberIdSet.add(b.barberId));
-            // Add permanent barbers, excluding those overridden to another location today
+
             permanentBarbers.forEach(b => {
                 if (!overriddenBarberIds.has(b.id)) {
                     barberIdSet.add(b.id);

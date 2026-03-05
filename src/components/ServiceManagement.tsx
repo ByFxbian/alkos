@@ -212,7 +212,7 @@ export default function ServiceManagement({ services: initialServices, available
         </div>
       </form>
 
-      {/* Mobile card view */}
+
       <div className="md:hidden space-y-3">
         {services.map((service) => (
           <div key={service.id} className="p-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)]">
@@ -255,7 +255,7 @@ export default function ServiceManagement({ services: initialServices, available
         )}
       </div>
 
-      {/* Desktop table view */}
+
       <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full divide-y divide-[var(--color-border)]">
           <thead className="bg-[var(--color-surface-3)]">

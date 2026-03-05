@@ -188,7 +188,7 @@ export default function ShiftManager({ availableLocations, allBarbers }: ShiftMa
                 </form>
             )}
 
-            {/* Upcoming Shifts */}
+
             {shifts.length === 0 ? (
                 <p className="text-sm text-[var(--color-text-muted)] text-center py-6">Keine aktiven Overrides vorhanden.</p>
             ) : (

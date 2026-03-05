@@ -8,11 +8,11 @@ type LocationMapProps = {
 };
 
 export default function LocationMap({ googleMapsUrl, address, city, postalCode }: LocationMapProps) {
-  // Build a proper embed URL from the address if no custom URL is provided
+
   const encodedAddress = encodeURIComponent(`${address}, ${postalCode} ${city}`);
   const mapSrc = googleMapsUrl || `https://maps.google.com/maps?width=100%25&height=600&hl=de&q=${encodedAddress}+(ALKOS+Barber)&t=&z=15&ie=UTF8&iwloc=B&output=embed`;
 
-  // Build directions link dynamically from the address
+
   const directionsUrl = `https://www.google.com/maps/dir//${encodeURIComponent(`ALKOS Barber ${address} ${postalCode} ${city}`)}`;
 
   return (

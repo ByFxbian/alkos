@@ -27,7 +27,7 @@ export default function Navbar({ locationSlug }: NavbarProps) {
   const [savedLocation, setSavedLocation] = useState<string>("");
 
   useEffect(() => {
-    // Restore saved location for navigation fallback
+
     const saved = localStorage.getItem('alkos-location');
     if (saved) setSavedLocation(saved);
 

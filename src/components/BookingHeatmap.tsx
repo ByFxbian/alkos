@@ -17,26 +17,25 @@ export default function BookingHeatmap({ data, maxCount }: HeatmapProps) {
 
   const getColor = (intensity: number) => {
     if (intensity === 0) return 'var(--color-surface-2)';
-    // Gold gradient from light to strong
+
     const alpha = 0.15 + intensity * 0.85;
     return `rgba(212, 175, 55, ${alpha})`;
   };
 
   return (
     <div className="w-full flex justify-center">
-      <div className="w-full max-w-[480px]"> {/* Konsequent kompaktere Breite */}
+      <div className="w-full max-w-[480px]">
         
         <div className="grid grid-cols-[30px_repeat(12,1fr)] gap-0.5 md:gap-1 items-center">
           
-          {/* Hour header */}
-          <div></div> {/* Empty top-left cell */}
+          <div></div>
           {hours.map(h => (
             <div key={`header-${h}`} className="text-center text-[9px] md:text-[10px] text-[var(--color-text-muted)] font-medium mb-1">
               {h}
             </div>
           ))}
 
-          {/* Day rows (mapped as flat elements) */}
+
           {dayOrder.map((dayIdx, rowIdx) => {
             const cells = hours.map(h => {
               const key = `${dayIdx}-${h}`;
@@ -48,7 +47,7 @@ export default function BookingHeatmap({ data, maxCount }: HeatmapProps) {
                   className="aspect-square rounded-[2px] transition-all duration-200 group relative cursor-default"
                   style={{ backgroundColor: getColor(intensity) }}
                 >
-                  {/* Tooltip on hover */}
+
                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-black/90 text-white text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 w-max">
                     {dayLabels[rowIdx]} {h}:00 — {count} Termine
                   </div>
@@ -65,7 +64,7 @@ export default function BookingHeatmap({ data, maxCount }: HeatmapProps) {
           })}
         </div>
 
-        {/* Legend */}
+
         <div className="flex items-center justify-end gap-2 mt-4 text-[9px] md:text-[10px] text-[var(--color-text-muted)]">
           <span>Weniger</span>
           <div className="flex gap-0.5 md:gap-1">

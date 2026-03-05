@@ -301,7 +301,7 @@ export default async function AdminDashboardPage() {
         />
       </div>
 
-      {/* Extended Stats Row */}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="⌀ Umsatz/Termin" 
@@ -328,7 +328,7 @@ export default async function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         <div className="lg:col-span-1 flex flex-col gap-8">
-            {/* Booking Heatmap */}
+
             <div className="space-y-4">
               <h2 className="text-2xl font-bold tracking-tight text-[var(--color-text)]">Buchungs-Heatmap <span className="text-xs font-normal text-[var(--color-text-muted)] ml-2">(letzte 30 Tage)</span></h2>
               <div className="p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">

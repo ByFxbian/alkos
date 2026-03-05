@@ -53,7 +53,7 @@ export default async function KalenderAdminPage() {
       }
   }
 
-  // Fetch location-level opening hours (barberId IS NULL)
+
   const allLocationAvailabilities = await prisma.availability.findMany({
     where: {
       barberId: null,

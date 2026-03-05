@@ -9,7 +9,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'PIN erforderlich' }, { status: 400 });
         }
 
-        // Try matching PIN against location postal codes first
+
         const matchingLocation = await prisma.location.findFirst({
             where: { postalCode: pin },
             select: { id: true, name: true, slug: true, postalCode: true },
@@ -24,13 +24,13 @@ export async function POST(req: Request) {
             });
         }
 
-        // Fallback: check the legacy global walkin_pin setting
+
         const pinSetting = await prisma.settings.findUnique({
             where: { key: 'walkin_pin' },
         });
 
         if (pinSetting && pin === pinSetting.value) {
-            // Legacy PIN: find the first/default location
+
             const defaultLocation = await prisma.location.findFirst({
                 select: { id: true, name: true, slug: true },
                 orderBy: { createdAt: 'asc' },

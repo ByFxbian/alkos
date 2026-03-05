@@ -23,7 +23,7 @@ async function findNextAvailableSlot(serviceId: string, locationId?: string): Pr
     const dateStr = format(today, 'yyyy-MM-dd');
     const dayOfWeek = today.getDay();
 
-    // Get barbers filtered by location
+
     const barberWhere: Record<string, unknown> = {
         role: { in: ['BARBER', 'HEADOFBARBER'] }
     };
@@ -39,7 +39,7 @@ async function findNextAvailableSlot(serviceId: string, locationId?: string): Pr
     const allAvailableSlots: AvailableSlot[] = [];
 
     for (const barber of barbers) {
-        // Get availability filtered by location
+
         const availWhere: Record<string, unknown> = {
             barberId: barber.id,
             dayOfWeek

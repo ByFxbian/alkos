@@ -9,12 +9,12 @@ export default function FloatingScannerButton() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
 
-  // Don't show on admin pages, login, or if not authenticated
+
   if (status !== 'authenticated' || pathname.startsWith('/admin') || pathname === '/login') {
     return null;
   }
 
-  // Also don't show on the scanner page itself or walkin kiosk to avoid clutter
+
   if (pathname === '/redeem-stamp' || pathname === '/walkin') {
       return null;
   }

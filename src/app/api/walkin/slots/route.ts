@@ -37,7 +37,7 @@ export async function GET(req: Request) {
         const dateStr = format(today, 'yyyy-MM-dd');
         const dayOfWeek = today.getDay();
 
-        // Get barbers filtered by location if provided
+
         const barberWhere: Record<string, unknown> = {
             role: { in: ['BARBER', 'HEADOFBARBER'] }
         };
@@ -53,7 +53,7 @@ export async function GET(req: Request) {
         const availableSlots: BarberSlot[] = [];
 
         for (const barber of barbers) {
-            // Get barber's availability for today, filtered by location
+
             const availWhere: Record<string, unknown> = {
                 barberId: barber.id,
                 dayOfWeek
@@ -71,7 +71,7 @@ export async function GET(req: Request) {
             const availabilityStart = fromZonedTime(`${dateStr}T${availability.startTime}:00`, timeZone);
             const availabilityEnd = fromZonedTime(`${dateStr}T${availability.endTime}:00`, timeZone);
 
-            // Get booked appointments
+
             const bookedAppointments = await prisma.appointment.findMany({
                 where: {
                     barberId: barber.id,
@@ -79,7 +79,7 @@ export async function GET(req: Request) {
                 },
             });
 
-            // Get blocked times
+
             const blockedTimes = await prisma.blockedTime.findMany({
                 where: {
                     barberId: barber.id,
@@ -91,7 +91,7 @@ export async function GET(req: Request) {
                 },
             });
 
-            // Iterate 20-min slots to find the FIRST available one for this barber
+
             const currentTime = new Date(availabilityStart);
             let foundSlot: Date | null = null;
 
@@ -136,7 +136,7 @@ export async function GET(req: Request) {
         }
 
         if (availableSlots.length > 0) {
-            // Sort to find absolute earliest
+
             availableSlots.sort((a, b) => new Date(a.slot).getTime() - new Date(b.slot).getTime());
             availableSlots[0].isEarliest = true;
         }

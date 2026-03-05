@@ -68,7 +68,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
 
   const [confirmedAppointment, setConfirmedAppointment] = useState<ConfirmedAppointmentData | null>(null);
 
-  // 5€ Promo: March 7th Baden haircuts only
+
   const PROMO_DATE = '2026-03-07';
   const isPromoDay = selectedDate ? selectedDate.toLocaleDateString('en-CA') === PROMO_DATE : false;
   const isPromoHaircut = (serviceName: string) => serviceName.toLowerCase().includes('haarschnitt');
@@ -212,7 +212,7 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
     }
   }, [step, selectedDate, minDate]);
 
-  // Fetch available days when barber changes
+
   useEffect(() => {
     if (selectedBarber && currentLocationId) {
       setAvailableDates(null);
