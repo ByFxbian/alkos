@@ -12,7 +12,7 @@ interface AvailableSlot {
     barberName: string;
 }
 
-async function findNextAvailableSlot(serviceId: string): Promise<AvailableSlot | null> {
+async function findNextAvailableSlot(serviceId: string, locationId?: string): Promise<AvailableSlot | null> {
     const service = await prisma.service.findUnique({ where: { id: serviceId } });
     if (!service) return null;
 
@@ -23,16 +23,33 @@ async function findNextAvailableSlot(serviceId: string): Promise<AvailableSlot |
     const dateStr = format(today, 'yyyy-MM-dd');
     const dayOfWeek = today.getDay();
 
+    // Get barbers filtered by location
+    const barberWhere: Record<string, unknown> = {
+        role: { in: ['BARBER', 'HEADOFBARBER'] }
+    };
+    if (locationId) {
+        barberWhere.locations = { some: { id: locationId } };
+    }
+
     const barbers = await prisma.user.findMany({
-        where: { role: { in: ['BARBER', 'HEADOFBARBER'] } },
+        where: barberWhere,
         select: { id: true, name: true },
     });
 
     const allAvailableSlots: AvailableSlot[] = [];
 
     for (const barber of barbers) {
+        // Get availability filtered by location
+        const availWhere: Record<string, unknown> = {
+            barberId: barber.id,
+            dayOfWeek
+        };
+        if (locationId) {
+            availWhere.locationId = locationId;
+        }
+
         const availability = await prisma.availability.findFirst({
-            where: { barberId: barber.id, dayOfWeek },
+            where: availWhere,
         });
 
         if (!availability) continue;
@@ -98,7 +115,7 @@ async function findNextAvailableSlot(serviceId: string): Promise<AvailableSlot |
 
 export async function POST(req: Request) {
     try {
-        const { customerName, serviceId, barberId, startTime } = await req.json();
+        const { customerName, serviceId, barberId, startTime, locationId } = await req.json();
 
         if (!customerName || typeof customerName !== 'string' || customerName.trim().length < 2) {
             return NextResponse.json({ error: 'Bitte gib deinen Namen ein (mind. 2 Zeichen)' }, { status: 400 });
@@ -132,7 +149,7 @@ export async function POST(req: Request) {
                 barberName: 'Selected Barber'
             };
         } else {
-            nextSlot = await findNextAvailableSlot(serviceId);
+            nextSlot = await findNextAvailableSlot(serviceId, locationId || undefined);
         }
 
         if (!nextSlot) {
@@ -161,6 +178,7 @@ export async function POST(req: Request) {
                 serviceId: serviceId,
                 walkInName: customerName.trim(),
                 isFree: false,
+                ...(locationId ? { locationId } : {}),
             },
             include: {
                 service: true,

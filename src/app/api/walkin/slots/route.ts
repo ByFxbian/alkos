@@ -19,6 +19,7 @@ export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
         const serviceId = searchParams.get('serviceId');
+        const locationId = searchParams.get('locationId');
 
         if (!serviceId) {
             return NextResponse.json({ error: 'Service ID required' }, { status: 400 });
@@ -36,18 +37,33 @@ export async function GET(req: Request) {
         const dateStr = format(today, 'yyyy-MM-dd');
         const dayOfWeek = today.getDay();
 
-        // Get all barbers
+        // Get barbers filtered by location if provided
+        const barberWhere: Record<string, unknown> = {
+            role: { in: ['BARBER', 'HEADOFBARBER'] }
+        };
+        if (locationId) {
+            barberWhere.locations = { some: { id: locationId } };
+        }
+
         const barbers = await prisma.user.findMany({
-            where: { role: { in: ['BARBER', 'HEADOFBARBER'] } },
+            where: barberWhere,
             select: { id: true, name: true, image: true },
         });
 
         const availableSlots: BarberSlot[] = [];
 
         for (const barber of barbers) {
-            // Get barber's availability for today
+            // Get barber's availability for today, filtered by location
+            const availWhere: Record<string, unknown> = {
+                barberId: barber.id,
+                dayOfWeek
+            };
+            if (locationId) {
+                availWhere.locationId = locationId;
+            }
+
             const availability = await prisma.availability.findFirst({
-                where: { barberId: barber.id, dayOfWeek },
+                where: availWhere,
             });
 
             if (!availability) continue;

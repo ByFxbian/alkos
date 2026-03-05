@@ -157,10 +157,6 @@ export default function Navbar({ locationSlug }: NavbarProps) {
                   {(session.user?.role === 'ADMIN') && (
                       <Link href="/admin/locations" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Locations</Link>
                   )}
-
-                  {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
-                      <Link href="/admin/einstellungen" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Walk-In Einstellungen</Link>
-                  )}
                   
                   <hr className=" my-1" style={{ borderColor: 'var(--color-border)' }}/>
                   <button onClick={() => signOut({ callbackUrl: '/' })} className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-red-500 hover:text-white">
@@ -279,11 +275,7 @@ export default function Navbar({ locationSlug }: NavbarProps) {
                                                  </Link>
                                              )}
 
-                                              {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
-                                                  <Link href="/admin/einstellungen" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                                                      ⚙️ <span>Walk-In</span>
-                                                  </Link>
-                                              )}
+
                                           </div>
                                      </div>
                                  )}

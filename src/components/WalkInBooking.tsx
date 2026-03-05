@@ -11,6 +11,7 @@ interface Service {
   name: string;
   duration: number;
   price: number;
+  locationId?: string | null;
 }
 
 interface WalkInBookingProps {
@@ -48,12 +49,18 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
   const [isBooking, setIsBooking] = useState(false);
   const [bookingResult, setBookingResult] = useState<BookingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [locationId, setLocationId] = useState<string | null>(null);
+  const [locationName, setLocationName] = useState<string>('ALKOS Barber');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const unlocked = sessionStorage.getItem('walkin_unlocked');
+      const storedLocationId = sessionStorage.getItem('walkin_locationId');
+      const storedLocationName = sessionStorage.getItem('walkin_locationName');
       if (unlocked === 'true') {
         setStep('name');
+        if (storedLocationId) setLocationId(storedLocationId);
+        if (storedLocationName) setLocationName(storedLocationName);
       }
     }
 
@@ -98,8 +105,18 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
         body: JSON.stringify({ pin }),
       });
 
-      if (res.ok) {
+      const data = await res.json();
+
+      if (res.ok && data.success) {
         sessionStorage.setItem('walkin_unlocked', 'true');
+        if (data.locationId) {
+          sessionStorage.setItem('walkin_locationId', data.locationId);
+          setLocationId(data.locationId);
+        }
+        if (data.locationName) {
+          sessionStorage.setItem('walkin_locationName', data.locationName);
+          setLocationName(data.locationName);
+        }
         setStep('name');
         setPin('');
       } else {
@@ -119,7 +136,8 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
     setError(null);
     
     try {
-      const res = await fetch(`/api/walkin/slots?serviceId=${service.id}`);
+      const slotUrl = `/api/walkin/slots?serviceId=${service.id}${locationId ? `&locationId=${locationId}` : ''}`;
+      const res = await fetch(slotUrl);
       const data = await res.json();
       
       if (res.ok && data.slots && data.slots.length > 0) {
@@ -147,6 +165,7 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
       const body: any = {
         customerName: customerName.trim(),
         serviceId: selectedService.id,
+        ...(locationId ? { locationId } : {}),
       };
 
       if (barberId && startTime) {
@@ -279,7 +298,7 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
           >
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--color-gold-500)' }}>
-                Willkommen bei ALKOS
+                Willkommen bei {locationName}
               </h1>
               <p className="text-neutral-400">Wie heißt du?</p>
             </div>
@@ -326,7 +345,9 @@ export default function WalkInBooking({ services }: WalkInBookingProps) {
             )}
 
             <div className="grid grid-cols-2 gap-4 mb-8">
-              {services.map((service) => (
+              {services
+                .filter((s) => !locationId || !s.locationId || s.locationId === locationId)
+                .map((service) => (
                 <button
                   key={service.id}
                   onClick={() => handleServiceSelect(service)}

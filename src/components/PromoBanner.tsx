@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const PROMO_DATE = '2026-03-07';
@@ -10,8 +11,13 @@ const PROMO_STORAGE_KEY = 'hidePromoBanner_0307';
 export default function PromoBanner() {
   const [isVisible, setIsVisible] = useState(false);
   const [timeLabel, setTimeLabel] = useState('');
+  const pathname = usePathname();
+
+  // Don't show on walkin or admin pages
+  const isHiddenRoute = pathname === '/walkin' || pathname.startsWith('/admin');
 
   useEffect(() => {
+    if (isHiddenRoute) return;
     // Check if dismissed this session
     if (sessionStorage.getItem(PROMO_STORAGE_KEY) === 'true') return;
 
@@ -39,7 +45,7 @@ export default function PromoBanner() {
     }
 
     setIsVisible(true);
-  }, []);
+  }, [isHiddenRoute]);
 
   const handleDismiss = () => {
     setIsVisible(false);

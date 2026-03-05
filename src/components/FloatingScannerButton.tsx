@@ -14,8 +14,8 @@ export default function FloatingScannerButton() {
     return null;
   }
 
-  // Also don't show on the scanner page itself to avoid clutter
-  if (pathname === '/redeem-stamp') {
+  // Also don't show on the scanner page itself or walkin kiosk to avoid clutter
+  if (pathname === '/redeem-stamp' || pathname === '/walkin') {
       return null;
   }
 

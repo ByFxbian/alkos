@@ -9,19 +9,41 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'PIN erforderlich' }, { status: 400 });
         }
 
+        // Try matching PIN against location postal codes first
+        const matchingLocation = await prisma.location.findFirst({
+            where: { postalCode: pin },
+            select: { id: true, name: true, slug: true, postalCode: true },
+        });
+
+        if (matchingLocation) {
+            return NextResponse.json({
+                success: true,
+                locationId: matchingLocation.id,
+                locationName: matchingLocation.name,
+                locationSlug: matchingLocation.slug,
+            });
+        }
+
+        // Fallback: check the legacy global walkin_pin setting
         const pinSetting = await prisma.settings.findUnique({
             where: { key: 'walkin_pin' },
         });
 
-        if (!pinSetting) {
-            return NextResponse.json({ error: 'Walk-In System nicht konfiguriert' }, { status: 500 });
+        if (pinSetting && pin === pinSetting.value) {
+            // Legacy PIN: find the first/default location
+            const defaultLocation = await prisma.location.findFirst({
+                select: { id: true, name: true, slug: true },
+                orderBy: { createdAt: 'asc' },
+            });
+            return NextResponse.json({
+                success: true,
+                locationId: defaultLocation?.id || null,
+                locationName: defaultLocation?.name || 'ALKOS',
+                locationSlug: defaultLocation?.slug || null,
+            });
         }
 
-        if (pin === pinSetting.value) {
-            return NextResponse.json({ success: true });
-        } else {
-            return NextResponse.json({ error: 'Falscher PIN' }, { status: 401 });
-        }
+        return NextResponse.json({ error: 'Falscher PIN' }, { status: 401 });
     } catch (error) {
         console.error('Error verifying PIN:', error);
         return NextResponse.json({ error: 'Interner Fehler' }, { status: 500 });

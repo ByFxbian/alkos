@@ -87,7 +87,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                             <Link href="/admin/services" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">✂️ Services</Link>
                             <Link href="/admin/locations" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">📍 Standorte</Link>
                             <Link href="/admin/web-team" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">🌐 Web-Team</Link>
-                            <Link href="/admin/einstellungen" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">⚙️ Walk-In</Link>
                         </>
                     )}
                </div>
