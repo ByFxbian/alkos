@@ -70,6 +70,7 @@ export default function HomepageClient({ location, teamMembers }: HomepageClient
                     src={location.heroImage || "/images/hero-bg.jpeg"}
                     alt={`Hintergrund ${location.name}`}
                     fill
+                    sizes="100vw"
                     style={{ objectFit: 'cover' }}
                     quality={90}
                     priority

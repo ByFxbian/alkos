@@ -68,7 +68,7 @@ export default function GatewayPage() {
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-black flex flex-col items-center justify-center p-4 transition-colors duration-500" style={themeStyle}>
       <div className="absolute inset-0 opacity-40">
-         <Image src="/images/hero-bg.jpeg" alt="Background" fill className="object-cover blur-md scale-110 animate-pulse [animation-duration:7s]" />
+         <Image src="/images/hero-bg.jpeg" alt="Background" fill priority sizes="100vw" className="object-cover blur-md scale-110 animate-pulse [animation-duration:7s]" />
       </div>
       
       <div className="relative z-10 w-full max-w-5xl">
@@ -129,6 +129,8 @@ export default function GatewayPage() {
                         src={loc.heroImage || '/images/hero-bg.jpeg'} 
                         alt={loc.name} 
                         fill 
+                        priority
+                        sizes="(max-width: 768px) 100vw, 50vw"
                         className="object-cover transition-transform duration-1000 group-hover:scale-110 group-hover:rotate-1 grayscale group-hover:grayscale-0"
                     />
                     
