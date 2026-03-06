@@ -115,8 +115,8 @@ export default async function KalenderAdminPage() {
       BlockedTimeWhereClause.barberId = dbUser.id;
   } else {
       BlockedTimeWhereClause.barber = {
-          locations: {
-              some: { id: { in: queryLocationIds } }
+          userLocations: {
+              some: { locationId: { in: queryLocationIds } }
           }
       };
   }
