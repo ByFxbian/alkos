@@ -86,7 +86,10 @@ export default function CustomerDetailsModal({customer, onClose}: CustomerDetail
                                     alt={customer.name || 'Kunde'}
                                     width={56}
                                     height={56}
+                                    unoptimized
                                     className="w-14 h-14 rounded-full object-cover border-2 border-[var(--color-gold-500)] cursor-pointer select-none"
+                                    style={{ WebkitTouchCallout: 'none', touchAction: 'none' } as React.CSSProperties}
+                                    onContextMenu={(e) => e.preventDefault()}
                                     draggable={false}
                                 />
                             ) : (
@@ -183,11 +186,13 @@ export default function CustomerDetailsModal({customer, onClose}: CustomerDetail
                                     alt={customer.name || 'Kunde'}
                                     width={320}
                                     height={320}
+                                    unoptimized
                                     className="w-72 h-72 sm:w-80 sm:h-80 rounded-full object-cover pointer-events-none"
                                     style={{
                                         boxShadow: '0 0 60px rgba(0,0,0,0.5)',
                                         border: '3px solid rgba(255,255,255,0.15)',
-                                    }}
+                                        WebkitTouchCallout: 'none',
+                                    } as React.CSSProperties}
                                     draggable={false}
                                 />
                             </motion.div>

@@ -54,13 +54,13 @@ export async function GET(req: Request) {
 
     const barber = await prisma.user.findUnique({
         where: { id: barberId },
-        include: { locations: { select: { id: true } } },
+        include: { userLocations: { select: { locationId: true, isBookable: true } } },
     });
     if (!barber) {
         return NextResponse.json({ error: 'Barber not found' }, { status: 404 });
     }
 
-    const isPermanent = barber.locations.some(l => l.id === locationId);
+    const isPermanent = barber.userLocations.some(ul => ul.locationId === locationId && ul.isBookable);
 
 
     const locationHours = await prisma.availability.findMany({

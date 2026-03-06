@@ -23,7 +23,7 @@ export default async function KalenderAdminPage() {
 
   const dbUser = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { locations: { select: { id: true, name: true } } }
+      include: { userLocations: { include: { location: { select: { id: true, name: true } } } } }
   });
 
   if (!dbUser) {
@@ -36,12 +36,12 @@ export default async function KalenderAdminPage() {
   if (isGlobalAdmin) {
       availableLocations = await prisma.location.findMany({ select: { id: true, name: true } });
   } else {
-      availableLocations = dbUser.locations;
+      availableLocations = dbUser.userLocations.map(ul => ul.location);
   }
 
   const allowedLocationIds = isGlobalAdmin
       ? availableLocations.map(l => l.id)
-      : dbUser.locations.map(l => l.id);
+      : dbUser.userLocations.map(ul => ul.location.id);
 
   const cookieStore = await cookies();
   const filterId = cookieStore.get('admin_location_filter')?.value;
@@ -136,7 +136,7 @@ export default async function KalenderAdminPage() {
   const allBarbers = isAdminOrHead ? await prisma.user.findMany({
     where: {
       role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] },
-      locations: { some: { id: { in: queryLocationIds } } }
+      userLocations: { some: { locationId: { in: queryLocationIds } } }
     },
     select: {
         id: true,

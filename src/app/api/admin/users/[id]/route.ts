@@ -20,15 +20,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const requester = await prisma.user.findUnique({
     where: { id: session.user.id },
-    include: { locations: { select: { id: true } } }
+    include: { userLocations: { select: { locationId: true } } }
   });
   const requesterIsAdmin = requester?.role === 'ADMIN';
-  const requesterLocationIds = requester?.locations.map(l => l.id) || [];
+  const requesterLocationIds = requester?.userLocations.map(ul => ul.locationId) || [];
 
 
   const targetUser = await prisma.user.findUnique({
     where: { id: targetUserId },
-    include: { locations: { select: { id: true } } }
+    include: { userLocations: { select: { locationId: true } } }
   });
 
   if (!targetUser) return NextResponse.json({ error: 'User nicht gefunden' }, { status: 404 });
@@ -59,21 +59,31 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     if (locationIds && Array.isArray(locationIds)) {
       if (!requesterIsAdmin) {
-        const allAllowed = locationIds.every(id => requesterLocationIds.includes(id));
+        const allAllowed = locationIds.every((loc: any) => {
+          const id = typeof loc === 'string' ? loc : loc.locationId;
+          return requesterLocationIds.includes(id);
+        });
         if (!allAllowed) {
           return NextResponse.json({ error: 'Sie können nur Ihre eigenen Standorte zuweisen' }, { status: 403 });
         }
       }
 
-      updateData.locations = {
-        set: locationIds.map((id: string) => ({ id }))
-      };
+      await prisma.userLocation.deleteMany({ where: { userId: targetUserId } });
+      if (locationIds.length > 0) {
+        await prisma.userLocation.createMany({
+          data: locationIds.map((loc: any) => {
+            const id = typeof loc === 'string' ? loc : loc.locationId;
+            const bookable = typeof loc === 'object' && 'isBookable' in loc ? loc.isBookable : true;
+            return { userId: targetUserId, locationId: id, isBookable: bookable };
+          })
+        });
+      }
     }
 
     const updatedUser = await prisma.user.update({
       where: { id: targetUserId },
       data: updateData,
-      include: { locations: true }
+      include: { userLocations: { include: { location: true } } }
     });
 
     return NextResponse.json(updatedUser);
@@ -94,17 +104,17 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     return NextResponse.json({ error: 'Man kann sich nicht selbst löschen' }, { status: 403 });
   }
 
-  const requester = await prisma.user.findUnique({ where: { id: session.user.id }, include: { locations: true } });
+  const requester = await prisma.user.findUnique({ where: { id: session.user.id }, include: { userLocations: true } });
   const requesterIsAdmin = requester?.role === 'ADMIN';
 
   if (!requesterIsAdmin) {
-    const targetUser = await prisma.user.findUnique({ where: { id: targetUserId }, include: { locations: true } });
+    const targetUser = await prisma.user.findUnique({ where: { id: targetUserId }, include: { userLocations: true } });
 
     if (!targetUser) return NextResponse.json({ error: 'User nicht gefunden' }, { status: 404 });
     if (targetUser.role === 'ADMIN') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-    const requesterLocIds = requester?.locations.map(l => l.id) || [];
-    const targetLocIds = targetUser.locations.map(l => l.id);
+    const requesterLocIds = requester?.userLocations.map(ul => ul.locationId) || [];
+    const targetLocIds = targetUser.userLocations.map(ul => ul.locationId);
 
     const hasOverlap = targetLocIds.some(id => requesterLocIds.includes(id));
     if (!hasOverlap && targetLocIds.length > 0) {

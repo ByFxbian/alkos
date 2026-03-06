@@ -29,9 +29,10 @@ export default async function TerminePage({ params }: { params: Promise<{ locati
         where: {
             role: { in: ['BARBER', 'HEADOFBARBER'] },
             isBlocked: false,
-            locations: {
+            userLocations: {
                 some: {
-                    id: locationObj.id
+                    locationId: locationObj.id,
+                    isBookable: true,
                 }
             }
         },

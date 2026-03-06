@@ -28,7 +28,7 @@ async function findNextAvailableSlot(serviceId: string, locationId?: string): Pr
         role: { in: ['BARBER', 'HEADOFBARBER'] }
     };
     if (locationId) {
-        barberWhere.locations = { some: { id: locationId } };
+        barberWhere.userLocations = { some: { locationId: locationId, isBookable: true } };
     }
 
     const barbers = await prisma.user.findMany({

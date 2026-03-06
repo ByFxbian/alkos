@@ -31,17 +31,15 @@ async function main() {
   const staff = await prisma.user.findMany({
     where: {
       role: { in: [Role.BARBER, Role.HEADOFBARBER, Role.ADMIN] },
-      locations: { none: {} }
+      userLocations: { none: {} }
     }
   })
 
   for (const user of staff) {
-    await prisma.user.update({
-      where: { id: user.id },
+    await prisma.userLocation.create({
       data: {
-        locations: {
-          connect: { id: wien.id }
-        }
+        userId: user.id,
+        locationId: wien.id
       }
     })
     console.log(`   👤 ${user.name} -> Wien`)

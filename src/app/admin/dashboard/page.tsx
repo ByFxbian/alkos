@@ -20,7 +20,7 @@ export default async function AdminDashboardPage() {
 
   const currentUser = await prisma.user.findUnique({
     where: { email: session.user.email },
-    include: { locations: { select: { id: true, name: true } } },
+    include: { userLocations: { include: { location: { select: { id: true, name: true } } } } },
   });
 
   if (!currentUser) {
@@ -31,16 +31,16 @@ export default async function AdminDashboardPage() {
   if (currentUser.role === 'ADMIN') {
       availableLocations = await prisma.location.findMany({ select: { id: true, name: true } });
   } else {
-      availableLocations = currentUser.locations;
+      availableLocations = currentUser.userLocations.map(ul => ul.location);
   }
 
   const userAllowedLocationIds = currentUser.role === 'ADMIN' 
     ? availableLocations.map(l => l.id)
-    : currentUser.locations.map(loc => loc.id);
+    : currentUser.userLocations.map(ul => ul.location.id);
 
   const authorizedLocationIds = currentUser.role === 'ADMIN' 
     ? undefined 
-    : currentUser.locations.map(loc => loc.id);
+    : currentUser.userLocations.map(ul => ul.location.id);
 
   if (currentUser.role === 'HEADOFBARBER' && (!userAllowedLocationIds || userAllowedLocationIds.length === 0)) {
      return (

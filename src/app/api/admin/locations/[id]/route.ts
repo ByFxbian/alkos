@@ -15,10 +15,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (session.user.role === 'HEADOFBARBER') {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: { locations: { select: { id: true } } }
+      include: { userLocations: { select: { locationId: true } } }
     });
-
-    const isAssigned = user?.locations.some(l => l.id === id);
+    const isAssigned = user?.userLocations.some(ul => ul.locationId === id);
     if (!isAssigned) {
       return NextResponse.json({ error: "Forbidden: Not your location" }, { status: 403 });
     }

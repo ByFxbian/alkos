@@ -2,7 +2,7 @@ import NextAuth, { AuthOptions } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import CredentialsProvider from "next-auth/providers/credentials";
-import EmailProvider from "next-auth/providers/email"; 
+import EmailProvider from "next-auth/providers/email";
 import bcrypt from "bcrypt";
 import { User } from "@/generated/prisma";
 import { Resend } from 'resend'
@@ -70,12 +70,12 @@ export const authOptions: AuthOptions = {
     },
     callbacks: {
         async signIn({ user }) {
-            if(!user.email) return false;
+            if (!user.email) return false;
 
             const isBlacklisted = await prisma.blockedEmail.findUnique({
                 where: { email: user.email }
             });
-            if(isBlacklisted) {
+            if (isBlacklisted) {
                 return false;
             }
 
@@ -83,18 +83,26 @@ export const authOptions: AuthOptions = {
                 where: { email: user.email }
             });
 
-            if(dbUser && dbUser.isBlocked) {
+            if (dbUser && dbUser.isBlocked) {
                 return false;
+            }
+
+            if (user.image && user.image.includes('=s96-c')) {
+                const hiResImage = user.image.replace('=s96-c', '=s400-c');
+                await prisma.user.update({
+                    where: { email: user.email },
+                    data: { image: hiResImage },
+                });
             }
 
             return true;
         },
         async redirect({ url, baseUrl }) {
-            if(url.includes('callback/email')) {
+            if (url.includes('callback/email')) {
                 return baseUrl + '/meine-termine';
             }
 
-            if(url.startsWith('/')) return `${baseUrl}${url}`;
+            if (url.startsWith('/')) return `${baseUrl}${url}`;
             else if (new URL(url).origin === baseUrl) return url;
 
             return baseUrl;
@@ -109,9 +117,9 @@ export const authOptions: AuthOptions = {
                     token.emailVerified = (user as User).emailVerified || token.emailVerified;
                     console.log("JWT Callback during SignIn - Initial Token:", { id: token.id, role: token.role, emailVerified: token.emailVerified });
                 }
-                if(typeof token.id === 'string') {
-                    const dbUser = await prisma.user.findUnique({ where: { id: token.id }});
-                    if(!dbUser) {
+                if (typeof token.id === 'string') {
+                    const dbUser = await prisma.user.findUnique({ where: { id: token.id } });
+                    if (!dbUser) {
                         console.warn("JWT Callback: DB User not found for token ID:", token.id);
                     } else {
                         token.emailVerified = dbUser.emailVerified;

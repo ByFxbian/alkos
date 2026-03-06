@@ -22,8 +22,8 @@ export async function GET(req: Request) {
   }
 
   const isAdmin = session.user.role === 'ADMIN';
-  const userLocs = !isAdmin ? await prisma.user.findUnique({ where: { id: session.user.id }, include: { locations: true } }) : null;
-  const allowedIds = userLocs?.locations.map(l => l.id) || [];
+  const userLocs = !isAdmin ? await prisma.user.findUnique({ where: { id: session.user.id }, include: { userLocations: true } }) : null;
+  const allowedIds = userLocs?.userLocations.map(ul => ul.locationId) || [];
 
   let whereClause: any = {};
   if (!isAdmin) {
@@ -73,14 +73,14 @@ export async function POST(req: Request) {
     if (session.user.role !== 'ADMIN') {
       const user = await prisma.user.findUnique({
         where: { id: session.user.id },
-        include: { locations: { select: { id: true } } }
+        include: { userLocations: { select: { locationId: true } } }
       });
 
       if (!locationId) {
         return NextResponse.json({ error: 'Nur Admins können globale Services erstellen.' }, { status: 403 });
       }
 
-      const isAssigned = user?.locations.some(l => l.id === locationId);
+      const isAssigned = user?.userLocations.some(ul => ul.locationId === locationId);
       if (!isAssigned) {
         return NextResponse.json({ error: 'Nicht berechtigt für diesen Standort.' }, { status: 403 });
       }

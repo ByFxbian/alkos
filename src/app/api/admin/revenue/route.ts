@@ -18,12 +18,12 @@ export async function GET(req: Request) {
 
     const dbUser = await prisma.user.findUnique({
         where: { id: session.user.id },
-        include: { locations: true }
+        include: { userLocations: true }
     });
 
     const allowedLocationIds = session.user.role === 'ADMIN'
         ? (await prisma.location.findMany()).map(l => l.id)
-        : dbUser?.locations.map(l => l.id) || [];
+        : dbUser?.userLocations.map(ul => ul.locationId) || [];
 
     const cookieStore = await cookies();
     const filterId = cookieStore.get('admin_location_filter')?.value || 'ALL';

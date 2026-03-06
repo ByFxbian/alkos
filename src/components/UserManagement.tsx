@@ -8,7 +8,7 @@ import Image from "next/image";
 
 type UserWithDetails = User & { 
     isBlocked: boolean;
-    locations: { id: string; name: string }[];
+    userLocations: { isBookable: boolean, location: { id: string; name: string } }[];
 };
 
 type UserManagementProps = {
@@ -59,19 +59,41 @@ export default function UserManagement({ allUsers, currentUserId, availableLocat
   };
 
   const handleLocationToggle = async (user: UserWithDetails, locationId: string) => {
-    const isAssigned = user.locations.some(l => l.id === locationId);
-    let newLocationIds: string[] = [];
+    const isAssigned = user.userLocations.some(l => l.location.id === locationId);
+    let newLocations;
 
     if (isAssigned) {
-        newLocationIds = user.locations.filter(l => l.id !== locationId).map(l => l.id);
+        newLocations = user.userLocations
+            .filter(l => l.location.id !== locationId)
+            .map(l => ({ locationId: l.location.id, isBookable: l.isBookable }));
     } else {
-        newLocationIds = [...user.locations.map(l => l.id), locationId];
+        newLocations = [
+            ...user.userLocations.map(l => ({ locationId: l.location.id, isBookable: l.isBookable })),
+            { locationId, isBookable: true }
+        ];
     }
 
     await fetch(`/api/admin/users/${user.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ locationIds: newLocationIds })
+        body: JSON.stringify({ locationIds: newLocations })
+    });
+    router.refresh();
+  };
+
+  const handleBookableToggle = async (e: React.MouseEvent, user: UserWithDetails, locationId: string, currentBookable: boolean) => {
+    e.stopPropagation();
+    const newLocations = user.userLocations.map(l => {
+        if (l.location.id === locationId) {
+            return { locationId: l.location.id, isBookable: !currentBookable };
+        }
+        return { locationId: l.location.id, isBookable: l.isBookable };
+    });
+
+    await fetch(`/api/admin/users/${user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locationIds: newLocations })
     });
     router.refresh();
   };
@@ -198,20 +220,32 @@ export default function UserManagement({ allUsers, currentUserId, availableLocat
                     {['BARBER', 'HEADOFBARBER'].includes(user.role) && (
                         <div className="mt-2 flex flex-wrap gap-1">
                             {availableLocations.map(loc => {
-                                const isAssigned = user.locations.some(l => l.id === loc.id);
+                                const userLoc = user.userLocations.find(l => l.location.id === loc.id);
+                                const isAssigned = !!userLoc;
                                 return (
-                                    <button
-                                        key={loc.id}
-                                        onClick={() => handleLocationToggle(user, loc.id)}
-                                        disabled={isRowDisabled}
-                                        className={`text-[10px] px-2 py-1 rounded border transition-colors ${
-                                            isAssigned 
-                                            ? 'bg-gold-500 text-black border-gold-500 font-bold' 
-                                            : 'border-neutral-400 text-neutral-500 hover:border-gold-500'
-                                        }`}
-                                    >
-                                        {loc.name}
-                                    </button>
+                                    <div key={loc.id} className={`flex items-center text-[10px] rounded border transition-colors ${
+                                        isAssigned 
+                                        ? 'bg-gold-500 text-black border-gold-500 font-bold' 
+                                        : 'border-neutral-400 text-neutral-500 hover:border-gold-500'
+                                    }`}>
+                                      <button
+                                          onClick={() => handleLocationToggle(user, loc.id)}
+                                          disabled={isRowDisabled}
+                                          className="px-2 py-1"
+                                      >
+                                          {loc.name}
+                                      </button>
+                                      {isAssigned && (
+                                        <button 
+                                          onClick={(e) => handleBookableToggle(e, user, loc.id, userLoc.isBookable)}
+                                          disabled={isRowDisabled}
+                                          className={`px-2 py-1 border-l border-black/20 hover:bg-black/10 ${userLoc.isBookable ? '' : 'text-neutral-700 opacity-60'}`}
+                                          title={userLoc.isBookable ? 'Buchbar' : 'Nicht buchbar'}
+                                        >
+                                          {userLoc.isBookable ? '🟢' : '🔴'}
+                                        </button>
+                                      )}
+                                    </div>
                                 )
                             })}
                         </div>
@@ -278,16 +312,28 @@ export default function UserManagement({ allUsers, currentUserId, availableLocat
                       <label className="text-xs font-bold opacity-60 mb-1 block">Standorte</label>
                       <div className="flex flex-wrap gap-2">
                         {availableLocations.map(loc => {
-                            const isAssigned = user.locations.some(l => l.id === loc.id);
+                            const userLoc = user.userLocations.find(l => l.location.id === loc.id);
+                            const isAssigned = !!userLoc;
                             return (
-                                <button
-                                    key={loc.id}
-                                    onClick={() => handleLocationToggle(user, loc.id)}
-                                    disabled={isRowDisabled}
-                                    className={`text-xs px-3 py-2 rounded border ${isAssigned ? 'bg-gold-500 text-black border-gold-500 font-bold' : 'border-neutral-500'}`}
-                                >
-                                    {loc.name}
-                                </button>
+                                <div key={loc.id} className={`flex text-xs rounded border ${isAssigned ? 'bg-gold-500 text-black border-gold-500 font-bold' : 'border-neutral-500'}`}>
+                                    <button
+                                        onClick={() => handleLocationToggle(user, loc.id)}
+                                        disabled={isRowDisabled}
+                                        className="px-3 py-2"
+                                    >
+                                        {loc.name}
+                                    </button>
+                                    {isAssigned && (
+                                        <button 
+                                            onClick={(e) => handleBookableToggle(e, user, loc.id, userLoc.isBookable)}
+                                            disabled={isRowDisabled}
+                                            className={`px-3 py-2 border-l border-black/20 hover:bg-black/10 flex items-center ${userLoc.isBookable ? '' : 'opacity-60'}`}
+                                            title={userLoc.isBookable ? 'Buchbar' : 'Nicht buchbar'}
+                                        >
+                                            {userLoc.isBookable ? '🟢 Buchbar' : '🔴 Ausblenden'}
+                                        </button>
+                                    )}
+                                </div>
                             )
                         })}
                       </div>

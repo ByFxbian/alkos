@@ -42,7 +42,7 @@ export async function GET(req: Request) {
             role: { in: ['BARBER', 'HEADOFBARBER'] }
         };
         if (locationId) {
-            barberWhere.locations = { some: { id: locationId } };
+            barberWhere.userLocations = { some: { locationId: locationId, isBookable: true } };
         }
 
         const barbers = await prisma.user.findMany({

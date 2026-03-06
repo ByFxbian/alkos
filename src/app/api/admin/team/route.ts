@@ -15,9 +15,9 @@ export async function GET() {
   if (session.user.role !== 'ADMIN') {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: { locations: { select: { id: true } } }
+      include: { userLocations: { select: { locationId: true } } }
     });
-    const allowedIds = user?.locations.map(l => l.id) || [];
+    const allowedIds = user?.userLocations.map(ul => ul.locationId) || [];
 
     if (allowedIds.length === 0) {
 
@@ -52,9 +52,9 @@ export async function POST(req: Request) {
   if (session.user.role !== 'ADMIN') {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: { locations: { select: { id: true } } }
+      include: { userLocations: { select: { locationId: true } } }
     });
-    const allowedIds = user?.locations.map(l => l.id) || [];
+    const allowedIds = user?.userLocations.map(ul => ul.locationId) || [];
 
     const isValid = locationIds.every((id: string) => allowedIds.includes(id));
     if (!isValid) {

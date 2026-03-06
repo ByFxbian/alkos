@@ -158,7 +158,7 @@ export async function GET(req: Request) {
             const [permanentBarbers, shiftBarbers] = await Promise.all([
                 prisma.user.findMany({
                     where: {
-                        locations: { some: { id: locationId } },
+                        userLocations: { some: { locationId: locationId, isBookable: true } },
                         role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] },
                         isBlocked: false,
                     },

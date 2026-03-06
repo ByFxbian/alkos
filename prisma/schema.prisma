@@ -58,7 +58,7 @@ model User {
   blockedTimes           BlockedTime[]        @relation("BarberBlockedTimes")
   passwordResetTokens    PasswordResetToken[]
   sessions               Session[]
-  locations              Location[]           @relation("UserLocations")
+  userLocations          UserLocation[]
 }
 
 model BlockedEmail {
@@ -199,7 +199,19 @@ model Location {
   barberShifts    BarberShift[]
   services        Service[]
   teamMembers     TeamMember[]  @relation("TeamMemberLocations")
-  users           User[]        @relation("UserLocations")
+  userLocations   UserLocation[]
+}
+
+model UserLocation {
+  id         String   @id @default(cuid())
+  userId     String
+  locationId String
+  isBookable Boolean  @default(true)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, locationId])
+  @@index([locationId])
 }
 
 model TeamMember {

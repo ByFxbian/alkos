@@ -15,7 +15,7 @@ export default async function AdminServicesPage() {
 
   const currentUser = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { locations: true }
+      include: { userLocations: { include: { location: true } } }
   });
 
   if (!currentUser) {
@@ -23,7 +23,7 @@ export default async function AdminServicesPage() {
   }
 
   const isGlobalAdmin = currentUser.role === 'ADMIN';
-  const allowedLocationIds = currentUser.locations.map(l => l.id);
+  const allowedLocationIds = currentUser.userLocations.map(ul => ul.locationId);
 
   const whereClause: any = {};
   
@@ -50,7 +50,7 @@ export default async function AdminServicesPage() {
 
   const availableLocations = isGlobalAdmin 
       ? await prisma.location.findMany({ select: { id: true, name: true } })
-      : currentUser.locations;
+      : currentUser.userLocations.map(ul => ul.location);
 
   return (
     <div className="container mx-auto py-12 px-4 animate-in fade-in duration-700">

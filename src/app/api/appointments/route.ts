@@ -71,7 +71,7 @@ export async function POST(req: Request) {
 
       const potentialBarbers = await prisma.user.findMany({
         where: {
-          locations: { some: { id: locationId } },
+          userLocations: { some: { locationId: locationId, isBookable: true } },
           role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] }
         }
       });

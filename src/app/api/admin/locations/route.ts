@@ -14,10 +14,10 @@ export async function GET() {
   if (session.user.role !== 'ADMIN') {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: { locations: { select: { id: true } } }
+      include: { userLocations: { select: { locationId: true } } }
     });
 
-    const assignedIds = user?.locations.map(l => l.id) || [];
+    const assignedIds = user?.userLocations.map(ul => ul.locationId) || [];
 
     if (assignedIds.length === 0) {
       return NextResponse.json([]);
