@@ -70,8 +70,7 @@ export default async function AdminDashboardPage() {
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   const locationFilter = { locationId: { in: effectiveLocationIds } };
-  const userLocationFilter = { locations: { some: { id: { in: effectiveLocationIds } } } };
-
+  const userLocationFilter = { userLocations: { some: { location: { id: { in: effectiveLocationIds } } } } };
 
   const [
     barbers,
