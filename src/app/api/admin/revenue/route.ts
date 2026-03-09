@@ -44,6 +44,9 @@ export async function GET(req: Request) {
     let startDate = new Date();
     let groupBy = 'day';
 
+    const startDateParam = searchParams.get('startDate');
+    const endDateParam = searchParams.get('endDate');
+
     switch (range) {
         case 'yesterday':
             startDate = subDays(startOfDay(now), 1);
@@ -70,11 +73,25 @@ export async function GET(req: Request) {
             startDate = new Date(0);
             groupBy = 'month';
             break;
+        case 'custom':
+            if (startDateParam && endDateParam) {
+                startDate = new Date(startDateParam);
+                // Set to start of day for safety
+                startDate.setHours(0,0,0,0);
+            } else {
+                startDate = subDays(now, 7);
+            }
+            break;
         default:
             startDate = subDays(now, 7);
     }
 
-    const endDate = range === 'yesterday' ? startOfDay(now) : now;
+    let endDate = range === 'yesterday' ? startOfDay(now) : now;
+    if (range === 'custom' && endDateParam) {
+        endDate = new Date(endDateParam);
+        // Set to end of day to include the full day
+        endDate.setHours(23, 59, 59, 999);
+    }
 
     try {
         const appointments = await prisma.appointment.findMany({

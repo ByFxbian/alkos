@@ -19,6 +19,8 @@ type ChartData = {
 
 export default function RevenueChart({barbers}: RevenueChartProps) {
     const [range, setRange] = useState('7d');
+    const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
     const [selectedBarber, setSelectedBarber] = useState('all');
     const [data, setData] = useState<ChartData[]>([]);
     const [total, setTotal] = useState(0);
@@ -29,10 +31,17 @@ export default function RevenueChart({barbers}: RevenueChartProps) {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const params = new URLSearchParams({
+                const queryParams: Record<string, string> = {
                     range,
                     barberId: selectedBarber,
-                });
+                };
+                
+                if (range === 'custom') {
+                    queryParams.startDate = startDate;
+                    queryParams.endDate = endDate;
+                }
+
+                const params = new URLSearchParams(queryParams);
                 const res = await fetch(`/api/admin/revenue?${params.toString()}`);
                 const json = await res.json();
 
@@ -49,7 +58,7 @@ export default function RevenueChart({barbers}: RevenueChartProps) {
         };
 
         fetchData();
-    }, [range, selectedBarber]);
+    }, [range, selectedBarber, startDate, endDate]);
 
     return (
         <div className="p-6 rounded-lg border border-neutral-800 shadow-lg" style={{ backgroundColor: 'var(--color-surface)'}}>
@@ -89,7 +98,26 @@ export default function RevenueChart({barbers}: RevenueChartProps) {
                         <option value="6m">6 Monate</option>
                         <option value="12m">12 Monate</option>
                         <option value="all">Insgesamt</option>
+                        <option value="custom">Zeitraum wählen...</option>
                     </select>
+
+                    {range === 'custom' && (
+                        <div className="flex items-center gap-2 w-full md:w-auto">
+                            <input 
+                                type="date" 
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="p-2 rounded text-sm border bg-[var(--color-surface-3)] border-[var(--color-border)] text-white"
+                            />
+                            <span className="text-[var(--color-text-muted)]">bis</span>
+                            <input 
+                                type="date" 
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="p-2 rounded text-sm border bg-[var(--color-surface-3)] border-[var(--color-border)] text-white"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 

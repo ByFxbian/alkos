@@ -147,9 +147,7 @@ export default function BarberSchedule({ appointments, isAdmin }: BarberSchedule
 
     const nextSevenDays = Array.from({ length: 7 }).map((_, i) => addDays(new Date(), i));
 
-    if (appointments.length === 0) {
-        return <p style={{ color: 'var(--color-text-muted)' }}>Für heute sind keine Termine eingetragen.</p>;
-    }
+
 
     return (
         <>
