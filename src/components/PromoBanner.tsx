@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const PROMO_DATE = '2026-03-07';
-const PROMO_STORAGE_KEY = 'hidePromoBanner_0307';
+const PROMO_START_DATE = '2026-03-07';
+const PROMO_END_DATE = '2026-03-14';
+const PROMO_STORAGE_KEY = 'hidePromoBanner_0314';
 
 export default function PromoBanner() {
   const [isVisible, setIsVisible] = useState(false);
@@ -22,25 +23,16 @@ export default function PromoBanner() {
     if (sessionStorage.getItem(PROMO_STORAGE_KEY) === 'true') return;
 
     const now = new Date();
-    const promoDate = new Date(PROMO_DATE + 'T00:00:00+01:00');
-    const promoEnd = new Date(PROMO_DATE + 'T23:59:59+01:00');
+    const promoStart = new Date(PROMO_START_DATE + 'T00:00:00+01:00');
+    const promoEnd = new Date(PROMO_END_DATE + 'T23:59:59+01:00');
 
 
     if (now > promoEnd) return;
 
-    const todayStr = now.toLocaleDateString('en-CA');
-    const tomorrowDate = new Date(now);
-    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-    const tomorrowStr = tomorrowDate.toLocaleDateString('en-CA');
-
-    if (todayStr === PROMO_DATE) {
-      setTimeLabel('🔥 HEUTE');
-    } else if (tomorrowStr === PROMO_DATE) {
-      setTimeLabel('⏰ MORGEN');
-    } else if (now < promoDate) {
-      setTimeLabel('📅 Am 7. März');
+    if (now < promoStart) {
+      setTimeLabel(`📅 Ab 7. März`);
     } else {
-      return;
+      setTimeLabel('✨ AKTION');
     }
 
     setIsVisible(true);
@@ -82,7 +74,7 @@ export default function PromoBanner() {
                   {timeLabel}:
                 </motion.span>
                 <span className="font-bold text-sm sm:text-base">
-                  Alle Haarschnitte nur <span className="text-lg sm:text-xl font-black">5€</span> bei ALKOS Baden!
+                  Alle Haarschnitte nur <span className="text-lg sm:text-xl font-black">5€</span> bei ALKOS Baden bis zum 14. März!
                 </span>
                 <span className="text-xs sm:text-sm font-medium opacity-80">
                   Eröffnungsangebot 🎉

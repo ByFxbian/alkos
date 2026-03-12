@@ -26,6 +26,7 @@ export default function RevenueChart({barbers}: RevenueChartProps) {
     const [total, setTotal] = useState(0);
     const [count, setCount] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
+    const [dynamicBarbers, setDynamicBarbers] = useState<BarberSimple[]>(barbers);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -49,6 +50,9 @@ export default function RevenueChart({barbers}: RevenueChartProps) {
                     setData(json.chartData);
                     setTotal(json.totalRevenue);
                     setCount(json.appointmentCount);
+                    if (json.barbers) {
+                        setDynamicBarbers(json.barbers);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch revenue", error);
@@ -80,7 +84,7 @@ export default function RevenueChart({barbers}: RevenueChartProps) {
                         style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}
                     >
                         <option value="all">Alle Barber</option>
-                        {barbers.map(b => (
+                        {dynamicBarbers.map(b => (
                             <option key={b.id} value={b.id}>{b.name}</option>
                         ))}
                     </select>

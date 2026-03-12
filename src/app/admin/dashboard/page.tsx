@@ -82,7 +82,10 @@ export default async function AdminDashboardPage() {
   ] = await Promise.all([
     prisma.user.findMany({
       where: {
-        role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] },
+        OR: [
+          { role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] } },
+          { appointmentsAsBarber: { some: { startTime: { gte: thirtyDaysAgo } } } }
+        ],
         ...userLocationFilter,
       },
       select: { id: true, name: true, image: true }
@@ -178,11 +181,12 @@ export default async function AdminDashboardPage() {
     servicePopularity[sId].count++;
   }
 
-  // 5€ Promo helper: Baden haircuts on March 7th
-  const PROMO_DATE_STR = '2026-03-07';
+  // 5€ Promo helper: Baden haircuts between March 7th and March 14th
+  const PROMO_START_DATE = '2026-03-07';
+  const PROMO_END_DATE = '2026-03-14';
   const getEffectivePrice = (app: { startTime: Date; service: { price: number; name: string }; location?: { slug: string } | null }) => {
     const dateStr = new Date(app.startTime).toLocaleDateString('en-CA');
-    if (dateStr === PROMO_DATE_STR && app.location?.slug === 'baden' && app.service.name.toLowerCase().includes('haarschnitt')) {
+    if (dateStr >= PROMO_START_DATE && dateStr <= PROMO_END_DATE && app.location?.slug === 'baden' && app.service.name.toLowerCase().includes('haarschnitt')) {
       return 5;
     }
     return app.service.price;

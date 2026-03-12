@@ -69,8 +69,12 @@ export default function BookingForm({ barbers, services, hasFreeAppointment, cur
   const [confirmedAppointment, setConfirmedAppointment] = useState<ConfirmedAppointmentData | null>(null);
 
 
-  const PROMO_DATE = '2026-03-07';
-  const isPromoDay = selectedDate ? selectedDate.toLocaleDateString('en-CA') === PROMO_DATE : false;
+  const PROMO_START_DATE = '2026-03-07';
+  const PROMO_END_DATE = '2026-03-14';
+  const isPromoDay = selectedDate ? (
+    selectedDate.toLocaleDateString('en-CA') >= PROMO_START_DATE && 
+    selectedDate.toLocaleDateString('en-CA') <= PROMO_END_DATE
+  ) : false;
   const isPromoHaircut = (serviceName: string) => serviceName.toLowerCase().includes('haarschnitt');
   const isPromoActive = isBaden && isPromoDay && selectedService ? isPromoHaircut(selectedService.name) : false;
 

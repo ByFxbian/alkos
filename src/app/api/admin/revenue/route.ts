@@ -106,7 +106,10 @@ export async function GET(req: Request) {
             },
             include: {
                 service: {
-                    select: { price: true }
+                    select: { price: true, name: true }
+                },
+                location: {
+                    select: { slug: true }
                 }
             },
             orderBy: {
@@ -117,8 +120,21 @@ export async function GET(req: Request) {
         const groupedData: Record<string, number> = {};
         let totalRevenue = 0;
 
+        const PROMO_START_DATE = '2026-03-07';
+        const PROMO_END_DATE = '2026-03-14';
+
         appointments.forEach(app => {
-            const price = app.service.price;
+            let price = app.service.price;
+            
+            // Apply 5€ Promo for Baden haircuts during the promo period
+            const dateStr = format(new Date(app.startTime), 'yyyy-MM-dd');
+            const isBaden = app.location?.slug === 'baden';
+            const isHaircut = app.service.name.toLowerCase().includes('haarschnitt');
+            
+            if (isBaden && isHaircut && dateStr >= PROMO_START_DATE && dateStr <= PROMO_END_DATE) {
+                price = 5;
+            }
+
             totalRevenue += price;
 
             let key = '';
@@ -139,10 +155,23 @@ export async function GET(req: Request) {
             value
         }));
 
+        // Fetch all possible barbers for the dropdown (including former ones who had appointments in this range)
+        const relevantBarbers = await prisma.user.findMany({
+            where: {
+                OR: [
+                    { role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] } },
+                    { appointmentsAsBarber: { some: { startTime: { gte: startDate, lt: endDate } } } }
+                ],
+                userLocations: { some: { locationId: { in: allowedLocationIds } } }
+            },
+            select: { id: true, name: true }
+        });
+
         return NextResponse.json({
             chartData,
             totalRevenue,
-            appointmentCount: appointments.length
+            appointmentCount: appointments.length,
+            barbers: relevantBarbers
         });
     } catch (error) {
         console.error("Revenue API Error:", error);
