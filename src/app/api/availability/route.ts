@@ -76,26 +76,27 @@ async function getSlotsForBarber(barberId: string, date: string, serviceDuration
     const dayStart = startOfDay(availabilityStartInVienna);
     const dayEnd = endOfDay(availabilityStartInVienna);
 
-    const bookedAppointments = await prisma.appointment.findMany({
-        where: {
-            barberId: barberId,
-            startTime: {
-                gte: availabilityStartInVienna,
-                lt: availabilityEndInVienna,
+    const [bookedAppointments, blockedTimes] = await Promise.all([
+        prisma.appointment.findMany({
+            where: {
+                barberId: barberId,
+                startTime: {
+                    gte: availabilityStartInVienna,
+                    lt: availabilityEndInVienna,
+                },
             },
-        },
-    });
-
-    const blockedTimes = await prisma.blockedTime.findMany({
-        where: {
-            barberId: barberId,
-            OR: [
-                { startTime: { gte: dayStart, lt: dayEnd } },
-                { endTime: { gte: dayStart, lt: dayEnd } },
-                { startTime: { lte: dayStart }, endTime: { gte: dayEnd } }
-            ]
-        }
-    });
+        }),
+        prisma.blockedTime.findMany({
+            where: {
+                barberId: barberId,
+                OR: [
+                    { startTime: { gte: dayStart, lt: dayEnd } },
+                    { endTime: { gte: dayStart, lt: dayEnd } },
+                    { startTime: { lte: dayStart }, endTime: { gte: dayEnd } }
+                ]
+            }
+        }),
+    ]);
 
     const slots: Date[] = [];
     let currentTime = new Date(availabilityStartInVienna);
@@ -199,11 +200,10 @@ export async function GET(req: Request) {
         }
 
         const allSlotsSet = new Set<string>();
-
-        for (const bId of targetBarberIds) {
-            const slots = await getSlotsForBarber(bId, date, service.duration, locationId);
-            slots.forEach(s => allSlotsSet.add(s.toISOString()));
-        }
+        const allBarberSlots = await Promise.all(
+            targetBarberIds.map((bId) => getSlotsForBarber(bId, date, service.duration, locationId))
+        );
+        allBarberSlots.flat().forEach((slot) => allSlotsSet.add(slot.toISOString()));
 
         let sortedSlots = Array.from(allSlotsSet).sort();
 

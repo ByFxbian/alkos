@@ -4,16 +4,23 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 import { logger } from '@/lib/logger';
 import { PrismaClientKnownRequestError } from '@/generated/prisma/runtime/library';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
   logger.info("API Route /api/auth/register POST called");
   let response: NextResponse;
-  let requestBody = {};
+  let requestEmail: string | undefined;
+
+  const ip = getClientIp(req);
+  const rl = checkRateLimit(`auth-register:${ip}`, { limit: 10, windowMs: 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json({ error: 'Zu viele Anfragen. Bitte später erneut versuchen.' }, { status: 429 });
+  }
 
   try {
-    requestBody = await req.json();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const requestBody = await req.json();
     const { email, name, password, instagram } = requestBody as any;
+    requestEmail = email;
     const isBlacklisted = await prisma.blockedEmail.findUnique({
       where: { email }
     });
@@ -41,8 +48,13 @@ export async function POST(req: Request) {
     });
     logger.info("API Route /api/auth/register: User created successfully.", { userId: newUser.id, email: newUser.email });
 
-    response = NextResponse.json(newUser, { status: 201 });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+    response = NextResponse.json({
+      id: newUser.id,
+      email: newUser.email,
+      name: newUser.name,
+      role: newUser.role,
+      emailVerified: newUser.emailVerified,
+    }, { status: 201 });
   } catch (error: any) {
     if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
       let targetFields: string[] = [];
@@ -50,11 +62,11 @@ export async function POST(req: Request) {
         targetFields = error.meta.target as string[];
       }
       if (targetFields.includes('email')) {
-        logger.warn("API Route /api/auth/register: Conflict - Email already exists.", { providedEmail: (requestBody as any).email });
+        logger.warn("API Route /api/auth/register: Conflict - Email already exists.", { providedEmail: requestEmail });
         response = NextResponse.json({ error: 'Diese E-Mail-Adresse ist bereits registriert.' }, { status: 409 });
       
       } else if (targetFields.includes('instagram')) {
-        logger.warn("API Route /api/auth/register: Conflict - Instagram handle already taken.", { providedInstagram: (requestBody as any).instagram });
+        logger.warn("API Route /api/auth/register: Conflict - Instagram handle already taken.");
         response = NextResponse.json({ error: 'Dieser Instagram-Name ist bereits vergeben.' }, { status: 409 });
       
       } else {
@@ -63,7 +75,7 @@ export async function POST(req: Request) {
       }
 
     } else {
-      logger.error('API Route /api/auth/register - Registration error:', { error, requestBody });
+      logger.error('API Route /api/auth/register - Registration error:', { error, requestEmail });
       if (error instanceof TypeError) {
         logger.error('API Route /api/auth/register - Encountered TypeError:', { message: error.message, stack: error.stack });
       }

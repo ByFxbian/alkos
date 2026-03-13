@@ -17,10 +17,23 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Keine Datei gefunden' }, { status: 400 });
   }
 
+  const contentType = request.headers.get('content-type') || '';
+  if (!contentType.startsWith('image/')) {
+    return NextResponse.json({ error: 'Ungültiger Dateityp' }, { status: 400 });
+  }
 
-  const blob = await put(filename, request.body, {
+  const contentLength = Number(request.headers.get('content-length') || '0');
+  if (contentLength > 5 * 1024 * 1024) {
+    return NextResponse.json({ error: 'Datei ist zu groß (max. 5MB)' }, { status: 413 });
+  }
+
+  const sanitizedFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '');
+  const uniquePath = `avatars/${session.user.id}/${Date.now()}-${sanitizedFilename || 'avatar'}`;
+
+  const blob = await put(uniquePath, request.body, {
     access: 'public',
-    allowOverwrite: true,
+    allowOverwrite: false,
+    contentType,
   });
 
 

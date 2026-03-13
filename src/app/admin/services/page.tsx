@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@/generated/prisma';
 import ServiceManagement from '@/components/ServiceManagement';
 
 export const revalidate = 0;
@@ -25,7 +26,7 @@ export default async function AdminServicesPage() {
   const isGlobalAdmin = currentUser.role === 'ADMIN';
   const allowedLocationIds = currentUser.userLocations.map(ul => ul.locationId);
 
-  const whereClause: any = {};
+  const whereClause: Prisma.ServiceWhereInput = {};
   
   if (!isGlobalAdmin) {
      if (allowedLocationIds.length === 0) {

@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@/generated/prisma';
 import UserManagement from '@/components/UserManagement';
 
 export const revalidate = 0;
@@ -25,7 +26,7 @@ export default async function FriseurAdminPage() {
   const isGlobalAdmin = currentUser.role === 'ADMIN';
   const allowedLocationIds = currentUser.userLocations.map(ul => ul.locationId);
 
-  const whereClause: any = {};
+  const whereClause: Prisma.UserWhereInput = {};
 
   if (!isGlobalAdmin) {
       if (allowedLocationIds.length === 0) {

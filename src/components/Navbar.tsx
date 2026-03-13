@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import ThemeToggle from './ThemeToggle';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { loadLocationsClient } from '@/lib/location-client-cache';
 
 type NavbarProps = {
     locationSlug?: string;
@@ -31,13 +32,13 @@ export default function Navbar({ locationSlug }: NavbarProps) {
     const saved = localStorage.getItem('alkos-location');
     if (saved) setSavedLocation(saved);
 
-    fetch('/api/public/location-data')
-      .then(r => r.json())
-      .then(d => {
-        const locs = d.locations || d;
-        if(Array.isArray(locs)) setLocations(locs);
+    loadLocationsClient()
+      .then((locs) => {
+        setLocations(locs);
       })
-      .catch(e => console.error("Nav Load Error", e));
+      .catch(() => {
+        setLocations([]);
+      });
   }, []);
 
   const handleLocationSwitch = (slug: string) => {

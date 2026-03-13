@@ -35,8 +35,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       data: { ...body }
     });
     return NextResponse.json(location);
-  } catch (e) {
-    return NextResponse.json({ error: "Update Failed", details: e }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Update Failed" }, { status: 500 });
   }
 }
 

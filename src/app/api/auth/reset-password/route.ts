@@ -3,12 +3,18 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 import { logger } from '@/lib/logger';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
     logger.info("API Route /api/auth/reset-password POST called");
     let response: NextResponse;
     try {
         const { token, password } = await req.json();
+        const ip = getClientIp(req);
+        const rl = checkRateLimit(`auth-reset:${ip}`, { limit: 10, windowMs: 60_000 });
+        if (!rl.ok) {
+            return NextResponse.json({ error: 'Zu viele Anfragen. Bitte später erneut versuchen.' }, { status: 429 });
+        }
 
         if (!token || !password) {
         logger.warn("API Route /api/auth/reset-password: Missing token or password.");

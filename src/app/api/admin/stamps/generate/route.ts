@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { randomBytes } from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from '@/lib/auth';
-import { formatInTimeZone } from "date-fns-tz";
 import { endOfDay } from "date-fns";
 
 export async function POST(req: Request) {
@@ -15,6 +14,29 @@ export async function POST(req: Request) {
     const { appointmentId } = await req.json();
     if(!appointmentId) {
         return NextResponse.json({ message: "Termin-ID Fehlt." }, { status: 400 });
+    }
+
+    const appointment = await prisma.appointment.findUnique({
+        where: { id: appointmentId },
+        select: { id: true, barberId: true, locationId: true },
+    });
+    if (!appointment) {
+        return NextResponse.json({ error: 'Termin nicht gefunden.' }, { status: 404 });
+    }
+
+    if (session.user.role === 'BARBER' && appointment.barberId !== session.user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    if (session.user.role === 'HEADOFBARBER') {
+        const requester = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            include: { userLocations: { select: { locationId: true } } },
+        });
+        const allowedLocationIds = requester?.userLocations.map((ul) => ul.locationId) || [];
+        if (!appointment.locationId || !allowedLocationIds.includes(appointment.locationId)) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
     }
 
     const existingToken = await prisma.stampToken.findFirst({
@@ -30,10 +52,7 @@ export async function POST(req: Request) {
     }
 
     const token = randomBytes(32).toString('hex');
-
-    const timeZone = 'Europe/Vienna';
-    const nowInVienna = formatInTimeZone(new Date(), timeZone, 'yyyy-MM-dd HH:mm:ssXXX');
-    const expiresAt = endOfDay(nowInVienna);
+    const expiresAt = endOfDay(new Date());
 
     try {
         const stampToken = await prisma.stampToken.create({

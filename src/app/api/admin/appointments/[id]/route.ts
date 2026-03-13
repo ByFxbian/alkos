@@ -26,7 +26,7 @@ export async function DELETE(
     } else {
       const appointment = await prisma.appointment.findUnique({
         where: { id: appointmentId },
-        select: { barberId: true }
+        select: { barberId: true, locationId: true }
       });
       if (!appointment) {
             logger.warn("API Route /api/admin/appointments/[id] DELETE: Appointment not found during auth check.", { appointmentId, userId: session.user.id });
@@ -34,6 +34,18 @@ export async function DELETE(
       } else {
         const isAdminOrHead = ['ADMIN', 'HEADOFBARBER'].includes(session.user.role);
         const isOwnAppointment = session.user.role === 'BARBER' && appointment.barberId === session.user.id;
+
+        if (session.user.role === 'HEADOFBARBER') {
+          const requester = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            include: { userLocations: { select: { locationId: true } } },
+          });
+          const allowedLocationIds = requester?.userLocations.map((ul) => ul.locationId) || [];
+          if (!appointment.locationId || !allowedLocationIds.includes(appointment.locationId)) {
+            response = NextResponse.json({ error: 'Zugriff verweigert' }, { status: 403 });
+            return response;
+          }
+        }
 
         if (!isAdminOrHead && !isOwnAppointment) {
           logger.warn("API Route /api/admin/appointments/[id] DELETE: Forbidden access attempt.", {

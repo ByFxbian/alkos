@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
     try {
+        const ip = getClientIp(req);
+        const rl = checkRateLimit(`walkin-pin:${ip}`, { limit: 20, windowMs: 60_000 });
+        if (!rl.ok) {
+            return NextResponse.json({ error: 'Zu viele Versuche. Bitte warte kurz.' }, { status: 429 });
+        }
+
         const { pin } = await req.json();
 
         if (!pin || typeof pin !== 'string') {

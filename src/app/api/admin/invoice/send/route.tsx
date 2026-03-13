@@ -26,6 +26,17 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Termin oder Kunden-Email fehlt" }, { status: 404 });
     }
 
+    if (session.user.role === 'HEADOFBARBER') {
+        const requester = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            include: { userLocations: { select: { locationId: true } } },
+        });
+        const allowedLocationIds = requester?.userLocations.map((ul) => ul.locationId) || [];
+        if (!appointment.locationId || !allowedLocationIds.includes(appointment.locationId)) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+    }
+
     const pdfBuffer = await renderToBuffer(
         <InvoiceDocument 
             appointmentId={appointment.id}

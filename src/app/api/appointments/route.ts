@@ -5,27 +5,28 @@ import { prisma } from '@/lib/prisma';
 import { Resend } from 'resend';
 import ConfirmationEmail from '@/emails/ConfirmationEmail';
 import { logger } from '@/lib/logger';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { PrismaClientKnownRequestError } from '@/generated/prisma/runtime/library';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
-  console.log("API Route /api/appointments POST called");
-  logger.info("API Route /api/appointments POST called");
-  const session = await getServerSession(authOptions);
+  logger.info('API Route /api/appointments POST called');
 
+  const ip = getClientIp(req);
+  const rl = checkRateLimit(`appointments-create:${ip}`, { limit: 30, windowMs: 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json({ error: 'Zu viele Anfragen. Bitte später erneut versuchen.' }, { status: 429 });
+  }
+
+  const session = await getServerSession(authOptions);
   if (!session || !session.user) {
-    console.warn("API Route /api/appointments: Unauthorized access attempt.");
-    logger.warn("API Route /api/appointments: Unauthorized access attempt.");
     return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
   }
-  console.log("API Route /api/appointments: User authorized.", { userId: session.user.id });
-  logger.info("API Route /api/appointments: User authorized.", { userId: session.user.id });
 
   let response: NextResponse;
   try {
     const body = await req.json();
-    console.log("API Route /api/appointments: Request body:", body);
-    logger.info("API Route /api/appointments: Request body:", { body });
     const { serviceId, startTime, useFreeAppointment, locationId } = body;
     let { barberId } = body;
     const customerId = session.user.id;
@@ -42,23 +43,12 @@ export async function POST(req: Request) {
         const appointmentStart = new Date(startTime);
         const badenStartDateTime = new Date('2026-03-07T12:00:00+01:00');
         if (appointmentStart < badenStartDateTime) {
-          return NextResponse.json({ error: 'Termine für diesen Standort sind erst ab dem 07.03.2026 um 12:00 Uhr buchbar.' }, { status: 400 });
+          return NextResponse.json(
+            { error: 'Termine für diesen Standort sind erst ab dem 07.03.2026 um 12:00 Uhr buchbar.' },
+            { status: 400 }
+          );
         }
       }
-    }
-
-    if (useFreeAppointment) {
-      const customer = await prisma.user.findUnique({ where: { id: customerId } });
-      if (!customer?.hasFreeAppointment) {
-        return NextResponse.json({ error: 'Kein Gratis-Termin verfügbar' }, { status: 400 });
-      }
-      await prisma.user.update({
-        where: { id: customerId },
-        data: {
-          hasFreeAppointment: false,
-          completedAppointments: 0,
-        },
-      });
     }
 
     const appointmentStartTime = new Date(startTime);
@@ -71,9 +61,9 @@ export async function POST(req: Request) {
 
       const potentialBarbers = await prisma.user.findMany({
         where: {
-          userLocations: { some: { locationId: locationId, isBookable: true } },
-          role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] }
-        }
+          userLocations: { some: { locationId, isBookable: true } },
+          role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] },
+        },
       });
 
       let assignedBarberId: string | null = null;
@@ -81,28 +71,26 @@ export async function POST(req: Request) {
       for (const barber of potentialBarbers) {
         const dayOfWeek = appointmentStartTime.getDay();
         const availability = await prisma.availability.findFirst({
-          where: { barberId: barber.id, dayOfWeek }
+          where: { barberId: barber.id, dayOfWeek },
         });
-
         if (!availability) continue;
 
-        const hasConflict = await prisma.appointment.findFirst({
-          where: {
-            barberId: barber.id,
-            OR: [
-              { startTime: { lt: appointmentEndTime }, endTime: { gt: appointmentStartTime } }
-            ]
-          }
-        });
-
-        const hasBlock = await prisma.blockedTime.findFirst({
-          where: {
-            barberId: barber.id,
-            OR: [
-              { startTime: { lt: appointmentEndTime }, endTime: { gt: appointmentStartTime } }
-            ]
-          }
-        });
+        const [hasConflict, hasBlock] = await Promise.all([
+          prisma.appointment.findFirst({
+            where: {
+              barberId: barber.id,
+              OR: [{ startTime: { lt: appointmentEndTime }, endTime: { gt: appointmentStartTime } }],
+            },
+            select: { id: true },
+          }),
+          prisma.blockedTime.findFirst({
+            where: {
+              barberId: barber.id,
+              OR: [{ startTime: { lt: appointmentEndTime }, endTime: { gt: appointmentStartTime } }],
+            },
+            select: { id: true },
+          }),
+        ]);
 
         if (!hasConflict && !hasBlock) {
           assignedBarberId = barber.id;
@@ -118,38 +106,58 @@ export async function POST(req: Request) {
 
     const now = new Date();
     const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-
     const isLastMinuteBooking = appointmentStartTime < twentyFourHoursFromNow;
 
-    const existingAppointment = await prisma.appointment.findFirst({
-      where: {
-        barberId: barberId,
-        startTime: appointmentStartTime,
-      },
-    });
+    const newAppointment = await prisma.$transaction(async (tx) => {
+      const existingAppointment = await tx.appointment.findFirst({
+        where: {
+          barberId,
+          startTime: appointmentStartTime,
+        },
+        select: { id: true },
+      });
+      if (existingAppointment) {
+        throw new Error('SLOT_TAKEN');
+      }
 
-    if (existingAppointment) {
-      return NextResponse.json({ error: 'Dieser Zeitslot wurde gerade eben gebucht oder ist bereits belegt.' }, { status: 409 });
-    }
-    const newAppointment = await prisma.appointment.create({
-      data: {
-        startTime: appointmentStartTime,
-        endTime: appointmentEndTime,
-        customerId,
-        barberId,
-        serviceId,
-        isFree: useFreeAppointment || false,
-        reminderSentAt: isLastMinuteBooking ? new Date() : null,
-        locationId: locationId || null,
-      },
-      include: {
-        customer: true,
-        barber: true,
-        service: true,
-      },
+      if (useFreeAppointment) {
+        const customer = await tx.user.findUnique({ where: { id: customerId }, select: { hasFreeAppointment: true } });
+        if (!customer?.hasFreeAppointment) {
+          throw new Error('NO_FREE_APPOINTMENT');
+        }
+        await tx.user.update({
+          where: { id: customerId },
+          data: {
+            hasFreeAppointment: false,
+            completedAppointments: 0,
+          },
+        });
+      }
+
+      return tx.appointment.create({
+        data: {
+          startTime: appointmentStartTime,
+          endTime: appointmentEndTime,
+          customerId,
+          barberId,
+          serviceId,
+          isFree: useFreeAppointment || false,
+          reminderSentAt: isLastMinuteBooking ? new Date() : null,
+          locationId: locationId || null,
+        },
+        include: {
+          customer: {
+            select: { id: true, email: true, name: true },
+          },
+          barber: {
+            select: { id: true, name: true },
+          },
+          service: {
+            select: { id: true, name: true, duration: true, price: true },
+          },
+        },
+      });
     });
-    console.log("API Route /api/appointments: Appointment created successfully.", { appointmentId: newAppointment.id, userId: customerId });
-    logger.info("API Route /api/appointments: Appointment created successfully.", { appointmentId: newAppointment.id, userId: session.user.id });
 
     try {
       await resend.emails.send({
@@ -160,30 +168,40 @@ export async function POST(req: Request) {
           customerName: newAppointment.customer.name || '',
           serviceName: newAppointment.service.name,
           barberName: newAppointment.barber.name || '',
-          startTime: newAppointment.startTime,
+          startTime: appointmentStartTime,
           host: 'ALKOS',
           locationName: locationData?.name,
           locationAddress: locationData?.address,
         }),
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (emailError: any) {
-      logger.error("API Route /api/appointments: Error when sending confirmation email.", emailError);
-      console.error('Fehler beim Senden der Bestätigungs-E-Mail:', emailError);
+    } catch (emailError) {
+      logger.error('API Route /api/appointments: Error when sending confirmation email.', {
+        appointmentId: newAppointment.id,
+        error: emailError,
+      });
     }
+
     response = NextResponse.json(newAppointment, { status: 201 });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    logger.error('API Route /api/appointments - Booking error:', error);
-    console.error('API Route /api/appointments - Booking error:', error);
-    if (error instanceof NextResponse && error.status === 409) {
-      response = error;
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === 'SLOT_TAKEN') {
+      response = NextResponse.json(
+        { error: 'Dieser Zeitslot wurde gerade eben gebucht oder ist bereits belegt.' },
+        { status: 409 }
+      );
+    } else if (error instanceof Error && error.message === 'NO_FREE_APPOINTMENT') {
+      response = NextResponse.json({ error: 'Kein Gratis-Termin verfügbar' }, { status: 400 });
+    } else if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+      response = NextResponse.json(
+        { error: 'Dieser Zeitslot wurde gerade eben gebucht oder ist bereits belegt.' },
+        { status: 409 }
+      );
     } else {
+      logger.error('API Route /api/appointments - Booking error:', { error });
       response = NextResponse.json({ error: 'Fehler bei der Terminerstellung.' }, { status: 500 });
     }
   } finally {
-    logger.info("API Route /api/appointments POST: Flushing logs.");
     await logger.flush();
   }
-  return response;
+
+  return response!;
 }

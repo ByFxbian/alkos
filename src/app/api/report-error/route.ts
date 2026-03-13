@@ -2,13 +2,19 @@ import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const reportRecipientEmail = process.env.ERROR_REPORT_EMAIL || 'sopa.fabian@gmx.net';
 
 export async function POST(req: Request) {
-    console.log("API ROUTE /api/report-error POST called");
     try {
+        const ip = getClientIp(req);
+        const rl = checkRateLimit(`report-error:${ip}`, { limit: 10, windowMs: 60_000 });
+        if (!rl.ok) {
+            return NextResponse.json({ error: 'Zu viele Meldungen. Bitte warte kurz.' }, { status: 429 });
+        }
+
         const { description, email: reporterEmail } = await req.json();
 
         if(!description || typeof description !== 'string' || description.trim().length === 0) {
@@ -32,7 +38,7 @@ export async function POST(req: Request) {
             emailBody += `Eingeloggter User E-Mail: ${userEmail}\n`;
         }
 
-        const { data, error } = await resend.emails.send({
+        const { error } = await resend.emails.send({
             from: 'Fehlermeldung <noreply@alkosbarber.at>',
             to: [reportRecipientEmail],
             subject: subject,
@@ -40,14 +46,11 @@ export async function POST(req: Request) {
         });
 
         if(error) {
-            console.error("Resend error sending report: ", error);
             return NextResponse.json({ error: 'Fehler beim Senden der E-Mail.' }, { status: 500 });
         }
 
-        console.log("API Route /api/report-error: Report sent successfully.", { emailId: data?.id });
         return NextResponse.json({ message: 'Meldung erfolgreich gesendet.' }, { status: 200 });
-    } catch (error) {
-        console.error('API Route /api/report-error - General error:', error);
+    } catch {
         return NextResponse.json({ error: 'Ein interner Fehler ist aufgetreten.' }, { status: 500 });
     }
 }

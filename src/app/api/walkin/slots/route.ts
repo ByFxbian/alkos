@@ -50,10 +50,7 @@ export async function GET(req: Request) {
             select: { id: true, name: true, image: true },
         });
 
-        const availableSlots: BarberSlot[] = [];
-
-        for (const barber of barbers) {
-
+        const slotResults = await Promise.all(barbers.map(async (barber) => {
             const availWhere: Record<string, unknown> = {
                 barberId: barber.id,
                 dayOfWeek
@@ -66,31 +63,29 @@ export async function GET(req: Request) {
                 where: availWhere,
             });
 
-            if (!availability) continue;
+            if (!availability) return null;
 
             const availabilityStart = fromZonedTime(`${dateStr}T${availability.startTime}:00`, timeZone);
             const availabilityEnd = fromZonedTime(`${dateStr}T${availability.endTime}:00`, timeZone);
 
-
-            const bookedAppointments = await prisma.appointment.findMany({
-                where: {
-                    barberId: barber.id,
-                    startTime: { gte: availabilityStart, lt: availabilityEnd },
-                },
-            });
-
-
-            const blockedTimes = await prisma.blockedTime.findMany({
-                where: {
-                    barberId: barber.id,
-                    OR: [
-                        { startTime: { gte: startOfDay(availabilityStart), lt: endOfDay(availabilityStart) } },
-                        { endTime: { gte: startOfDay(availabilityStart), lt: endOfDay(availabilityStart) } },
-                        { startTime: { lte: startOfDay(availabilityStart) }, endTime: { gte: endOfDay(availabilityStart) } },
-                    ],
-                },
-            });
-
+            const [bookedAppointments, blockedTimes] = await Promise.all([
+                prisma.appointment.findMany({
+                    where: {
+                        barberId: barber.id,
+                        startTime: { gte: availabilityStart, lt: availabilityEnd },
+                    },
+                }),
+                prisma.blockedTime.findMany({
+                    where: {
+                        barberId: barber.id,
+                        OR: [
+                            { startTime: { gte: startOfDay(availabilityStart), lt: endOfDay(availabilityStart) } },
+                            { endTime: { gte: startOfDay(availabilityStart), lt: endOfDay(availabilityStart) } },
+                            { startTime: { lte: startOfDay(availabilityStart) }, endTime: { gte: endOfDay(availabilityStart) } },
+                        ],
+                    },
+                }),
+            ]);
 
             const currentTime = new Date(availabilityStart);
             let foundSlot: Date | null = null;
@@ -118,22 +113,23 @@ export async function GET(req: Request) {
 
                 if (!isBooked && !isBlocked) {
                     foundSlot = slotStart;
-                    break; // Found the earliest slot for this barber
+                    break;
                 }
 
                 currentTime.setMinutes(currentTime.getMinutes() + 20);
             }
 
-            if (foundSlot) {
-                availableSlots.push({
-                    barberId: barber.id,
-                    barberName: barber.name || 'Unbekannt',
-                    barberImage: barber.image,
-                    slot: foundSlot.toISOString(),
-                    isEarliest: false, // Will calculate later
-                });
-            }
-        }
+            if (!foundSlot) return null;
+            return {
+                barberId: barber.id,
+                barberName: barber.name || 'Unbekannt',
+                barberImage: barber.image,
+                slot: foundSlot.toISOString(),
+                isEarliest: false,
+            } as BarberSlot;
+        }));
+
+        const availableSlots: BarberSlot[] = slotResults.filter((slot): slot is BarberSlot => !!slot);
 
         if (availableSlots.length > 0) {
 

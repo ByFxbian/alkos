@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { loadLocationsClient } from '@/lib/location-client-cache';
 
 type SimpleLocation = {
   id: string;
@@ -26,12 +27,10 @@ export default function GatewayPage() {
         setSavedLocationSlug(saved);
     }
 
-    fetch('/api/public/location-data')
-      .then(res => res.json())
-      .then(data => {
-        setLocations(data.locations);
-        setTimeout(() => setLoading(false), 800);
-      });
+    loadLocationsClient().then((locs) => {
+      setLocations(locs);
+      setLoading(false);
+    });
   }, []);
 
   const handleSelect = (slug: string) => {
@@ -129,7 +128,7 @@ export default function GatewayPage() {
                         src={loc.heroImage || '/images/hero-bg.jpeg'} 
                         alt={loc.name} 
                         fill 
-                        priority
+                        priority={idx === 0}
                         sizes="(max-width: 768px) 100vw, 50vw"
                         className="object-cover transition-transform duration-1000 group-hover:scale-110 group-hover:rotate-1 grayscale group-hover:grayscale-0"
                     />

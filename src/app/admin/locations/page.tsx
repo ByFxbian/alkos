@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import LoadingModal from '@/components/LoadingModal';
 import { useSession } from 'next-auth/react';
 import ImageUpload from '@/components/ImageUpload';
+import Image from 'next/image';
 
 type Location = {
   id: string;
@@ -215,7 +216,7 @@ export default function AdminLocationsPage() {
                     <div className="flex items-start gap-4">
                         <div className="w-16 h-16 rounded-lg bg-[var(--color-surface)] flex-shrink-0 overflow-hidden border border-[var(--color-border)]">
                              {loc.heroImage ? (
-                                 <img src={loc.heroImage} alt={loc.name} className="w-full h-full object-cover" />
+                                 <Image src={loc.heroImage} alt={loc.name} width={64} height={64} className="w-full h-full object-cover" />
                              ) : (
                                  <div className="w-full h-full flex items-center justify-center text-[var(--color-text-muted)] text-xs">No Img</div>
                              )}

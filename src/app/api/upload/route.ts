@@ -10,7 +10,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         const jsonResponse = await handleUpload({
             body,
             request,
-            onBeforeGenerateToken: async (pathname) => {
+            onBeforeGenerateToken: async () => {
 
                 const session = await getServerSession(authOptions);
 
@@ -26,8 +26,8 @@ export async function POST(request: Request): Promise<NextResponse> {
                 };
             },
             onUploadCompleted: async ({ blob, tokenPayload }) => {
-
-                console.log('blob upload completed', blob, tokenPayload);
+                void blob;
+                void tokenPayload;
             },
         });
 

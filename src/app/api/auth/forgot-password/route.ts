@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { prisma } from '@/lib/prisma';
 import ResetPasswordEmail from "@/emails/ResetPasswordEmail";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -12,6 +13,11 @@ export async function POST(req: Request) {
     let response: NextResponse;
     try {
         const { email } = await req.json();
+        const ip = getClientIp(req);
+        const rl = checkRateLimit(`auth-forgot:${ip}`, { limit: 8, windowMs: 60_000 });
+        if (!rl.ok) {
+            return NextResponse.json({ error: 'Zu viele Anfragen. Bitte später erneut versuchen.' }, { status: 429 });
+        }
 
         if(!email) {
             logger.warn("API Route /api/auth/forgot-password: Missing email.");

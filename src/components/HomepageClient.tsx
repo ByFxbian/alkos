@@ -5,9 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import BarberCard from '@/components/BarberCard';
 import { useState, useEffect } from 'react';
-import type { User } from '@/generated/prisma';
 import { motion, type Variants } from 'framer-motion';
-import TikTokCarousel from '@/components/TikTokCarousel';
 import LocationMap from './LocationMap';
 
 type HomepageClientProps = {
@@ -52,15 +50,24 @@ export default function HomepageClient({ location, teamMembers }: HomepageClient
         : salonImages;
 
     useEffect(() => {
+        let rafId = 0;
+
         const handleScroll = () => {
-            const scrollY = window.scrollY;
-            const fadeOutDistance = 500;
-            const newOpacity = Math.max(0, 1 - scrollY / fadeOutDistance);
-            setOpacity(newOpacity)
+            if (rafId) return;
+            rafId = window.requestAnimationFrame(() => {
+                const scrollY = window.scrollY;
+                const fadeOutDistance = 500;
+                const newOpacity = Math.max(0, 1 - scrollY / fadeOutDistance);
+                setOpacity(newOpacity);
+                rafId = 0;
+            });
         };
 
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            if (rafId) window.cancelAnimationFrame(rafId);
+        };
     }, []);
   
     return (

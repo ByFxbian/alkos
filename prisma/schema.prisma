@@ -140,7 +140,7 @@ model Appointment {
   service           Service     @relation(fields: [serviceId], references: [id])
   stampToken        StampToken?
 
-  @@index([barberId, startTime])
+  @@unique([barberId, startTime])
   @@index([customerId, startTime])
 }
 

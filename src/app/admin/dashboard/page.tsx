@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@/generated/prisma';
 import StatCard from '@/components/StatCard';
 import RevenueChart from '@/components/RevenueChart';
 import BookingHeatmap from '@/components/BookingHeatmap';
@@ -149,14 +150,15 @@ export default async function AdminDashboardPage() {
     }),
 
     // Returning customers (2+ appointments, all time)
-    prisma.$queryRawUnsafe<{ count: bigint }[]>(
-      `SELECT COUNT(*) as count FROM (
-        SELECT "customerId" FROM "Appointment"
-        WHERE "locationId" = ANY($1::text[])
-        GROUP BY "customerId" HAVING COUNT(*) >= 2
-      ) as returning_customers`,
-      effectiveLocationIds
-    ),
+    effectiveLocationIds.length === 0
+      ? Promise.resolve([{ count: BigInt(0) }])
+      : prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`
+          SELECT COUNT(*) as count FROM (
+            SELECT "customerId" FROM "Appointment"
+            WHERE "locationId" IN (${Prisma.join(effectiveLocationIds)})
+            GROUP BY "customerId" HAVING COUNT(*) >= 2
+          ) as returning_customers
+        `),
   ]);
 
   const serviceCountMap: Record<string, number> = {};

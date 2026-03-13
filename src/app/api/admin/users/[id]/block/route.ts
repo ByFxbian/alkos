@@ -11,6 +11,28 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     const { id } = await params;
     const { isBlocked } = await req.json();
+    if (typeof isBlocked !== 'boolean') {
+        return NextResponse.json({ error: "Ungültiger Wert für isBlocked" }, { status: 400 });
+    }
+
+    if (session.user.role === 'HEADOFBARBER') {
+        const requester = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            include: { userLocations: { select: { locationId: true } } },
+        });
+        const requesterLocationIds = requester?.userLocations.map((ul) => ul.locationId) || [];
+
+        const target = await prisma.user.findUnique({
+            where: { id },
+            include: { userLocations: { select: { locationId: true } } },
+        });
+        if (!target) return NextResponse.json({ error: "User not found" }, { status: 404 });
+        if (target.role === 'ADMIN') return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+        const targetLocationIds = target.userLocations.map((ul) => ul.locationId);
+        const hasOverlap = targetLocationIds.some((locId) => requesterLocationIds.includes(locId));
+        if (!hasOverlap) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     await prisma.user.update({
         where: { id },

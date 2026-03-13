@@ -11,6 +11,25 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     const { id } = await params;
 
+    if (session.user.role === 'HEADOFBARBER') {
+        const requester = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            include: { userLocations: { select: { locationId: true } } },
+        });
+        const requesterLocationIds = requester?.userLocations.map((ul) => ul.locationId) || [];
+
+        const target = await prisma.user.findUnique({
+            where: { id },
+            include: { userLocations: { select: { locationId: true } } },
+        });
+        if (!target) return NextResponse.json({ error: "User not found" }, { status: 404 });
+        if (target.role === 'ADMIN') return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+        const targetLocationIds = target.userLocations.map((ul) => ul.locationId);
+        const hasOverlap = targetLocationIds.some((locId) => requesterLocationIds.includes(locId));
+        if (!hasOverlap) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const user = await prisma.user.findUnique({ where: { id } });
     if (!user || !user.email) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
