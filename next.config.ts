@@ -36,6 +36,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
-
-// oRslrHQrE9QcDUCg
