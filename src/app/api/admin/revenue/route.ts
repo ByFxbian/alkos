@@ -27,6 +27,7 @@ export async function GET(req: Request) {
 
     const cookieStore = await cookies();
     const filterId = cookieStore.get('admin_location_filter')?.value || 'ALL';
+    const includeManual = cookieStore.get('include_manual_revenue')?.value === 'true';
 
     let queryLocationIds = allowedLocationIds;
 
@@ -150,6 +151,34 @@ export async function GET(req: Request) {
             groupedData[key] += price;
         });
 
+        if (includeManual) {
+            const manualEntries = await prisma.manualEntry.findMany({
+                where: {
+                    date: {
+                        gte: startDate,
+                        lt: endDate,
+                    },
+                    ...(barberId !== 'all' ? { barberId } : {}),
+                    locationId: filterId === 'ALL' ? { in: queryLocationIds } : filterId
+                }
+            });
+
+            manualEntries.forEach(entry => {
+                totalRevenue += entry.price;
+                let key = '';
+                if (groupBy === 'month') {
+                    key = format(new Date(entry.date), 'MMM yyyy', { locale: de });
+                } else {
+                    key = format(new Date(entry.date), 'dd.MM.', { locale: de });
+                }
+
+                if (!groupedData[key]) {
+                    groupedData[key] = 0;
+                }
+                groupedData[key] += entry.price;
+            });
+        }
+
         const chartData = Object.entries(groupedData).map(([name, value]) => ({
             name,
             value
@@ -170,7 +199,13 @@ export async function GET(req: Request) {
         return NextResponse.json({
             chartData,
             totalRevenue,
-            appointmentCount: appointments.length,
+            appointmentCount: appointments.length + (includeManual ? (await prisma.manualEntry.count({
+                where: {
+                    date: { gte: startDate, lt: endDate },
+                    ...(barberId !== 'all' ? { barberId } : {}),
+                    locationId: filterId === 'ALL' ? { in: queryLocationIds } : filterId
+                }
+            })) : 0),
             barbers: relevantBarbers
         });
     } catch (error) {

@@ -30,6 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
              <NavLink href="/admin/dashboard" label="Dashboard" icon="LayoutDashboard" />
              <NavLink href="/admin/kalender" label="Kalender & Zeiten" icon="Calendar" />
+             <NavLink href="/admin/manual-entries" label="Manuelle Einträge" icon="Clipboard" />
              
              {(session.user.role === 'ADMIN' || session.user.role === 'HEADOFBARBER') && (
                  <>
@@ -81,6 +82,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                <div className="md:hidden flex overflow-x-auto gap-2 p-2 border-b border-[var(--color-border)] bg-[var(--color-surface)] no-scrollbar">
                     <Link href="/admin/dashboard" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">📊 Dashboard</Link>
                     <Link href="/admin/kalender" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">📅 Kalender</Link>
+                    <Link href="/admin/manual-entries" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">📝 Einträge</Link>
                     {(session.user.role === 'ADMIN' || session.user.role === 'HEADOFBARBER') && (
                         <>
                             <Link href="/admin/friseure" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">👥 Team</Link>
@@ -104,6 +106,7 @@ function NavLink({ href, label, icon }: { href: string, label: string, icon: str
              <span className="text-lg opacity-70 group-hover:scale-110 transition-transform">
                 {icon === 'LayoutDashboard' && '📊'}
                 {icon === 'Calendar' && '📅'}
+                {icon === 'Clipboard' && '📝'}
                 {icon === 'Users' && '👥'}
                 {icon === 'Scissors' && '✂️'}
                 {icon === 'MapPin' && '📍'}

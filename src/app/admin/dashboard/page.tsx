@@ -9,6 +9,7 @@ import BookingHeatmap from '@/components/BookingHeatmap';
 import Image from 'next/image';
 import AdminLocationFilter from '@/components/AdminLocationFilter';
 import { cookies } from 'next/headers';
+import ManualEntryDashboardToggle from '@/components/ManualEntryDashboardToggle';
 
 export const revalidate = 60;
 
@@ -54,6 +55,7 @@ export default async function AdminDashboardPage() {
 
   const cookieStore = await cookies();
   const filterId = cookieStore.get('admin_location_filter')?.value;
+  const includeManual = cookieStore.get('include_manual_revenue')?.value === 'true';
 
   let effectiveLocationIds = userAllowedLocationIds;
 
@@ -80,6 +82,8 @@ export default async function AdminDashboardPage() {
     popularServices,
     appointmentsLast30Days,
     returningCustomersResult,
+    manualEntriesLast30Days,
+    manualEntriesNext7Days,
   ] = await Promise.all([
     prisma.user.findMany({
       where: {
@@ -132,7 +136,6 @@ export default async function AdminDashboardPage() {
         select: { id: true, name: true }
     }),
 
-    // Past 30 days appointments for deeper stats
     prisma.appointment.findMany({
       where: {
         startTime: {
@@ -149,7 +152,6 @@ export default async function AdminDashboardPage() {
       },
     }),
 
-    // Returning customers (2+ appointments, all time)
     effectiveLocationIds.length === 0
       ? Promise.resolve([{ count: BigInt(0) }])
       : prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`
@@ -159,6 +161,31 @@ export default async function AdminDashboardPage() {
             GROUP BY "customerId" HAVING COUNT(*) >= 2
           ) as returning_customers
         `),
+
+    prisma.manualEntry.findMany({
+      where: {
+        locationId: { in: effectiveLocationIds },
+        date: { gte: thirtyDaysAgo, lte: now },
+      },
+      select: {
+        price: true,
+        tip: true,
+        barberId: true,
+        date: true,
+      },
+    }),
+
+    prisma.manualEntry.findMany({
+      where: {
+        locationId: { in: effectiveLocationIds },
+        date: { gte: startOfDay, lte: sevenDaysFromNow },
+      },
+      select: {
+        price: true,
+        tip: true,
+        barberId: true,
+      },
+    }),
   ]);
 
   const serviceCountMap: Record<string, number> = {};
@@ -172,7 +199,7 @@ export default async function AdminDashboardPage() {
     .slice(0, 3)
     .map(([name, count]) => ({ name, count }));
 
-  const appointmentsCountNext7Days = appointmentsNext7Days.length;
+  let appointmentsCountNext7Days = appointmentsNext7Days.length;
 
   const servicePopularity: Record<string, { count: number, name: string }> = {};
   for (const app of appointmentsNext7Days) {
@@ -183,7 +210,6 @@ export default async function AdminDashboardPage() {
     servicePopularity[sId].count++;
   }
 
-  // 5€ Promo helper: Baden haircuts between March 7th and March 14th
   const PROMO_START_DATE = '2026-03-07';
   const PROMO_END_DATE = '2026-03-14';
   const getEffectivePrice = (app: { startTime: Date; service: { price: number; name: string }; location?: { slug: string } | null }) => {
@@ -222,16 +248,7 @@ export default async function AdminDashboardPage() {
      barberStatsMap[app.barberId].revenue += getEffectivePrice(app);
   }
 
-  const barberStatsArray = Object.values(barberStatsMap).sort((a,b) => b.revenue - a.revenue);
-
   const mostPopularService = Object.values(servicePopularity).sort((a, b) => b.count - a.count)[0];
-
-  // New stats
-  const avgRevenuePerAppointment = totalAppointments > 0 
-    ? (totalRevenue / totalAppointments).toFixed(2) 
-    : '0.00';
-
-  // Busiest day of week from last 30 days
   const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
   const dayCounts: Record<number, number> = {};
   for (const app of appointmentsLast30Days) {
@@ -242,13 +259,10 @@ export default async function AdminDashboardPage() {
   const busiestDay = busiestDayEntry ? dayNames[parseInt(busiestDayEntry[0])] : '-';
   const busiestDayCount = busiestDayEntry ? busiestDayEntry[1] : 0;
 
-  // Past 30 day revenue
-  const past30DayRevenue = appointmentsLast30Days.reduce((sum, a) => sum + getEffectivePrice(a), 0);
+  let past30DayRevenue = appointmentsLast30Days.reduce((sum, a) => sum + getEffectivePrice(a), 0);
 
-  // Returning customers
   const returningCustomers = Number(returningCustomersResult[0]?.count ?? 0);
 
-  // Heatmap data: day-of-week × hour from last 30 days
   const heatmapData: Record<string, number> = {};
   let heatmapMax = 0;
   for (const app of appointmentsLast30Days) {
@@ -257,6 +271,39 @@ export default async function AdminDashboardPage() {
     heatmapData[key] = (heatmapData[key] || 0) + 1;
     if (heatmapData[key] > heatmapMax) heatmapMax = heatmapData[key];
   }
+
+  const manualRevenue7Days = manualEntriesNext7Days.reduce((sum, e) => sum + e.price, 0);
+  const manualTips7Days = manualEntriesNext7Days.reduce((sum, e) => sum + e.tip, 0);
+  const manualCount7Days = manualEntriesNext7Days.length;
+  const manualRevenue30Days = manualEntriesLast30Days.reduce((sum, e) => sum + e.price, 0);
+  const manualCount30Days = manualEntriesLast30Days.length;
+
+  if (includeManual) {
+    totalRevenue += manualRevenue7Days;
+    totalAppointments += manualCount7Days;
+    appointmentsCountNext7Days += manualCount7Days;
+    past30DayRevenue += manualRevenue30Days;
+    
+    for (const entry of manualEntriesNext7Days) {
+        if (!barberStatsMap[entry.barberId]) {
+            const barberObj = barbers.find(b => b.id === entry.barberId);
+            barberStatsMap[entry.barberId] = {
+                name: barberObj?.name || 'Unbekannt',
+                image: barberObj?.image || null,
+                appointments: 0,
+                revenue: 0
+            };
+        }
+        barberStatsMap[entry.barberId].appointments++;
+        barberStatsMap[entry.barberId].revenue += entry.price;
+    }
+  }
+
+  const barberStatsArray = Object.values(barberStatsMap).sort((a,b) => b.revenue - a.revenue);
+
+  const avgRevenuePerAppointment = totalAppointments > 0 
+    ? (totalRevenue / totalAppointments).toFixed(2) 
+    : '0.00';
 
   return (
     <div className="container mx-auto py-12 px-4 animate-in fade-in duration-700 space-y-12">
@@ -282,6 +329,16 @@ export default async function AdminDashboardPage() {
             )}
         </div>
       </div>
+
+      {(manualCount7Days > 0 || manualCount30Days > 0) && (
+        <ManualEntryDashboardToggle
+          manualRevenue7Days={manualRevenue7Days}
+          manualTips7Days={manualTips7Days}
+          manualCount7Days={manualCount7Days}
+          manualRevenue30Days={manualRevenue30Days}
+          manualCount30Days={manualCount30Days}
+        />
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
