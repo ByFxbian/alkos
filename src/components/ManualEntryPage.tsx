@@ -42,7 +42,6 @@ export default function ManualEntryPage({ services }: { services: Service[] }) {
 
   const [barberId, setBarberId] = useState<string | null>(null);
   const [barberName, setBarberName] = useState('');
-  const [locations, setLocations] = useState<LocationInfo[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<LocationInfo | null>(null);
 
   const [serviceName, setServiceName] = useState('');
@@ -53,7 +52,7 @@ export default function ManualEntryPage({ services }: { services: Service[] }) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+
 
   const [entries, setEntries] = useState<ManualEntry[]>([]);
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
@@ -69,7 +68,6 @@ export default function ManualEntryPage({ services }: { services: Service[] }) {
         const data = JSON.parse(stored);
         setBarberId(data.barberId);
         setBarberName(data.barberName);
-        setLocations(data.locations || []);
         if (data.selectedLocation) {
           setSelectedLocation(data.selectedLocation);
           setStep('form');
@@ -121,19 +119,19 @@ export default function ManualEntryPage({ services }: { services: Service[] }) {
       if (res.ok && data.success) {
         setBarberId(data.barberId);
         setBarberName(data.barberName);
-        setLocations(data.locations || []);
         const sessionData = {
           barberId: data.barberId,
           barberName: data.barberName,
-          locations: data.locations,
           selectedLocation: null as LocationInfo | null,
         };
-        if (data.locations.length === 1) {
+        if (data.locations.length > 0) {
           setSelectedLocation(data.locations[0]);
           sessionData.selectedLocation = data.locations[0];
           setStep('form');
         } else {
-          setStep('location');
+          setPinError(true);
+          setPin('');
+          return;
         }
         sessionStorage.setItem('manual_entry_session', JSON.stringify(sessionData));
         setPin('');
@@ -148,27 +146,10 @@ export default function ManualEntryPage({ services }: { services: Service[] }) {
     }
   };
 
-  const selectLocation = (loc: LocationInfo) => {
-    setSelectedLocation(loc);
-    const stored = sessionStorage.getItem('manual_entry_session');
-    if (stored) {
-      const data = JSON.parse(stored);
-      data.selectedLocation = loc;
-      sessionStorage.setItem('manual_entry_session', JSON.stringify(data));
-    }
-    setStep('form');
-  };
+
 
   const filteredServices = services
-    .filter(s => !selectedLocation || !s.locationId || s.locationId === selectedLocation.id)
-    .filter(s => serviceName.length > 0 && s.name.toLowerCase().includes(serviceName.toLowerCase()));
-
-  const selectServiceSuggestion = (s: Service) => {
-    setServiceName(s.name);
-    setPrice(s.price.toString());
-    if (s.duration) setDuration(s.duration.toString());
-    setShowSuggestions(false);
-  };
+    .filter(s => !selectedLocation || !s.locationId || s.locationId === selectedLocation.id);
 
   const handleSubmit = async () => {
     if (!barberId || !selectedLocation) return;
@@ -255,7 +236,6 @@ export default function ManualEntryPage({ services }: { services: Service[] }) {
     sessionStorage.removeItem('manual_entry_session');
     setBarberId(null);
     setBarberName('');
-    setLocations([]);
     setSelectedLocation(null);
     setEntries([]);
     setPin('');
@@ -345,40 +325,7 @@ export default function ManualEntryPage({ services }: { services: Service[] }) {
           </motion.div>
         )}
 
-        {step === 'location' && (
-          <motion.div
-            key="location"
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            className="w-full max-w-lg"
-          >
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--color-gold-500)' }}>
-                Hallo {barberName}!
-              </h1>
-              <p className="text-neutral-400">Für welchen Standort möchtest du eintragen?</p>
-            </div>
 
-            <div className="space-y-4 mb-8">
-              {locations.map(loc => (
-                <button
-                  key={loc.id}
-                  onClick={() => selectLocation(loc)}
-                  className="w-full p-6 rounded-xl text-left bg-neutral-800 hover:bg-neutral-700 transition-all group"
-                >
-                  <span className="text-xl font-bold text-white group-hover:text-[var(--color-gold-500)] transition-colors">
-                    📍 {loc.name}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <button onClick={logout} className="w-full py-4 rounded-xl font-bold bg-neutral-800 hover:bg-neutral-700 text-neutral-400 transition-all">
-              Abmelden
-            </button>
-          </motion.div>
-        )}
 
         {step === 'form' && (
           <motion.div
@@ -404,31 +351,31 @@ export default function ManualEntryPage({ services }: { services: Service[] }) {
             )}
 
             <div className="space-y-4 mb-6">
-              <div className="relative">
-                <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1.5">Service *</label>
-                <input
-                  type="text"
-                  value={serviceName}
-                  onChange={e => { setServiceName(e.target.value); setShowSuggestions(true); }}
-                  onFocus={() => setShowSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                  placeholder="z.B. Haarschnitt, Bartpflege..."
-                  className="w-full p-4 rounded-xl bg-neutral-800 border border-neutral-700 focus:border-[var(--color-gold-500)] focus:outline-none transition-all text-white placeholder:text-neutral-600"
-                />
-                {showSuggestions && filteredServices.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-neutral-800 border border-neutral-700 rounded-xl overflow-hidden shadow-2xl max-h-48 overflow-y-auto">
-                    {filteredServices.map(s => (
-                      <button
-                        key={s.id}
-                        onMouseDown={() => selectServiceSuggestion(s)}
-                        className="w-full p-3 text-left hover:bg-neutral-700 transition-colors flex justify-between items-center"
-                      >
-                        <span className="text-white font-medium">{s.name}</span>
-                        <span className="text-neutral-400 text-sm">{s.price}€ • {s.duration}min</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <div className="mb-6">
+                <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">Service *</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {filteredServices.map(service => (
+                    <button
+                      key={service.id}
+                      type="button"
+                      onClick={() => {
+                        setServiceName(service.name);
+                        setPrice(service.price.toString());
+                        if (service.duration) setDuration(service.duration.toString());
+                      }}
+                      className={`p-4 rounded-xl text-left transition-all ${
+                        serviceName === service.name
+                          ? 'bg-[var(--color-gold-500)] text-black font-bold shadow-lg shadow-gold-500/20 scale-100 border-2 border-transparent'
+                          : 'bg-neutral-800 hover:bg-neutral-700 text-white border-2 border-transparent hover:border-neutral-600'
+                      }`}
+                    >
+                      <p className="font-bold mb-1 leading-tight">{service.name}</p>
+                      <p className={`text-xs ${serviceName === service.name ? 'text-black/70' : 'text-neutral-400'}`}>
+                        {service.duration} Min • {service.price}€
+                      </p>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -566,19 +513,13 @@ export default function ManualEntryPage({ services }: { services: Service[] }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <button
-                onClick={resetForm}
+                onClick={logout}
                 className="py-5 rounded-xl font-bold text-lg text-black transition-all"
                 style={{ backgroundColor: 'var(--color-gold-500)' }}
               >
-                Weiterer Eintrag
-              </button>
-              <button
-                onClick={showList}
-                className="py-5 rounded-xl font-bold text-lg bg-neutral-800 hover:bg-neutral-700 text-white transition-all"
-              >
-                📋 Alle Einträge
+                Abmelden & Weiterer Eintrag
               </button>
             </div>
           </motion.div>

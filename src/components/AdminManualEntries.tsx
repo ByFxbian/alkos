@@ -1,15 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { format } from 'date-fns';
-import { de } from 'date-fns/locale';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 
 interface Barber {
   id: string;
   name: string;
   image: string | null;
-  hasPin: boolean;
+  hasPin?: boolean;
 }
 
 interface LocationInfo {
@@ -120,27 +118,50 @@ export default function AdminManualEntries({ currentUserId, isBarberOnly, userRo
     } catch { /* ignore */ }
   };
 
+  const groupedBarbers = useMemo(() => {
+    const map: Record<string, { barber: Barber; entries: ManualEntry[]; sumPrice: number; sumTip: number }> = {};
+    entries.forEach(e => {
+      if (!map[e.barber.id]) map[e.barber.id] = { barber: e.barber, entries: [], sumPrice: 0, sumTip: 0 };
+      map[e.barber.id].entries.push(e);
+      map[e.barber.id].sumPrice += e.price;
+      map[e.barber.id].sumTip += e.tip;
+    });
+    return Object.values(map).sort((a,b) => a.barber.name.localeCompare(b.barber.name));
+  }, [entries]);
+
+  const maxRows = useMemo(() => {
+    return groupedBarbers.reduce((max, group) => Math.max(max, group.entries.length), 0);
+  }, [groupedBarbers]);
+
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-8 print:space-y-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:mb-4">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[var(--color-text)]">Manuelle Einträge</h1>
           <p className="mt-1 text-[var(--color-text-muted)] text-sm">
             {isBarberOnly ? 'Deine manuell erfassten Termine' : 'Übersicht aller manuellen Termine'}
           </p>
         </div>
-        {!isBarberOnly && ['ADMIN', 'HEADOFBARBER'].includes(userRole) && (
-          <a
-            href="/manual-entry"
-            target="_blank"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors border border-[var(--color-border)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)]"
+        <div className="flex items-center gap-3 print:hidden">
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors bg-neutral-800 text-white hover:bg-neutral-700"
           >
-            📝 Zur Eintragsseite
-          </a>
-        )}
+            🖨️ Als PDF drucken
+          </button>
+          {!isBarberOnly && ['ADMIN', 'HEADOFBARBER'].includes(userRole) && (
+            <a
+              href="/manual-entry"
+              target="_blank"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors border border-[var(--color-border)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)]"
+            >
+              📝 Zur Eintragsseite
+            </a>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:hidden">
         <div className="p-5 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
           <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)]">Einträge</p>
           <p className="text-3xl font-bold mt-1 text-[var(--color-text)]">{totalEntries}</p>
@@ -159,7 +180,7 @@ export default function AdminManualEntries({ currentUserId, isBarberOnly, userRo
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+      <div className="flex flex-wrap gap-3 p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] print:hidden">
         {!isBarberOnly && (
           <select
             value={filterBarberId}
@@ -212,10 +233,10 @@ export default function AdminManualEntries({ currentUserId, isBarberOnly, userRo
       </div>
 
       {!isBarberOnly && ['ADMIN', 'HEADOFBARBER'].includes(userRole) && (
-        <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)]">
+        <div className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] print:hidden">
           <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">🔑 Barber PINs verwalten</h3>
           <div className="flex flex-wrap gap-2">
-            {barbers.filter(b => ['BARBER', 'HEADOFBARBER'].includes(userRole) || true).map(b => (
+            {barbers.map(b => (
               <button
                 key={b.id}
                 onClick={() => { setPinModalBarberId(b.id); setPinInput(''); setPinMessage(null); }}
@@ -281,121 +302,78 @@ export default function AdminManualEntries({ currentUserId, isBarberOnly, userRo
         </div>
       )}
 
-      <div className="hidden md:block rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] overflow-hidden shadow-sm">
-        <table className="min-w-full divide-y divide-[var(--color-border)]">
-          <thead className="bg-[var(--color-surface-3)]">
+      <div className="w-full overflow-x-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] shadow-sm print:border-none print:shadow-none">
+        <table className="min-w-full divide-y divide-[var(--color-border)] print:divide-neutral-300">
+          <thead className="bg-[var(--color-surface-3)] print:bg-transparent">
             <tr>
-              <th className="px-5 py-4 text-left text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Datum</th>
-              {!isBarberOnly && <th className="px-5 py-4 text-left text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Barber</th>}
-              <th className="px-5 py-4 text-left text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Service</th>
-              <th className="px-5 py-4 text-left text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Preis</th>
-              <th className="px-5 py-4 text-left text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Trinkgeld</th>
-              <th className="px-5 py-4 text-left text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Dauer</th>
-              <th className="px-5 py-4 text-left text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Standort</th>
-              <th className="px-5 py-4 text-left text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Notizen</th>
-              {!isBarberOnly && <th className="px-5 py-4 text-right text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider"></th>}
+              {groupedBarbers.map(g => (
+                <th key={g.barber.id} className="px-4 py-3 text-center text-sm font-bold text-[var(--color-text)] uppercase tracking-wider border-x border-[var(--color-border)] print:border-neutral-300 whitespace-nowrap">
+                  {g.barber.name}
+                </th>
+              ))}
+              {groupedBarbers.length === 0 && (
+                 <th className="px-4 py-3 text-center text-sm font-bold text-[var(--color-text-muted)]">Keine Daten</th>
+              )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--color-border)]">
+          <tbody className="divide-y divide-[var(--color-border)] print:divide-neutral-300 bg-[var(--color-surface)] print:bg-transparent">
             {isLoading ? (
-              <tr>
-                <td colSpan={isBarberOnly ? 7 : 9} className="px-5 py-12 text-center text-sm text-[var(--color-text-muted)]">
-                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--color-gold-500)] border-t-transparent mx-auto mb-3" />
-                  Lade Einträge...
-                </td>
-              </tr>
+               <tr><td colSpan={groupedBarbers.length || 1} className="py-12 text-center text-[var(--color-text-muted)] animate-pulse">Lade...</td></tr>
             ) : entries.length === 0 ? (
-              <tr>
-                <td colSpan={isBarberOnly ? 7 : 9} className="px-5 py-12 text-center text-sm text-[var(--color-text-muted)]">
-                  Keine Einträge gefunden
-                </td>
-              </tr>
+               <tr><td colSpan={1} className="py-12 text-center text-[var(--color-text-muted)]">Keine Einträge gefunden</td></tr>
             ) : (
-              entries.map(entry => (
-                <tr key={entry.id} className="hover:bg-[var(--color-surface-3)] transition-colors">
-                  <td className="px-5 py-3 text-sm font-medium text-[var(--color-text)]">
-                    {format(new Date(entry.date), 'dd.MM.yy', { locale: de })}
-                  </td>
-                  {!isBarberOnly && (
-                    <td className="px-5 py-3 text-sm text-[var(--color-text)]">
-                      <div className="flex items-center gap-2">
-                        {entry.barber.image ? (
-                          <Image src={entry.barber.image} alt={entry.barber.name} width={24} height={24} className="rounded-full object-cover" />
-                        ) : (
-                          <div className="w-6 h-6 rounded-full bg-[var(--color-surface-3)] flex items-center justify-center text-xs text-[var(--color-text-muted)]">{entry.barber.name.charAt(0)}</div>
-                        )}
-                        {entry.barber.name}
-                      </div>
-                    </td>
-                  )}
-                  <td className="px-5 py-3 text-sm font-medium text-[var(--color-text)]">{entry.serviceName}</td>
-                  <td className="px-5 py-3 text-sm font-bold text-[var(--color-gold-500)]">{entry.price.toFixed(2)}€</td>
-                  <td className="px-5 py-3 text-sm text-green-500">{entry.tip > 0 ? `${entry.tip.toFixed(2)}€` : '-'}</td>
-                  <td className="px-5 py-3 text-sm text-[var(--color-text-muted)]">{entry.duration ? `${entry.duration} Min` : '-'}</td>
-                  <td className="px-5 py-3 text-sm text-[var(--color-text-muted)]">{entry.location.name}</td>
-                  <td className="px-5 py-3 text-sm text-[var(--color-text-muted)] max-w-[150px] truncate">{entry.notes || '-'}</td>
-                  {!isBarberOnly && (
-                    <td className="px-5 py-3 text-right">
-                      <button
-                        onClick={() => handleDeleteEntry(entry.id)}
-                        className="text-xs px-2 py-1 rounded text-red-400 hover:bg-red-900/20 transition-colors"
-                      >
-                        🗑️
-                      </button>
-                    </td>
-                  )}
+              <>
+                {[...Array(maxRows)].map((_, i) => (
+                  <tr key={i} className="divide-x divide-[var(--color-border)] print:divide-neutral-300 relative group">
+                    {groupedBarbers.map(g => {
+                      const entry = g.entries[i];
+                      if (!entry) return <td key={g.barber.id} className="px-4 py-3 text-center border-b border-[var(--color-border)] print:border-neutral-300"></td>;
+                      return (
+                        <td key={g.barber.id} className="px-4 py-3 text-center align-top relative group border-b border-[var(--color-border)] print:border-neutral-300 hover:bg-[var(--color-surface-3)] transition-colors">
+                          {entry.price > 0 || entry.tip > 0 ? (
+                            <div className="font-bold text-[var(--color-text)] print:text-black">
+                              {entry.price}{entry.tip > 0 ? `+${entry.tip}` : ''}
+                            </div>
+                          ) : null}
+                          {entry.notes && (
+                            <div className="text-xs text-[var(--color-text-muted)] print:text-gray-600 italic mt-0.5 mx-auto break-words leading-tight">
+                              {entry.notes}
+                            </div>
+                          )}
+                          {!isBarberOnly && (
+                            <button
+                              onClick={() => handleDeleteEntry(entry.id)}
+                              className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-xs px-1.5 py-0.5 rounded bg-red-500/20 text-red-500 hover:text-red-400 hover:bg-red-500/30 print:hidden transition-all shadow-sm"
+                              title={`Löschen (${entry.serviceName})`}
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+                <tr className="divide-x divide-[var(--color-border)] print:divide-neutral-300 bg-[var(--color-surface-3)] print:bg-transparent">
+                   {groupedBarbers.map(g => (
+                     <td key={g.barber.id} className="px-4 py-3 text-center font-bold">
+                       <div className="text-[var(--color-gold-500)] print:text-black">
+                         {g.sumPrice} / <span className="text-green-500 print:text-gray-600">{g.sumTip}</span>
+                       </div>
+                     </td>
+                   ))}
                 </tr>
-              ))
+                {groupedBarbers.length > 0 && (
+                  <tr>
+                    <td colSpan={groupedBarbers.length} className="px-4 py-4 text-center font-bold text-xl border-t-2 border-[var(--color-border)] print:border-neutral-400 print:text-black">
+                      Total: <span className="text-[var(--color-gold-500)] print:text-black">{totalRevenue}€</span>
+                    </td>
+                  </tr>
+                 )}
+              </>
             )}
           </tbody>
         </table>
-      </div>
-
-      <div className="md:hidden space-y-3">
-        {isLoading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--color-gold-500)] border-t-transparent mx-auto mb-3" />
-            <p className="text-sm text-[var(--color-text-muted)]">Lade Einträge...</p>
-          </div>
-        ) : entries.length === 0 ? (
-          <div className="text-center py-12 bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)]">
-            <p className="text-[var(--color-text-muted)]">Keine Einträge gefunden</p>
-          </div>
-        ) : (
-          entries.map(entry => (
-            <div key={entry.id} className="p-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <p className="font-bold text-[var(--color-text)]">{entry.serviceName}</p>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    {format(new Date(entry.date), 'dd.MM.yyyy', { locale: de })}
-                    {entry.duration && ` • ${entry.duration} Min`}
-                  </p>
-                  {!isBarberOnly && (
-                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                      👤 {entry.barber.name} • 📍 {entry.location.name}
-                    </p>
-                  )}
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-lg text-[var(--color-gold-500)]">{entry.price.toFixed(2)}€</p>
-                  {entry.tip > 0 && <p className="text-xs text-green-500">+{entry.tip.toFixed(2)}€</p>}
-                </div>
-              </div>
-              {entry.notes && <p className="text-xs text-[var(--color-text-muted)] italic">💬 {entry.notes}</p>}
-              {!isBarberOnly && (
-                <div className="mt-2 flex justify-end">
-                  <button
-                    onClick={() => handleDeleteEntry(entry.id)}
-                    className="text-xs px-3 py-1.5 rounded-lg bg-red-900/20 text-red-400 hover:bg-red-900/30 transition-colors"
-                  >
-                    🗑️ Löschen
-                  </button>
-                </div>
-              )}
-            </div>
-          ))
-        )}
       </div>
     </div>
   );

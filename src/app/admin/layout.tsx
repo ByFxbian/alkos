@@ -14,8 +14,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] flex flex-col md:flex-row">
-       <div className="hidden md:flex w-64 flex-shrink-0 bg-[var(--color-surface)] border-r border-[var(--color-border)] flex-col">
+    <div className="min-h-screen bg-[var(--color-bg)] flex flex-col md:flex-row print:block print:min-h-0 print:h-auto print:bg-white print:text-black">
+       <div className="hidden md:flex w-64 flex-shrink-0 bg-[var(--color-surface)] border-r border-[var(--color-border)] flex-col print:hidden">
           <div className="p-6 border-b border-[var(--color-border)] flex flex-col gap-4">
               <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-[var(--color-gold-500)] rounded-full flex items-center justify-center font-bold text-black font-serif">A</div>
@@ -61,8 +61,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
        </div>
 
-       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <header className="h-16 flex items-center justify-between px-6 border-b border-[var(--color-border)] bg-[var(--color-bg)] sticky top-0 z-10 shadow-sm">
+       <div className="flex-1 flex flex-col min-h-0 overflow-hidden print:display-block print:overflow-visible print:h-auto print:block">
+          <header className="h-16 flex items-center justify-between px-6 border-b border-[var(--color-border)] bg-[var(--color-bg)] sticky top-0 z-10 shadow-sm print:hidden">
                <div className="md:hidden flex items-center gap-4">
                    <Link href="/" className="font-serif font-bold text-lg">ALKOS</Link>
                </div>
@@ -78,8 +78,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                </div>
           </header>
           
-          <main className="flex-1 overflow-y-auto bg-[var(--color-bg)] text-[var(--color-text)] relative p-0 scroll-smooth">
-               <div className="md:hidden flex overflow-x-auto gap-2 p-2 border-b border-[var(--color-border)] bg-[var(--color-surface)] no-scrollbar">
+          <main className="flex-1 overflow-y-auto bg-[var(--color-bg)] text-[var(--color-text)] relative p-0 scroll-smooth print:overflow-visible print:h-auto print:bg-white">
+               <div className="md:hidden flex overflow-x-auto gap-2 p-2 border-b border-[var(--color-border)] bg-[var(--color-surface)] no-scrollbar print:hidden">
                     <Link href="/admin/dashboard" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">📊 Dashboard</Link>
                     <Link href="/admin/kalender" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">📅 Kalender</Link>
                     <Link href="/admin/manual-entries" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">📝 Einträge</Link>
