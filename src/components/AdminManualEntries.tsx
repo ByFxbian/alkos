@@ -149,15 +149,6 @@ export default function AdminManualEntries({ currentUserId, isBarberOnly, userRo
           >
             🖨️ Als PDF drucken
           </button>
-          {!isBarberOnly && ['ADMIN', 'HEADOFBARBER'].includes(userRole) && (
-            <a
-              href="/manual-entry"
-              target="_blank"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-colors border border-[var(--color-border)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)]"
-            >
-              📝 Zur Eintragsseite
-            </a>
-          )}
         </div>
       </div>
 

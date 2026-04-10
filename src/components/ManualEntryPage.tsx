@@ -70,9 +70,11 @@ export default function ManualEntryPage({ services }: { services: Service[] }) {
         setBarberName(data.barberName);
         if (data.selectedLocation) {
           setSelectedLocation(data.selectedLocation);
+          setDate(new Date().toISOString().split('T')[0]);
           setStep('form');
         } else if (data.locations?.length === 1) {
           setSelectedLocation(data.locations[0]);
+          setDate(new Date().toISOString().split('T')[0]);
           setStep('form');
         } else {
           setStep('location');
@@ -127,6 +129,7 @@ export default function ManualEntryPage({ services }: { services: Service[] }) {
         if (data.locations.length > 0) {
           setSelectedLocation(data.locations[0]);
           sessionData.selectedLocation = data.locations[0];
+          setDate(new Date().toISOString().split('T')[0]);
           setStep('form');
         } else {
           setPinError(true);
@@ -238,6 +241,7 @@ export default function ManualEntryPage({ services }: { services: Service[] }) {
     setBarberName('');
     setSelectedLocation(null);
     setEntries([]);
+    setDate(new Date().toISOString().split('T')[0]);
     setPin('');
     setStep('pin');
   };

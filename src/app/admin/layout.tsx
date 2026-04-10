@@ -31,6 +31,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
              <NavLink href="/admin/dashboard" label="Dashboard" icon="LayoutDashboard" />
              <NavLink href="/admin/kalender" label="Kalender & Zeiten" icon="Calendar" />
              <NavLink href="/admin/manual-entries" label="Manuelle Einträge" icon="Clipboard" />
+             <NavLink href="/manual-entry" label="Eintrag erfassen" icon="PlusCircle" />
              
              {(session.user.role === 'ADMIN' || session.user.role === 'HEADOFBARBER') && (
                  <>
@@ -83,6 +84,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                     <Link href="/admin/dashboard" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">📊 Dashboard</Link>
                     <Link href="/admin/kalender" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">📅 Kalender</Link>
                     <Link href="/admin/manual-entries" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">📝 Einträge</Link>
+                    <Link href="/manual-entry" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">➕ Erfassen</Link>
                     {(session.user.role === 'ADMIN' || session.user.role === 'HEADOFBARBER') && (
                         <>
                             <Link href="/admin/friseure" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">👥 Team</Link>
@@ -104,6 +106,7 @@ function NavLink({ href, label, icon }: { href: string, label: string, icon: str
     return (
         <Link href={href} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-all group">
              <span className="text-lg opacity-70 group-hover:scale-110 transition-transform">
+                {icon === 'PlusCircle' && '➕'}
                 {icon === 'LayoutDashboard' && '📊'}
                 {icon === 'Calendar' && '📅'}
                 {icon === 'Clipboard' && '📝'}
