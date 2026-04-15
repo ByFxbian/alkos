@@ -34,20 +34,12 @@ export default async function AdminManualEntriesPage() {
     ? availableLocations.map(l => l.id)
     : currentUser.userLocations.map(ul => ul.location.id);
 
-  const cookieStore = await cookies();
-  const filterId = cookieStore.get('admin_location_filter')?.value;
-
-  let effectiveLocationIds = userAllowedLocationIds;
-  if (filterId && filterId !== 'ALL') {
-    if (userAllowedLocationIds.includes(filterId)) {
-      effectiveLocationIds = [filterId];
-    }
-  }
-
+  // Wir ignorieren hier den admin_location_filter Cookie für die Barber-Liste,
+  // da Manuelle Einträge einen eigenen lokalen Filter haben und man ggf. alle sehen möchte.
   const barbers = await prisma.user.findMany({
     where: {
       role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] },
-      userLocations: { some: { locationId: { in: effectiveLocationIds } } },
+      userLocations: { some: { locationId: { in: userAllowedLocationIds } } },
     },
     select: { id: true, name: true, image: true, barberPin: true },
   });

@@ -379,6 +379,27 @@ export default function ManualEntryPage({ services }: { services: Service[] }) {
                       </p>
                     </button>
                   ))}
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setServiceName('Produkt Verkauf');
+                      setPrice('15');
+                      setDuration('');
+                    }}
+                    className={`p-4 rounded-xl text-left transition-all ${
+                      serviceName === 'Produkt Verkauf'
+                        ? 'bg-[var(--color-gold-500)] text-black font-bold shadow-lg shadow-gold-500/20 scale-100 border-2 border-transparent'
+                        : 'bg-neutral-800 hover:bg-neutral-700 text-white border-2 border-transparent hover:border-neutral-600'
+                    }`}
+                  >
+                    <p className="font-bold mb-1 leading-tight flex items-center gap-2">
+                      <span>🛍️</span> Produkt (Wachs/Puder)
+                    </p>
+                    <p className={`text-xs ${serviceName === 'Produkt Verkauf' ? 'text-black/70' : 'text-neutral-400'}`}>
+                      15€
+                    </p>
+                  </button>
                 </div>
               </div>
 
