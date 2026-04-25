@@ -61,9 +61,16 @@ export async function GET(req: Request) {
         const locationId = searchParams.get('locationId');
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
+        const type = searchParams.get('type');
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const where: any = {};
+
+        if (type === 'product') {
+            where.serviceName = 'Produkt Verkauf';
+        } else if (type === 'service') {
+            where.serviceName = { not: 'Produkt Verkauf' };
+        }
 
         if (barberId) {
             where.barberId = barberId;

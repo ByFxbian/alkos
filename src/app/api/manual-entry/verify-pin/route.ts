@@ -18,6 +18,9 @@ export async function POST(req: Request) {
         }
 
 
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
         const barbersWithPin = await prisma.user.findMany({
             where: {
                 role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] },
@@ -36,6 +39,19 @@ export async function POST(req: Request) {
                         },
                     },
                 },
+                barberShifts: {
+                    where: {
+                        date: {
+                            gte: today,
+                            lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
+                        }
+                    },
+                    include: {
+                        location: {
+                            select: { id: true, name: true, slug: true },
+                        }
+                    }
+                }
             },
         });
 
@@ -43,11 +59,27 @@ export async function POST(req: Request) {
             if (!barber.barberPin) continue;
             const isMatch = await bcrypt.compare(pin, barber.barberPin);
             if (isMatch) {
-                const locations = barber.userLocations.map(ul => ({
-                    id: ul.location.id,
-                    name: ul.location.name,
-                    slug: ul.location.slug,
-                }));
+                const locationMap = new Map();
+                
+                // Füge standardmäßige Standorte hinzu
+                barber.userLocations.forEach(ul => {
+                    locationMap.set(ul.location.id, {
+                        id: ul.location.id,
+                        name: ul.location.name,
+                        slug: ul.location.slug,
+                    });
+                });
+
+                // Füge temporäre Shift-Standorte von heute hinzu (überschreibt ggf. falls schon da)
+                barber.barberShifts.forEach(shift => {
+                    locationMap.set(shift.location.id, {
+                        id: shift.location.id,
+                        name: shift.location.name,
+                        slug: shift.location.slug,
+                    });
+                });
+
+                const locations = Array.from(locationMap.values());
 
                 return NextResponse.json({
                     success: true,

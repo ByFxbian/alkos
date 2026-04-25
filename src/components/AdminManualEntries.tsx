@@ -47,6 +47,7 @@ export default function AdminManualEntries({ currentUserId, isBarberOnly, userRo
   const [filterLocationId, setFilterLocationId] = useState('all');
   const [filterStartDate, setFilterStartDate] = useState('');
   const [filterEndDate, setFilterEndDate] = useState('');
+  const [filterType, setFilterType] = useState('all');
 
   // PIN setting
   const [pinModalBarberId, setPinModalBarberId] = useState<string | null>(null);
@@ -66,6 +67,7 @@ export default function AdminManualEntries({ currentUserId, isBarberOnly, userRo
       if (filterLocationId !== 'all') params.set('locationId', filterLocationId);
       if (filterStartDate) params.set('startDate', filterStartDate);
       if (filterEndDate) params.set('endDate', filterEndDate);
+      if (filterType !== 'all') params.set('type', filterType);
 
       const res = await fetch(`/api/manual-entry?${params.toString()}`);
       const data = await res.json();
@@ -78,7 +80,7 @@ export default function AdminManualEntries({ currentUserId, isBarberOnly, userRo
     } catch { /* ignore */ } finally {
       setIsLoading(false);
     }
-  }, [currentUserId, isBarberOnly, filterBarberId, filterLocationId, filterStartDate, filterEndDate]);
+  }, [currentUserId, isBarberOnly, filterBarberId, filterLocationId, filterStartDate, filterEndDate, filterType]);
 
   useEffect(() => { fetchEntries(); }, [fetchEntries]);
 
@@ -213,9 +215,19 @@ export default function AdminManualEntries({ currentUserId, isBarberOnly, userRo
           placeholder="Bis"
         />
 
-        {(filterStartDate || filterEndDate || filterBarberId !== 'all' || filterLocationId !== 'all') && (
+        <select
+          value={filterType}
+          onChange={e => setFilterType(e.target.value)}
+          className="px-3 py-2 rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] text-sm text-[var(--color-text)] focus:outline-none focus:border-[var(--color-gold-500)] max-w-[150px]"
+        >
+          <option value="all">Alle Arten</option>
+          <option value="service">Nur Services</option>
+          <option value="product">Nur Produkte</option>
+        </select>
+
+        {(filterStartDate || filterEndDate || filterBarberId !== 'all' || filterLocationId !== 'all' || filterType !== 'all') && (
           <button
-            onClick={() => { setFilterBarberId('all'); setFilterLocationId('all'); setFilterStartDate(''); setFilterEndDate(''); }}
+            onClick={() => { setFilterBarberId('all'); setFilterLocationId('all'); setFilterStartDate(''); setFilterEndDate(''); setFilterType('all'); }}
             className="px-3 py-2 rounded-lg text-sm font-medium text-red-400 hover:bg-red-900/20 transition-colors"
           >
             ✕ Reset
@@ -315,12 +327,16 @@ export default function AdminManualEntries({ currentUserId, isBarberOnly, userRo
             ) : (
               <>
                 {[...Array(maxRows)].map((_, i) => (
-                  <tr key={i} className="divide-x divide-[var(--color-border)] print:divide-neutral-300 relative group">
+                  <tr key={i} className="divide-x divide-[var(--color-border)] print:divide-neutral-300 relative">
                     {groupedBarbers.map(g => {
                       const entry = g.entries[i];
                       if (!entry) return <td key={g.barber.id} className="px-4 py-3 text-center border-b border-[var(--color-border)] print:border-neutral-300"></td>;
                       return (
-                        <td key={g.barber.id} className="px-4 py-3 text-center align-top relative group border-b border-[var(--color-border)] print:border-neutral-300 hover:bg-[var(--color-surface-3)] transition-colors">
+                        <td 
+                          key={g.barber.id} 
+                          className="px-4 py-3 text-center align-top relative group border-b border-[var(--color-border)] print:border-neutral-300 hover:bg-[var(--color-surface-3)] transition-colors cursor-help"
+                          title={`Datum: ${new Date(entry.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}\nService: ${entry.serviceName}\nPreis: ${entry.price}€\nTrinkgeld: ${entry.tip}€${entry.duration ? `\nDauer: ${entry.duration} Min` : ''}${entry.notes ? `\nNotiz: ${entry.notes}` : ''}`}
+                        >
                           {entry.price > 0 || entry.tip > 0 ? (
                             <div className="font-bold text-[var(--color-text)] print:text-black">
                               {entry.price}{entry.tip > 0 ? `+${entry.tip}` : ''}
