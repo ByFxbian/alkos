@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import BookingForm from "@/components/BookingForm";
 import { notFound } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export const revalidate = 0; // Dynamic since barber list includes shift-based barbers
 
@@ -61,12 +63,26 @@ export default async function TerminePage({ params }: { params: Promise<{ locati
 
     const allBarbers = [...permanentBarbers, ...shiftBarbers];
 
+    const session = await getServerSession(authOptions);
+    let userHasFreeAppointment = false;
+
+    if (session?.user?.id) {
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { hasFreeAppointment: true, completedAppointments: true }
+        });
+        
+        if (user) {
+            userHasFreeAppointment = user.completedAppointments >= 15 || user.hasFreeAppointment;
+        }
+    }
+
     return (
         <div className="min-h-screen">
             <BookingForm 
                 barbers={allBarbers} 
                 services={services} 
-                hasFreeAppointment={false}
+                hasFreeAppointment={userHasFreeAppointment}
                 currentLocationId={locationObj.id}
                 locationSlug={locationObj.slug}
                 locationAddress={locationObj.address ? `ALKOS, ${locationObj.address}, ${locationObj.postalCode} ${locationObj.city}` : undefined}

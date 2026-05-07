@@ -121,15 +121,34 @@ export async function POST(req: Request) {
       }
 
       if (useFreeAppointment) {
-        const customer = await tx.user.findUnique({ where: { id: customerId }, select: { hasFreeAppointment: true } });
-        if (!customer?.hasFreeAppointment) {
+        const customer = await tx.user.findUnique({ where: { id: customerId }, select: { hasFreeAppointment: true, completedAppointments: true } });
+        
+        const hasFree = (customer?.completedAppointments && customer.completedAppointments >= 15) || customer?.hasFreeAppointment;
+        
+        if (!hasFree) {
           throw new Error('NO_FREE_APPOINTMENT');
         }
+        
+        let newCompleted = customer?.completedAppointments || 0;
+        let newHasFree = customer?.hasFreeAppointment || false;
+        
+        if (newCompleted >= 15) {
+          newCompleted -= 15;
+        } else if (newHasFree) {
+          newHasFree = false;
+        }
+        
+        if (newCompleted >= 15) {
+          newHasFree = true;
+        } else {
+          newHasFree = false;
+        }
+
         await tx.user.update({
           where: { id: customerId },
           data: {
-            hasFreeAppointment: false,
-            completedAppointments: 0,
+            hasFreeAppointment: newHasFree,
+            completedAppointments: newCompleted,
           },
         });
       }

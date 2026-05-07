@@ -121,7 +121,7 @@ export default function CustomerDetailsModal({customer, onClose}: CustomerDetail
                             )}
                         </p>
                         <p>
-                            <strong>Stempel:</strong> {customer.completedAppointments} / 15
+                            <strong>Stempel:</strong> {customer.completedAppointments % 15} / 15 (Gratis-Termine: {Math.floor(customer.completedAppointments / 15)})
                         </p>
                     </div>
                     <div className="mt-6 text-right">
