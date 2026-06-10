@@ -89,10 +89,13 @@ export const authOptions: AuthOptions = {
 
             if (user.image && user.image.includes('=s96-c')) {
                 const hiResImage = user.image.replace('=s96-c', '=s400-c');
-                await prisma.user.update({
-                    where: { email: user.email },
-                    data: { image: hiResImage },
-                });
+                user.image = hiResImage;
+                if (dbUser) {
+                    await prisma.user.update({
+                        where: { email: user.email },
+                        data: { image: hiResImage },
+                    });
+                }
             }
 
             return true;

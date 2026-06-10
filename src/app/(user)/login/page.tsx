@@ -55,6 +55,7 @@ function LoginForm() {
           >
             <FaGoogle /> Mit Google anmelden
           </button>
+          {/*
           <button 
             onClick={() => signIn('apple', { callbackUrl: '/meine-termine' })}
             className="w-full flex items-center justify-center gap-2 font-bold p-2 rounded border e hover:opacity-80 transition-colors"
@@ -66,6 +67,7 @@ function LoginForm() {
           >
             <FaApple /> Mit Apple anmelden
           </button>
+          */}
         </div>
 
         <div className="flex items-center my-4">
