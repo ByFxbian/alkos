@@ -48,7 +48,6 @@ export default async function MeineTerminePage() {
             orderBy: {
                 startTime: 'desc', 
             },
-            take: 10,
         }),
     ]);
 

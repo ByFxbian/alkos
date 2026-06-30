@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useRouter } from "next/navigation";
@@ -23,6 +24,7 @@ type PastAppointmentListProps = {
 
 export default function PastAppointmentList({ appointments }: PastAppointmentListProps) {
     const router = useRouter();
+    const [visibleCount, setVisibleCount] = useState(10);
 
     if (appointments.length === 0) {
         return <p style={{ color: 'var(--color-text-muted)' }}>Du hast noch keine vergangenen Termine.</p>
@@ -32,9 +34,12 @@ export default function PastAppointmentList({ appointments }: PastAppointmentLis
         router.push(`/termine?serviceId=${serviceId}&barberId=${barberId}`);
     };
 
+    const displayedAppointments = appointments.slice(0, visibleCount);
+    const hasMore = appointments.length > visibleCount;
+
     return (
         <div className="space-y-4">
-            {appointments.map((app) => (
+            {displayedAppointments.map((app) => (
                 <div key={app.id} className=" p-4 rounded-lg opacity-70" style={{ backgroundColor: 'var(--color-surface)' }}>
                     <div className="flex justify-between items-start gap-4">
                         <div>
@@ -56,6 +61,17 @@ export default function PastAppointmentList({ appointments }: PastAppointmentLis
                     </div>
                 </div>
             ))}
+
+            {hasMore && (
+                <div className="text-center pt-4">
+                    <button
+                        onClick={() => setVisibleCount((prev) => prev + 10)}
+                        className="px-6 py-2 rounded-lg text-gold-500 font-semibold border border-gold-500/30 hover:border-gold-500 hover:bg-gold-500/10 transition-all duration-300"
+                    >
+                        Mehr anzeigen ({appointments.length - visibleCount} weitere)
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
