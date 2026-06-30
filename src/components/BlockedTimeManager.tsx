@@ -8,6 +8,7 @@ import { de } from 'date-fns/locale';
 import LoadingModal from './LoadingModal';
 import { Role } from '@/generated/prisma';
 import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
 
 type BlockedTimeWithBarber = {
   id: string;
@@ -259,7 +260,10 @@ const router = useRouter();
                     modifiersStyles={modifiersStyles}
                     locale={de}
                     disabled={{ before: new Date() }}
-                    className="p-4 border rounded-lg bg-white dark:bg-black text-lg"
+                    captionLayout="dropdown"
+                    startMonth={new Date()}
+                    endMonth={new Date(new Date().getFullYear() + 1, 11)}
+                    className="p-4 border rounded-lg bg-[var(--color-surface)] border-[var(--color-border)] text-lg"
                 />
             </div>
             <p className="text-center text-sm text-neutral-500 mt-4">
