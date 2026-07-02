@@ -73,7 +73,7 @@ export default function Navbar({ locationSlug }: NavbarProps) {
   const activeLocationName = activeLocation ? activeLocation.city : "Standort";
 
   return (
-    <header className="backdrop-blur-sm sticky top-0 z-50 border-b" style={{
+    <header className="backdrop-blur-sm sticky top-0 z-50 border-b print:hidden" style={{
         backgroundColor: `var(--color-surface-rgb)`,
         borderColor: 'var(--color-border)'
       }}>

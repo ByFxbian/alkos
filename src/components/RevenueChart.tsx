@@ -1,134 +1,38 @@
 'use client';
 
-import { useEffect, useState } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-type BarberSimple = {
-    id: string;
-    name: string | null;
-};
-
-type RevenueChartProps = {
-    barbers: BarberSimple[];
-};
+import { de } from 'date-fns/locale';
 
 type ChartData = {
     name: string;
     value: number;
 };
 
-export default function RevenueChart({barbers}: RevenueChartProps) {
-    const [range, setRange] = useState('7d');
-    const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
-    const [selectedBarber, setSelectedBarber] = useState('all');
-    const [data, setData] = useState<ChartData[]>([]);
-    const [total, setTotal] = useState(0);
-    const [count, setCount] = useState(0);
-    const [isLoading, setIsLoading] = useState(true);
-    const [dynamicBarbers, setDynamicBarbers] = useState<BarberSimple[]>(barbers);
+type RevenueChartProps = {
+    data: ChartData[];
+    total: number;
+    count: number;
+    isLoading: boolean;
+};
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                const queryParams: Record<string, string> = {
-                    range,
-                    barberId: selectedBarber,
-                };
-                
-                if (range === 'custom') {
-                    queryParams.startDate = startDate;
-                    queryParams.endDate = endDate;
-                }
-
-                const params = new URLSearchParams(queryParams);
-                const res = await fetch(`/api/admin/revenue?${params.toString()}`);
-                const json = await res.json();
-
-                if(res.ok) {
-                    setData(json.chartData);
-                    setTotal(json.totalRevenue);
-                    setCount(json.appointmentCount);
-                    if (json.barbers) {
-                        setDynamicBarbers(json.barbers);
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to fetch revenue", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [range, selectedBarber, startDate, endDate]);
-
+export default function RevenueChart({ data, total, count, isLoading }: RevenueChartProps) {
     return (
-        <div className="p-6 rounded-lg border border-neutral-800 shadow-lg" style={{ backgroundColor: 'var(--color-surface)'}}>
+        <div className="p-6 rounded-lg shadow-lg border border-[var(--color-border)]" style={{ backgroundColor: 'var(--color-surface)' }}>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
-                    <h3 className="text-xl font-bold">Umsatzentwicklung</h3>
-                    <p className="text-sm" style={{ color: 'var(--color-text-muted)'}}>
+                    <h3 className="text-xl font-bold text-[var(--color-text)]">Umsatzentwicklung</h3>
+                    <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
                         Gesamtumsatz im Zeitraum: <span className="text-gold-500 font-bold text-lg ml-1">{total.toFixed(2)} €</span>
-                        <span className="mx-2"> |</span>
-                        {count} Termine
+                        <span className="mx-2">|</span>
+                        {count} Buchung(en)
                     </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                    <select 
-                        value={selectedBarber}
-                        onChange={(e) => setSelectedBarber(e.target.value)}
-                        className="p-2 rounded text-sm flex-grow md:flex-grow-0"
-                        style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}
-                    >
-                        <option value="all">Alle Barber</option>
-                        {dynamicBarbers.map(b => (
-                            <option key={b.id} value={b.id}>{b.name}</option>
-                        ))}
-                    </select>
-
-                    <select
-                        value={range}
-                        onChange={(e) => setRange(e.target.value)}
-                        className="p-2 rounded text-sm border flex-grow md:flex-grow-0"
-                        style={{ backgroundColor: 'var(--color-surface-3)', borderColor: 'var(--color-border)' }}
-                    >
-                        <option value="yesterday">Gestern</option>
-                        <option value="7d">7 Tage</option>
-                        <option value="30d">30 Tage</option>
-                        <option value="3m">3 Monate</option>
-                        <option value="6m">6 Monate</option>
-                        <option value="12m">12 Monate</option>
-                        <option value="all">Insgesamt</option>
-                        <option value="custom">Zeitraum wählen...</option>
-                    </select>
-
-                    {range === 'custom' && (
-                        <div className="flex items-center gap-2 w-full md:w-auto">
-                            <input 
-                                type="date" 
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="p-2 rounded text-sm border bg-[var(--color-surface-3)] border-[var(--color-border)] text-white"
-                            />
-                            <span className="text-[var(--color-text-muted)]">bis</span>
-                            <input 
-                                type="date" 
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="p-2 rounded text-sm border bg-[var(--color-surface-3)] border-[var(--color-border)] text-white"
-                            />
-                        </div>
-                    )}
                 </div>
             </div>
 
             <div className="h-[300px] w-full relative">
                 {isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10 rounded-lg backdrop-blur-sm">
-                        <p className="animate-pulse font-semibold">Lade Daten...</p>
+                        <p className="animate-pulse font-semibold text-white">Lade Daten...</p>
                     </div>
                 )}
 
@@ -136,52 +40,52 @@ export default function RevenueChart({barbers}: RevenueChartProps) {
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart
                             data={data}
-                            margin={{top:10, right: 10, left: -20, bottom: 0}}
+                            margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                         >
                             <defs>
                                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#facc15" stopOpacity={0.3}/>
-                                    <stop offset="95%" stopColor="#facc15" stopOpacity={0}/>
+                                    <stop offset="5%" stopColor="#facc15" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="#facc15" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                            <XAxis 
-                                dataKey="name" 
-                                stroke="#888" 
-                                fontSize={12} 
-                                tickLine={false} 
+                            <XAxis
+                                dataKey="name"
+                                stroke="#888"
+                                fontSize={12}
+                                tickLine={false}
                                 axisLine={false}
                                 minTickGap={30}
                             />
-                            <YAxis 
-                                stroke="#888" 
-                                fontSize={12} 
-                                tickLine={false} 
+                            <YAxis
+                                stroke="#888"
+                                fontSize={12}
+                                tickLine={false}
                                 axisLine={false}
                                 tickFormatter={(value) => `${value}€`}
                             />
-                            <Tooltip 
+                            <Tooltip
                                 contentStyle={{ backgroundColor: '#18181b', border: '1px solid #333', borderRadius: '8px' }}
                                 itemStyle={{ color: '#facc15' }}
                                 formatter={(value: number) => [`${value.toFixed(2)} €`, 'Umsatz']}
                             />
-                            <Area 
-                                type="monotone" 
-                                dataKey="value" 
-                                stroke="#facc15" 
+                            <Area
+                                type="monotone"
+                                dataKey="value"
+                                stroke="#facc15"
                                 strokeWidth={3}
-                                fillOpacity={1} 
-                                fill="url(#colorRevenue)" 
+                                fillOpacity={1}
+                                fill="url(#colorRevenue)"
                                 animationDuration={1500}
                             />
                         </AreaChart>
                     </ResponsiveContainer>
                 ) : (
-                    <div className="h-full flex items-center justify-center" style={{ color: 'var(--color-text-muted)' }}>
+                    <div className="h-full flex items-center justify-center text-[var(--color-text-muted)]">
                         Keine Daten für diesen Zeitraum gefunden.
                     </div>
                 )}
             </div>
         </div>
-    )
+    );
 }

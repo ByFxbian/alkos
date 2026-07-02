@@ -2,16 +2,9 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@/generated/prisma';
-import StatCard from '@/components/StatCard';
-import RevenueChart from '@/components/RevenueChart';
-import BookingHeatmap from '@/components/BookingHeatmap';
-import Image from 'next/image';
 import AdminLocationFilter from '@/components/AdminLocationFilter';
 import { cookies } from 'next/headers';
-import ManualEntryDashboardToggle from '@/components/ManualEntryDashboardToggle';
-
-export const revalidate = 60;
+import DashboardClient from '@/components/DashboardClient';
 
 export default async function AdminDashboardPage() {
   const session = await getServerSession(authOptions);
@@ -40,10 +33,6 @@ export default async function AdminDashboardPage() {
     ? availableLocations.map(l => l.id)
     : currentUser.userLocations.map(ul => ul.location.id);
 
-  const authorizedLocationIds = currentUser.role === 'ADMIN' 
-    ? undefined 
-    : currentUser.userLocations.map(ul => ul.location.id);
-
   if (currentUser.role === 'HEADOFBARBER' && (!userAllowedLocationIds || userAllowedLocationIds.length === 0)) {
      return (
         <div className="p-8 text-center text-red-500">
@@ -55,7 +44,6 @@ export default async function AdminDashboardPage() {
 
   const cookieStore = await cookies();
   const filterId = cookieStore.get('admin_location_filter')?.value;
-  const includeManual = cookieStore.get('include_manual_revenue')?.value === 'true';
 
   let effectiveLocationIds = userAllowedLocationIds;
 
@@ -66,25 +54,13 @@ export default async function AdminDashboardPage() {
   }
 
   const isFiltered = filterId && filterId !== 'ALL';
-
-  const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-  const locationFilter = { locationId: { in: effectiveLocationIds } };
+  
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const userLocationFilter = { userLocations: { some: { location: { id: { in: effectiveLocationIds } } } } };
+  const locationFilter = { locationId: { in: effectiveLocationIds } };
 
-  const [
-    barbers,
-    appointmentsNext7Days,
-    newCustomersLast30Days,
-    popularServices,
-    appointmentsLast30Days,
-    returningCustomersResult,
-    manualEntriesLast30Days,
-    manualEntriesNext7Days,
-  ] = await Promise.all([
+  // Load barbers and services metadata for the dropdowns
+  const [barbers, services] = await Promise.all([
     prisma.user.findMany({
       where: {
         OR: [
@@ -96,36 +72,6 @@ export default async function AdminDashboardPage() {
       select: { id: true, name: true, image: true }
     }),
 
-    prisma.appointment.findMany({
-      where: {
-        startTime: {
-          gte: now,
-          lt: sevenDaysFromNow,
-        },
-        ...locationFilter,
-      },
-      include: {
-        service: {
-          select: { price: true, name: true }
-        },
-        barber: {
-          select: { id: true, name: true, image: true }
-        },
-        location: { 
-            select: { name: true, slug: true }
-        }
-      }
-    }),
-
-    prisma.user.count({
-      where: {
-        role: 'KUNDE',
-        createdAt: {
-          gte: thirtyDaysAgo,
-        },
-      }
-    }),
-
     prisma.service.findMany({
         where: {
             OR: [
@@ -134,348 +80,18 @@ export default async function AdminDashboardPage() {
             ]
         },
         select: { id: true, name: true }
-    }),
-
-    prisma.appointment.findMany({
-      where: {
-        startTime: {
-          gte: thirtyDaysAgo,
-          lt: now,
-        },
-        ...locationFilter,
-      },
-      select: {
-        startTime: true,
-        customerId: true,
-        service: { select: { price: true, name: true } },
-        location: { select: { slug: true } },
-      },
-    }),
-
-    effectiveLocationIds.length === 0
-      ? Promise.resolve([{ count: BigInt(0) }])
-      : prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`
-          SELECT COUNT(*) as count FROM (
-            SELECT "customerId" FROM "Appointment"
-            WHERE "locationId" IN (${Prisma.join(effectiveLocationIds)})
-            GROUP BY "customerId" HAVING COUNT(*) >= 2
-          ) as returning_customers
-        `),
-
-    prisma.manualEntry.findMany({
-      where: {
-        locationId: { in: effectiveLocationIds },
-        date: { gte: thirtyDaysAgo, lte: now },
-      },
-      select: {
-        price: true,
-        tip: true,
-        barberId: true,
-        date: true,
-      },
-    }),
-
-    prisma.manualEntry.findMany({
-      where: {
-        locationId: { in: effectiveLocationIds },
-        date: { gte: startOfDay, lte: sevenDaysFromNow },
-      },
-      select: {
-        price: true,
-        tip: true,
-        barberId: true,
-      },
-    }),
+    })
   ]);
 
-  const serviceCountMap: Record<string, number> = {};
-  for (const app of appointmentsNext7Days) {
-    const sName = app.service.name;
-    serviceCountMap[sName] = (serviceCountMap[sName] || 0) + 1;
-  }
-  
-  const popularServiceStats = Object.entries(serviceCountMap)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 3)
-    .map(([name, count]) => ({ name, count }));
-
-  let appointmentsCountNext7Days = appointmentsNext7Days.length;
-
-  const servicePopularity: Record<string, { count: number, name: string }> = {};
-  for (const app of appointmentsNext7Days) {
-    const sId = app.service.name; 
-    if (!servicePopularity[sId]) {
-        servicePopularity[sId] = { count: 0, name: app.service.name };
-    }
-    servicePopularity[sId].count++;
-  }
-
-  const PROMO_START_DATE = '2026-03-07';
-  const PROMO_END_DATE = '2026-03-14';
-  const getEffectivePrice = (app: { startTime: Date; service: { price: number; name: string }; location?: { slug: string } | null }) => {
-    const dateStr = new Date(app.startTime).toLocaleDateString('en-CA');
-    if (dateStr >= PROMO_START_DATE && dateStr <= PROMO_END_DATE && app.location?.slug === 'baden' && app.service.name.toLowerCase().includes('haarschnitt')) {
-      return 5;
-    }
-    return app.service.price;
-  };
-
-  let totalAppointments = 0;
-  let totalRevenue = 0;
-
-  for (const app of appointmentsNext7Days) {
-    totalAppointments++;
-    totalRevenue += getEffectivePrice(app);
-  }
-
-  const barberStatsMap: Record<string, { name: string, image: string | null, appointments: number, revenue: number }> = {};
-
-  barbers.forEach(b => {
-      barberStatsMap[b.id] = { name: b.name || 'Unbekannt', image: b.image, appointments: 0, revenue: 0 };
-  });
-
-  for (const app of appointmentsNext7Days) {
-     if (!barberStatsMap[app.barberId]) {
-         barberStatsMap[app.barberId] = {
-             name: app.barber.name || 'Ehemalig / Unbekannt',
-             image: app.barber.image,
-             appointments: 0,
-             revenue: 0
-         };
-     }
-
-     barberStatsMap[app.barberId].appointments++;
-     barberStatsMap[app.barberId].revenue += getEffectivePrice(app);
-  }
-
-  const mostPopularService = Object.values(servicePopularity).sort((a, b) => b.count - a.count)[0];
-  const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
-  const dayCounts: Record<number, number> = {};
-  for (const app of appointmentsLast30Days) {
-    const day = new Date(app.startTime).getDay();
-    dayCounts[day] = (dayCounts[day] || 0) + 1;
-  }
-  const busiestDayEntry = Object.entries(dayCounts).sort(([,a], [,b]) => b - a)[0];
-  const busiestDay = busiestDayEntry ? dayNames[parseInt(busiestDayEntry[0])] : '-';
-  const busiestDayCount = busiestDayEntry ? busiestDayEntry[1] : 0;
-
-  let past30DayRevenue = appointmentsLast30Days.reduce((sum, a) => sum + getEffectivePrice(a), 0);
-
-  const returningCustomers = Number(returningCustomersResult[0]?.count ?? 0);
-
-  const heatmapData: Record<string, number> = {};
-  let heatmapMax = 0;
-  for (const app of appointmentsLast30Days) {
-    const d = new Date(app.startTime);
-    const key = `${d.getDay()}-${d.getHours()}`;
-    heatmapData[key] = (heatmapData[key] || 0) + 1;
-    if (heatmapData[key] > heatmapMax) heatmapMax = heatmapData[key];
-  }
-
-  const manualRevenue7Days = manualEntriesNext7Days.reduce((sum, e) => sum + e.price, 0);
-  const manualTips7Days = manualEntriesNext7Days.reduce((sum, e) => sum + e.tip, 0);
-  const manualCount7Days = manualEntriesNext7Days.length;
-  const manualRevenue30Days = manualEntriesLast30Days.reduce((sum, e) => sum + e.price, 0);
-  const manualCount30Days = manualEntriesLast30Days.length;
-
-  if (includeManual) {
-    totalRevenue += manualRevenue7Days;
-    totalAppointments += manualCount7Days;
-    appointmentsCountNext7Days += manualCount7Days;
-    past30DayRevenue += manualRevenue30Days;
-    
-    for (const entry of manualEntriesNext7Days) {
-        if (!barberStatsMap[entry.barberId]) {
-            const barberObj = barbers.find(b => b.id === entry.barberId);
-            barberStatsMap[entry.barberId] = {
-                name: barberObj?.name || 'Unbekannt',
-                image: barberObj?.image || null,
-                appointments: 0,
-                revenue: 0
-            };
-        }
-        barberStatsMap[entry.barberId].appointments++;
-        barberStatsMap[entry.barberId].revenue += entry.price;
-    }
-  }
-
-  const barberStatsArray = Object.values(barberStatsMap).sort((a,b) => b.revenue - a.revenue);
-
-  const avgRevenuePerAppointment = totalAppointments > 0 
-    ? (totalRevenue / totalAppointments).toFixed(2) 
-    : '0.00';
-
   return (
-    <div className="container mx-auto py-12 px-4 animate-in fade-in duration-700 space-y-12">
-      
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-            <h1 className="text-4xl font-bold tracking-tight text-[var(--color-text)]">Dashboard</h1>
-            <p className="mt-2 text-[var(--color-text-muted)]">
-                Willkommen zurück, {session.user.name}.
-                {isFiltered ? ' Gefilterte Ansicht.' : ' Gesamtübersicht.'}
-            </p>
-        </div>
-        <div className="flex items-center gap-4">
-            {isFiltered && (
-                <span className="hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                    Gefiltert: {effectiveLocationIds.length} Standort(e)
-                </span>
-            )}
-            {availableLocations.length > 1 && (
-                <div className="relative z-20">
-                    <AdminLocationFilter locations={availableLocations} />
-                </div>
-            )}
-        </div>
-      </div>
-
-      {(manualCount7Days > 0 || manualCount30Days > 0) && (
-        <ManualEntryDashboardToggle
-          manualRevenue7Days={manualRevenue7Days}
-          manualTips7Days={manualTips7Days}
-          manualCount7Days={manualCount7Days}
-          manualRevenue30Days={manualRevenue30Days}
-          manualCount30Days={manualCount30Days}
-        />
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Kommende Termine" 
-          value={appointmentsCountNext7Days.toString()} 
-          subtext="Nächste 7 Tage" 
-        />
-        <StatCard 
-          title="Erwarteter Umsatz" 
-          value={`${totalRevenue.toFixed(2)} €`} 
-          subtext="Nächste 7 Tage (Prognose)" 
-        />
-        <StatCard 
-          title="Neue Kunden" 
-          value={newCustomersLast30Days.toString()} 
-          subtext="Letzte 30 Tage (Global)" 
-        />
-        <StatCard 
-            title="Top Service" 
-            value={mostPopularService ? mostPopularService.name : '-'} 
-            subtext={mostPopularService ? `${mostPopularService.count} Buchungen` : ''}
-        />
-      </div>
-
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="⌀ Umsatz/Termin" 
-          value={`${avgRevenuePerAppointment} €`} 
-          subtext="Nächste 7 Tage" 
-        />
-        <StatCard 
-          title="Stärkster Tag" 
-          value={busiestDay} 
-          subtext={busiestDayCount > 0 ? `${busiestDayCount} Termine (letzte 30 Tage)` : ''} 
-        />
-        <StatCard 
-          title="Umsatz (30 Tage)" 
-          value={`${past30DayRevenue.toFixed(2)} €`} 
-          subtext="Letzte 30 Tage" 
-        />
-        <StatCard 
-          title="Stammkunden" 
-          value={returningCustomers.toString()} 
-          subtext="Kunden mit 2+ Terminen" 
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <div className="lg:col-span-1 flex flex-col gap-8">
-
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold tracking-tight text-[var(--color-text)]">Buchungs-Heatmap <span className="text-xs font-normal text-[var(--color-text-muted)] ml-2">(letzte 30 Tage)</span></h2>
-              <div className="p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
-                <BookingHeatmap data={heatmapData} maxCount={heatmapMax} />
-              </div>
-            </div>
-
-            <div className="space-y-6">
-                <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-[var(--color-text)]">
-                    Team Performance
-                <span className="text-xs font-normal text-[var(--color-text-muted)] ml-2">(7 Tage)</span>
-            </h2>
-
-            <div className="hidden md:block rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] overflow-hidden shadow-sm">
-                <table className="min-w-full divide-y divide-[var(--color-border)]">
-                    <thead className="bg-[var(--color-surface-3)]">
-                        <tr>
-                            <th className="px-6 py-4 text-left text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Mitarbeiter</th>
-                            <th className="px-6 py-4 text-left text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Termine</th>
-                            <th className="px-6 py-4 text-left text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Umsatz</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[var(--color-border)]">
-                        {barberStatsArray.map((barber) => (
-                            <tr key={barber.name} className="hover:bg-[var(--color-surface-3)] transition-colors">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[var(--color-text)] flex items-center gap-3">
-                                    <div className="relative w-8 h-8 rounded-full overflow-hidden bg-[var(--color-surface)] border border-[var(--color-border)]">
-                                        {barber.image ? (
-                                            <Image src={barber.image} alt={barber.name} fill className="object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-[var(--color-text-muted)] text-xs">
-                                                {barber.name.charAt(0)}
-                                            </div>
-                                        )}
-                                    </div>
-                                    {barber.name}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-[var(--color-text-muted)]">{barber.appointments}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-[var(--color-text)]">{barber.revenue.toFixed(2)} €</td>
-                            </tr>
-                        ))}
-                        {barberStatsArray.length === 0 && (
-                            <tr>
-                                <td colSpan={3} className="px-6 py-8 text-center text-sm text-[var(--color-text-muted)]">Keine Daten für diesen Zeitraum.</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-
-            <div className="md:hidden space-y-4">
-                {barberStatsArray.map((barber) => (
-                <div key={barber.name} className="p-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm flex items-center justify-between active:scale-[0.98] transition-transform">
-                    <div className="flex items-center gap-4">
-                         <div className="relative w-12 h-12 rounded-full overflow-hidden bg-[var(--color-surface-2)] border border-[var(--color-border)] shadow-inner">
-                            {barber.image ? (
-                                <Image src={barber.image} alt={barber.name} fill className="object-cover" />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[var(--color-text-muted)] font-bold">
-                                    {barber.name.charAt(0)}
-                                </div>
-                            )}
-                        </div>
-                        <div>
-                            <p className="font-bold text-[var(--color-text)]">{barber.name}</p>
-                            <p className="text-xs text-[var(--color-text-muted)]">{barber.appointments} Termine</p>
-                        </div>
-                    </div>
-                    <div className="text-right">
-                        <p className="font-bold text-[var(--color-gold-500)] text-lg">{barber.revenue.toFixed(2)} €</p>
-                        <p className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">Umsatz</p>
-                    </div>
-                </div>
-                ))}
-            </div>
-        </div>
-        </div>
-
-        <div className="lg:col-span-2 space-y-6">
-             <h2 className="text-2xl font-bold tracking-tight text-[var(--color-text)]">Umsatzverlauf</h2>
-             <div className="p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm min-h-[300px]">
-                 <RevenueChart key={filterId || 'all'} barbers={barbers} />
-             </div>
-        </div>
-      </div>
-    </div>
+    <DashboardClient
+      barbers={barbers}
+      services={services}
+      userName={session.user.name ?? null}
+      isFiltered={!!isFiltered}
+      effectiveLocationIdsCount={effectiveLocationIds.length}
+      availableLocations={availableLocations}
+      locationFilterComponent={<AdminLocationFilter locations={availableLocations} />}
+    />
   );
 }
