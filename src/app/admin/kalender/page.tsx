@@ -136,7 +136,7 @@ export default async function KalenderAdminPage() {
   const allBarbers = isAdminOrHead ? await prisma.user.findMany({
     where: {
       role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] },
-      userLocations: { some: { locationId: { in: queryLocationIds } } }
+      userLocations: { some: { locationId: { in: allowedLocationIds } } }
     },
     select: {
         id: true,
