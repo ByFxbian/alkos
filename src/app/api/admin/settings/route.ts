@@ -39,7 +39,7 @@ export async function PUT(req: Request) {
             return NextResponse.json({ error: 'Schlüssel erforderlich' }, { status: 400 });
         }
 
-        if (key === 'walkin_pin') {
+        if (key === 'walkin_pin' || key === 'dashboard_pin') {
             if (!value || typeof value !== 'string' || value.length < 4) {
                 return NextResponse.json({ error: 'PIN muss mindestens 4 Zeichen haben' }, { status: 400 });
             }

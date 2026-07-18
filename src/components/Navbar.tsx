@@ -144,11 +144,7 @@ export default function Navbar({ locationSlug }: NavbarProps) {
                       <Link href="/admin/friseure" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Nutzer verwalten</Link>
                   )}
                   {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
-                    <Link href="/admin/services" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Services verwalten</Link>
-                  )}
-
-                  {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
-                      <Link href="/admin/dashboard" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Dashboard</Link>
+                      <Link href="/admin/services" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Services verwalten</Link>
                   )}
 
                   {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
@@ -255,9 +251,7 @@ export default function Navbar({ locationSlug }: NavbarProps) {
                                              
                                              {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
                                                  <>
-                                                    <Link href="/admin/dashboard" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                                                        📊 <span>Dashboard</span>
-                                                    </Link>
+
                                                     <Link href="/admin/friseure" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
                                                         👥 <span>Nutzer</span>
                                                     </Link>

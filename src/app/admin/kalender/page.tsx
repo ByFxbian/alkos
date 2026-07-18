@@ -10,6 +10,7 @@ import { Role } from '@/generated/prisma';
 import { BlockedTimeManager } from '@/components/BlockedTimeManager';
 import { cookies } from 'next/headers';
 import AdminLocationFilter from '@/components/AdminLocationFilter';
+import WalkInStampGenerator from '@/components/WalkInStampGenerator';
 
 export const revalidate = 0;
 
@@ -142,7 +143,7 @@ export default async function KalenderAdminPage() {
         id: true,
         name: true,
     }
-  }) : [];
+  }) : [{ id: dbUser.id, name: dbUser.name }];
 
   return (
     <div className="container mx-auto py-12 px-4 animate-in fade-in duration-700 space-y-16">
@@ -186,17 +187,18 @@ export default async function KalenderAdminPage() {
                     Kommende Buchungen für {queryLocationIds.length > 1 ? 'alle Standorte' : 'den gewählten Standort'}.
                 </p>
              </div>
-             <div className="flex items-center gap-4">
-                 {queryLocationIds.length === 1 && (
-                     <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold hidden md:inline-block">
-                         Gefiltert
-                     </span>
-                 )}
-                 {availableLocations.length > 1 && isAdminOrHead && (
-                     <div className="relative z-20">
-                         <AdminLocationFilter locations={availableLocations} />
-                     </div>
-                 )}
+             <div className="flex items-center gap-4 flex-wrap">
+                  <WalkInStampGenerator allBarbers={allBarbers} availableLocations={availableLocations} />
+                  {queryLocationIds.length === 1 && (
+                      <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold hidden md:inline-block">
+                          Gefiltert
+                      </span>
+                  )}
+                  {availableLocations.length > 1 && isAdminOrHead && (
+                      <div className="relative z-20">
+                          <AdminLocationFilter locations={availableLocations} />
+                      </div>
+                  )}
              </div>
         </div>
 

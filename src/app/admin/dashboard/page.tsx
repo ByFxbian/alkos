@@ -83,6 +83,11 @@ export default async function AdminDashboardPage() {
     })
   ]);
 
+  const pinSetting = await prisma.settings.findUnique({
+    where: { key: 'dashboard_pin' },
+  });
+  const hasDashboardPin = !!pinSetting?.value;
+
   return (
     <DashboardClient
       barbers={barbers}
@@ -92,6 +97,7 @@ export default async function AdminDashboardPage() {
       effectiveLocationIdsCount={effectiveLocationIds.length}
       availableLocations={availableLocations}
       locationFilterComponent={<AdminLocationFilter locations={availableLocations} />}
+      hasDashboardPin={hasDashboardPin}
     />
   );
 }

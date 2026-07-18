@@ -26,6 +26,7 @@ interface DashboardClientProps {
     effectiveLocationIdsCount: number;
     availableLocations: { id: string; name: string }[];
     locationFilterComponent: React.ReactNode;
+    hasDashboardPin?: boolean;
 }
 
 interface DashboardData {
@@ -179,13 +180,58 @@ export default function DashboardClient({
     isFiltered,
     effectiveLocationIdsCount,
     availableLocations,
-    locationFilterComponent
+    locationFilterComponent,
+    hasDashboardPin = false
 }: DashboardClientProps) {
     const [range, setRange] = useState('30d');
     const [startDate, setStartDate] = useState(subDays(new Date(), 30).toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
     const [selectedBarberIds, setSelectedBarberIds] = useState<string[]>(barbers.map(b => b.id));
     const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>(services.map(s => s.id));
+
+    // PIN Authentication States
+    const [pinInput, setPinInput] = useState('');
+    const [isPinVerified, setIsPinVerified] = useState(false);
+    const [pinError, setPinError] = useState('');
+    const [isVerifyingPin, setIsVerifyingPin] = useState(false);
+    const [isCheckingSession, setIsCheckingSession] = useState(true);
+
+    useEffect(() => {
+        if (!hasDashboardPin) {
+            setIsPinVerified(true);
+        } else {
+            const unlocked = sessionStorage.getItem('dashboard_unlocked') === 'true';
+            setIsPinVerified(unlocked);
+        }
+        setIsCheckingSession(false);
+    }, [hasDashboardPin]);
+
+    const handleVerifyPin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setPinError('');
+        setIsVerifyingPin(true);
+
+        try {
+            const res = await fetch('/api/admin/dashboard/verify-pin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin: pinInput })
+            });
+
+            if (res.ok) {
+                sessionStorage.setItem('dashboard_unlocked', 'true');
+                setIsPinVerified(true);
+            } else {
+                const err = await res.json();
+                setPinError(err.error || 'Falscher PIN');
+            }
+        } catch (error) {
+            console.error('Error verifying PIN:', error);
+            setPinError('Fehler bei der Verbindung');
+        } finally {
+            setIsVerifyingPin(false);
+        }
+    };
     
     const [includeManual, setIncludeManual] = useState(false);
     const [data, setData] = useState<DashboardData | null>(null);
@@ -251,6 +297,64 @@ export default function DashboardClient({
             default: return 'Letzte 30 Tage';
         }
     };
+
+    if (isCheckingSession) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[500px]">
+                <div className="w-10 h-10 border-4 border-gold-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        );
+    }
+
+    if (!isPinVerified) {
+        return (
+            <div className="container mx-auto max-w-md py-20 px-4 animate-in fade-in duration-500">
+                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-8 rounded-2xl shadow-xl space-y-6 text-center">
+                    <div className="mx-auto w-16 h-16 bg-gold-500/10 rounded-full flex items-center justify-center text-gold-500 text-3xl">
+                        🔒
+                    </div>
+                    <div className="space-y-2">
+                        <h2 className="text-2xl font-bold text-[var(--color-text)]">Dashboard gesperrt</h2>
+                        <p className="text-sm text-[var(--color-text-muted)]">
+                            Bitte gib den Dashboard-Sicherheits-PIN ein, um den Umsatzbericht freizugeben.
+                        </p>
+                    </div>
+                    <form onSubmit={handleVerifyPin} className="space-y-4 text-left">
+                        <div>
+                            <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase block mb-1">
+                                Dashboard PIN
+                            </label>
+                            <input
+                                type="password"
+                                placeholder="PIN eingeben"
+                                value={pinInput}
+                                onChange={e => {
+                                    setPinInput(e.target.value);
+                                    setPinError('');
+                                }}
+                                className="w-full p-3 rounded-lg border border-[var(--color-border)] bg-transparent text-[var(--color-text)] text-center text-lg tracking-widest font-mono focus:ring-2 focus:ring-[var(--color-gold-500)] outline-none"
+                                autoFocus
+                            />
+                        </div>
+                        {pinError && (
+                            <p className="text-xs font-semibold text-red-500 text-center">{pinError}</p>
+                        )}
+                        <button
+                            type="submit"
+                            disabled={isVerifyingPin}
+                            className="w-full bg-[var(--color-gold-500)] text-black font-bold py-3 rounded-lg hover:brightness-110 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                            {isVerifyingPin ? (
+                                <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                                'Dashboard freigeben'
+                            )}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto py-12 px-4 space-y-12 animate-in fade-in duration-700">

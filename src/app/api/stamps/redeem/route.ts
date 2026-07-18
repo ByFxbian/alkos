@@ -42,7 +42,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Ungültiger oder abgelaufener QR-Code' }, { status: 400 });
     }
 
-    if (stampToken.appointment.customerId !== session.user.id) {
+    const walkInUser = await prisma.user.findUnique({
+      where: { email: 'walkin@alkosbarber.at' }
+    });
+
+    const isPendingWalkIn = walkInUser && stampToken.appointment.customerId === walkInUser.id;
+
+    if (!isPendingWalkIn && stampToken.appointment.customerId !== session.user.id) {
       logger.warn("API Route /api/stamps/redeem POST: Forbidden. Token does not belong to user.", {
         userId: session.user.id,
         tokenCustomerId: stampToken.appointment.customerId,
@@ -51,13 +57,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Dieser Stempel gehört nicht dir.' }, { status: 403 });
     }
 
-    const customerIdToUpdate = stampToken.appointment.customerId;
+    const customerIdToUpdate = session.user.id;
 
     await prisma.$transaction(async (tx) => {
       await tx.stampToken.update({
         where: { id: stampToken.id },
         data: { redeemedAt: new Date() },
       });
+
+      if (isPendingWalkIn) {
+        await tx.appointment.update({
+          where: { id: stampToken.appointmentId },
+          data: {
+            customerId: customerIdToUpdate,
+            walkInName: "Walk-In"
+          }
+        });
+      }
 
       const user = await tx.user.findUnique({ where: { id: customerIdToUpdate } });
       if (user) {

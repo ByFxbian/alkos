@@ -33,11 +33,43 @@ export default function AdminLocationsPage() {
     name: '', slug: '', address: '', city: '', postalCode: '', phone: '', email: '', description: '', heroImage: '', galleryImages: [] as string[]
   });
 
+  const [settings, setSettings] = useState<Record<string, string>>({});
+  const [walkinPinInput, setWalkinPinInput] = useState('');
+  const [dashboardPinInput, setDashboardPinInput] = useState('');
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
   const isAdmin = session?.user?.role === 'ADMIN';
 
   useEffect(() => {
     fetchLocations();
+    fetchSettings();
   }, []);
+
+  const fetchSettings = async () => {
+    const res = await fetch('/api/admin/settings');
+    if (!res.ok) return;
+    const data = await res.json();
+    setSettings(data);
+    setWalkinPinInput(data.walkin_pin || '');
+    setDashboardPinInput(data.dashboard_pin || '');
+  };
+
+  const handleSaveSetting = async (key: string, value: string) => {
+    setIsSavingSettings(true);
+    const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value })
+    });
+    if (res.ok) {
+        fetchSettings();
+        alert('Einstellung erfolgreich gespeichert.');
+    } else {
+        const err = await res.json();
+        alert(`Fehler beim Speichern: ${err.error || 'Unbekannter Fehler'}`);
+    }
+    setIsSavingSettings(false);
+  };
 
   const fetchLocations = async () => {
     const res = await fetch('/api/admin/locations');
@@ -111,100 +143,161 @@ export default function AdminLocationsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {(isAdmin || isEditing) && (
-            <div className="lg:col-span-1 bg-[var(--color-surface-2)] p-6 rounded-xl border border-[var(--color-border)] h-fit shadow-sm">
-                <h2 className="text-xl font-bold mb-4 text-[var(--color-text)]">
-                    {isEditing ? 'Standort bearbeiten' : 'Neuen Standort anlegen'}
-                </h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Name</label>
-                        <input required placeholder="z.B. Alkos Wien" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} 
-                            className="w-full p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)] focus:ring-2 focus:ring-[var(--color-gold-500)] outline-none" />
-                    </div>
-                    <div>
-                         <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Slug (URL)</label>
-                        <input required disabled={!isAdmin && isEditing !== null} placeholder="z.B. wien" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value.toLowerCase()})} 
-                            className="w-full p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)] disabled:opacity-50" />
-                         {!isAdmin && isEditing && <p className="text-xs text-[var(--color-text-muted)] mt-1">URL kann nur vom Admin geändert werden.</p>}
-                    </div>
+        <div className="lg:col-span-1 space-y-6 flex flex-col">
+          {(isAdmin || isEditing) && (
+              <div className="bg-[var(--color-surface-2)] p-6 rounded-xl border border-[var(--color-border)] h-fit shadow-sm">
+                  <h2 className="text-xl font-bold mb-4 text-[var(--color-text)]">
+                      {isEditing ? 'Standort bearbeiten' : 'Neuen Standort anlegen'}
+                  </h2>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                      <div>
+                          <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Name</label>
+                          <input required placeholder="z.B. Alkos Wien" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} 
+                              className="w-full p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)] focus:ring-2 focus:ring-[var(--color-gold-500)] outline-none" />
+                      </div>
+                      <div>
+                           <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Slug (URL)</label>
+                          <input required disabled={!isAdmin && isEditing !== null} placeholder="z.B. wien" value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value.toLowerCase()})} 
+                              className="w-full p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)] disabled:opacity-50" />
+                           {!isAdmin && isEditing && <p className="text-xs text-[var(--color-text-muted)] mt-1">URL kann nur vom Admin geändert werden.</p>}
+                      </div>
 
-                    <div>
-                        <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Adresse</label>
-                        <input required placeholder="Straße 1" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} 
-                            className="w-full p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)]" />
-                    </div>
+                      <div>
+                          <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Adresse</label>
+                          <input required placeholder="Straße 1" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} 
+                              className="w-full p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)]" />
+                      </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                        <div>
-                             <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">PLZ</label>
-                            <input required placeholder="1010" value={formData.postalCode} onChange={e => setFormData({...formData, postalCode: e.target.value})} 
-                                className="w-full p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)]" />
-                        </div>
-                        <div>
-                             <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Stadt</label>
-                            <input required placeholder="Wien" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} 
-                                className="w-full p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)]" />
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Telefon</label>
-                        <input placeholder="+43 ..." value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} 
-                            className="w-full p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)]" />
-                    </div>
+                      <div className="grid grid-cols-2 gap-2">
+                          <div>
+                               <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">PLZ</label>
+                              <input required placeholder="1010" value={formData.postalCode} onChange={e => setFormData({...formData, postalCode: e.target.value})} 
+                                  className="w-full p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)]" />
+                          </div>
+                          <div>
+                               <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Stadt</label>
+                              <input required placeholder="Wien" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} 
+                                  className="w-full p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)]" />
+                          </div>
+                      </div>
+                      
+                      <div>
+                          <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Telefon</label>
+                          <input placeholder="+43 ..." value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} 
+                              className="w-full p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)]" />
+                      </div>
 
-                    <div>
-                        <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Hero Bild (URL)</label>
-                        <div className="flex gap-2 mt-1">
-                            <input placeholder="https://..." value={formData.heroImage} onChange={e => setFormData({...formData, heroImage: e.target.value})} 
-                                className="flex-1 p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)]" />
-                            <ImageUpload onUploadComplete={(url) => setFormData({...formData, heroImage: url})} buttonText="Upload" />
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Galerie Bilder</label>
-                        <div className="space-y-2 mt-1">
-                            {formData.galleryImages.map((img, idx) => (
-                                <div key={idx} className="flex gap-2 items-center">
-                                    <input value={img} onChange={e => {
-                                        const newImages = [...formData.galleryImages];
-                                        newImages[idx] = e.target.value;
-                                        setFormData({...formData, galleryImages: newImages});
-                                    }} className="flex-1 p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)] text-sm" />
-                                    <button type="button" onClick={() => {
-                                        const newImages = [...formData.galleryImages];
-                                        newImages.splice(idx, 1);
-                                        setFormData({...formData, galleryImages: newImages});
-                                    }} className="p-2 text-red-500 hover:bg-red-500/10 rounded-md">✕</button>
-                                </div>
-                            ))}
-                            <ImageUpload 
-                                onUploadComplete={(url) => setFormData({...formData, galleryImages: [...formData.galleryImages, url]})} 
-                                buttonText="Galerie Bild hinzufügen" 
-                            />
-                        </div>
-                    </div>
-                    
-                    <div className="flex gap-2 pt-4">
-                        <button type="submit" className="flex-1 bg-[var(--color-gold-500)] text-black font-bold py-2 rounded hover:brightness-110 transition-all">
-                            {isEditing ? 'Speichern' : 'Erstellen'}
-                        </button>
-                        {isEditing && (
-                            <button type="button" onClick={() => {
-                                setIsEditing(null); 
-                                setFormData({ name: '', slug: '', address: '', city: '', postalCode: '', phone: '', email: '', description: '', heroImage: '', galleryImages: [] })
-                            }} className="px-4 py-2 bg-[var(--color-surface)] text-[var(--color-text)] rounded border border-[var(--color-border)] hover:bg-[var(--color-surface-3)]">
-                                Abbrechen
-                            </button>
-                        )}
-                    </div>
-                </form>
-            </div>
-        )}
+                      <div>
+                          <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Hero Bild (URL)</label>
+                          <div className="flex gap-2 mt-1">
+                              <input placeholder="https://..." value={formData.heroImage} onChange={e => setFormData({...formData, heroImage: e.target.value})} 
+                                  className="flex-1 p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)]" />
+                              <ImageUpload onUploadComplete={(url) => setFormData({...formData, heroImage: url})} buttonText="Upload" />
+                          </div>
+                      </div>
+                      
+                      <div>
+                          <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase">Galerie Bilder</label>
+                          <div className="space-y-2 mt-1">
+                              {formData.galleryImages.map((img, idx) => (
+                                  <div key={idx} className="flex gap-2 items-center">
+                                      <input value={img} onChange={e => {
+                                          const newImages = [...formData.galleryImages];
+                                          newImages[idx] = e.target.value;
+                                          setFormData({...formData, galleryImages: newImages});
+                                      }} className="flex-1 p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)] text-sm" />
+                                      <button type="button" onClick={() => {
+                                          const newImages = [...formData.galleryImages];
+                                          newImages.splice(idx, 1);
+                                          setFormData({...formData, galleryImages: newImages});
+                                      }} className="p-2 text-red-500 hover:bg-red-500/10 rounded-md">✕</button>
+                                  </div>
+                              ))}
+                              <ImageUpload 
+                                  onUploadComplete={(url) => setFormData({...formData, galleryImages: [...formData.galleryImages, url]})} 
+                                  buttonText="Galerie Bild hinzufügen" 
+                              />
+                          </div>
+                      </div>
+                      
+                      <div className="flex gap-2 pt-4">
+                          <button type="submit" className="flex-1 bg-[var(--color-gold-500)] text-black font-bold py-2 rounded hover:brightness-110 transition-all">
+                              {isEditing ? 'Speichern' : 'Erstellen'}
+                          </button>
+                          {isEditing && (
+                              <button type="button" onClick={() => {
+                                  setIsEditing(null); 
+                                  setFormData({ name: '', slug: '', address: '', city: '', postalCode: '', phone: '', email: '', description: '', heroImage: '', galleryImages: [] })
+                              }} className="px-4 py-2 bg-[var(--color-surface)] text-[var(--color-text)] rounded border border-[var(--color-border)] hover:bg-[var(--color-surface-3)]">
+                                  Abbrechen
+                              </button>
+                          )}
+                      </div>
+                  </form>
+              </div>
+          )}
 
-        <div className={`${(isAdmin || isEditing) ? 'lg:col-span-2' : 'lg:col-span-3'} space-y-4`}>
+          {/* PIN Settings Section */}
+          <div className="bg-[var(--color-surface-2)] p-6 rounded-xl border border-[var(--color-border)] shadow-sm space-y-6">
+              <h2 className="text-xl font-bold text-[var(--color-text)]">Sicherheit & PINs</h2>
+              
+              <div className="space-y-4">
+                  <div>
+                      <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase block mb-1">
+                          Walk-In Kalender PIN
+                      </label>
+                      <div className="flex gap-2">
+                          <input
+                              type="text"
+                              placeholder="z.B. 1234"
+                              value={walkinPinInput}
+                              onChange={e => setWalkinPinInput(e.target.value)}
+                              className="flex-1 p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)] focus:ring-2 focus:ring-[var(--color-gold-500)] outline-none"
+                          />
+                          <button
+                              type="button"
+                              disabled={isSavingSettings}
+                              onClick={() => handleSaveSetting('walkin_pin', walkinPinInput)}
+                              className="px-4 py-2 bg-[var(--color-gold-500)] text-black font-bold rounded hover:brightness-110 transition-all text-sm disabled:opacity-50"
+                          >
+                              {isSavingSettings ? '...' : 'Speichern'}
+                          </button>
+                      </div>
+                      <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+                          Wird benötigt, um neue Walk-In Buchungen im Salon freizugeben.
+                      </p>
+                  </div>
+
+                  <div className="border-t border-[var(--color-border)] pt-4">
+                      <label className="text-xs font-bold text-[var(--color-text-muted)] uppercase block mb-1">
+                          Dashboard PIN
+                      </label>
+                      <div className="flex gap-2">
+                          <input
+                              type="text"
+                              placeholder="z.B. 4321"
+                              value={dashboardPinInput}
+                              onChange={e => setDashboardPinInput(e.target.value)}
+                              className="flex-1 p-2 rounded-md border border-[var(--color-border)] bg-transparent text-[var(--color-text)] focus:ring-2 focus:ring-[var(--color-gold-500)] outline-none"
+                          />
+                          <button
+                              type="button"
+                              disabled={isSavingSettings}
+                              onClick={() => handleSaveSetting('dashboard_pin', dashboardPinInput)}
+                              className="px-4 py-2 bg-[var(--color-gold-500)] text-black font-bold rounded hover:brightness-110 transition-all text-sm disabled:opacity-50"
+                          >
+                              {isSavingSettings ? '...' : 'Speichern'}
+                          </button>
+                      </div>
+                      <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
+                          Schützt den Zugriff auf das Umsatz-Dashboard vor unbefugtem Einsehen.
+                      </p>
+                  </div>
+              </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-2 space-y-4">
              {locations.length === 0 && !isLoading && (
                  <div className="p-8 text-center border border-dashed border-[var(--color-border)] rounded-xl text-[var(--color-text-muted)]">
                      Noch keine Standorte gefunden.
