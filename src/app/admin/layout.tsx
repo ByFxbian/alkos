@@ -18,9 +18,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
        <div className="hidden md:flex w-64 flex-shrink-0 bg-[var(--color-surface)] border-r border-[var(--color-border)] flex-col print:hidden">
           <div className="p-6 border-b border-[var(--color-border)] flex flex-col gap-4">
               <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-[var(--color-gold-500)] rounded-full flex items-center justify-center font-bold text-black font-serif">A</div>
-                  <span className="font-serif font-bold text-xl tracking-tight text-[var(--color-text)]">ALKOS</span>
-                  <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] ml-auto bg-[var(--color-surface-3)] px-1 py-0.5 rounded">Admin</span>
+                  <Image src="/images/AlkosLogoCut.png" alt="ALKOS" width={120} height={42} className="h-8 w-auto object-contain" priority />
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] ml-auto bg-[var(--color-surface-3)] px-1.5 py-0.5 rounded">Admin</span>
               </div>
               <Link href="/" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-gold-500)] flex items-center gap-1 transition-colors">
                   ← Zurück zur Webseite
@@ -64,7 +63,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
        <div className="flex-1 flex flex-col min-h-0 overflow-hidden print:display-block print:overflow-visible print:h-auto print:block">
           <header className="h-16 flex items-center justify-between px-6 border-b border-[var(--color-border)] bg-[var(--color-bg)] sticky top-0 z-10 shadow-sm print:hidden">
                <div className="md:hidden flex items-center gap-4">
-                   <Link href="/" className="font-serif font-bold text-lg">ALKOS</Link>
+                    <Link href="/" className="flex items-center">
+                        <Image src="/images/AlkosLogoCut.png" alt="ALKOS" width={100} height={36} className="h-7 w-auto object-contain" />
+                    </Link>
                </div>
                
                <h2 className="hidden md:block text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wide">

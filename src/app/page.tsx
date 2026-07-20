@@ -100,11 +100,19 @@ export default function GatewayPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-center mb-16"
+            className="text-center mb-16 flex flex-col items-center"
         >
-            <h1 className="text-5xl md:text-8xl font-extrabold text-white mb-6 tracking-tighter drop-shadow-2xl">
-                ALKOS <span className="text-gold-500 transition-colors duration-500">BARBER</span>
-            </h1>
+            <h1 className="sr-only">ALKOS BARBERSHOP</h1>
+            <div className="relative w-72 h-44 md:w-[450px] md:h-64 mb-4">
+                <Image
+                    src="/images/AlkosLogoCut.png"
+                    alt="ALKOS Barbershop"
+                    fill
+                    priority
+                    sizes="(max-width: 768px) 288px, 450px"
+                    className="object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.9)]"
+                />
+            </div>
             <p className="text-xl md:text-2xl text-neutral-300 uppercase tracking-widest font-light">
                 Wähle deine Location
             </p>

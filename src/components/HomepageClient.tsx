@@ -91,14 +91,27 @@ export default function HomepageClient({ location, teamMembers }: HomepageClient
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: "easeOut" }}
                     >
-                        <motion.h1 
-                            className="text-6xl md:text-8xl font-extrabold tracking-tighter text-white drop-shadow-2xl shadow-black mb-2"
+                        <motion.div 
+                            className="flex flex-col items-center justify-center mb-4"
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ duration: 0.8, delay: 0.2 }}
                         >
-                            {location.name}
-                        </motion.h1>
+                            <h1 className="sr-only">{location.name}</h1>
+                            <div className="relative w-72 h-44 md:w-[420px] md:h-60">
+                                <Image
+                                    src="/images/AlkosLogoCut.png"
+                                    alt={`ALKOS Barbershop ${location.name}`}
+                                    fill
+                                    priority
+                                    sizes="(max-width: 768px) 288px, 420px"
+                                    className="object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.9)]"
+                                />
+                            </div>
+                            <span className="text-2xl md:text-4xl font-extrabold uppercase tracking-widest text-gold-500 drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] mt-2">
+                                {location.city || location.name.replace(/^ALKOS\s*/i, '')}
+                            </span>
+                        </motion.div>
                         <motion.p 
                             className="text-xl md:text-2xl max-w-2xl mx-auto text-neutral-200 font-medium drop-shadow-lg shadow-black"
                             initial={{ opacity: 0 }}

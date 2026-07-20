@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
 import ThemeToggle from './ThemeToggle';
@@ -78,8 +79,15 @@ export default function Navbar({ locationSlug }: NavbarProps) {
         borderColor: 'var(--color-border)'
       }}>
       <nav className="container mx-auto flex items-center justify-between p-4">
-        <Link href={locationSlug ? `/${locationSlug}` : '/'} className="text-xl font-bold  hover:text-gold-500 transition-colors">
-          ALKOS
+        <Link href={locationSlug ? `/${locationSlug}` : '/'} className="flex items-center hover:opacity-85 transition-opacity py-0.5">
+          <Image
+            src="/images/AlkosLogoCut.png"
+            alt="ALKOS Barbershop"
+            width={140}
+            height={48}
+            className="h-10 w-auto object-contain brightness-110"
+            priority
+          />
         </Link>
 
         <div className="hidden md:flex items-center space-x-6">
