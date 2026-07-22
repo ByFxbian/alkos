@@ -28,6 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
           <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
              <NavLink href="/admin/kalender" label="Kalender & Zeiten" icon="Calendar" />
+             <NavLink href="/admin/zeiterfassung" label="Zeiterfassung" icon="Clock" />
              <NavLink href="/admin/manual-entries" label="Manuelle Einträge" icon="Clipboard" />
              <NavLink href="/manual-entry" label="Eintrag erfassen" icon="PlusCircle" />
              
@@ -82,6 +83,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <main className="flex-1 overflow-y-auto bg-[var(--color-bg)] text-[var(--color-text)] relative p-0 scroll-smooth print:overflow-visible print:h-auto print:bg-white">
                <div className="md:hidden flex overflow-x-auto gap-2 p-2 border-b border-[var(--color-border)] bg-[var(--color-surface)] no-scrollbar print:hidden">
                     <Link href="/admin/kalender" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">📅 Kalender</Link>
+                    <Link href="/admin/zeiterfassung" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">⏰ Zeiterfassung</Link>
                     <Link href="/admin/manual-entries" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">📝 Einträge</Link>
                     <Link href="/manual-entry" className="flex-shrink-0 px-3 py-1.5 text-xs font-medium border border-[var(--color-border)] rounded-full bg-[var(--color-surface-2)] text-[var(--color-text)] hover:bg-[var(--color-gold-500)] hover:text-black hover:border-[var(--color-gold-500)] transition-colors">➕ Erfassen</Link>
                     {(session.user.role === 'ADMIN' || session.user.role === 'HEADOFBARBER') && (
@@ -108,6 +110,7 @@ function NavLink({ href, label, icon }: { href: string, label: string, icon: str
                 {icon === 'PlusCircle' && '➕'}
                 {icon === 'LayoutDashboard' && '📊'}
                 {icon === 'Calendar' && '📅'}
+                {icon === 'Clock' && '⏰'}
                 {icon === 'Clipboard' && '📝'}
                 {icon === 'Users' && '👥'}
                 {icon === 'Scissors' && '✂️'}

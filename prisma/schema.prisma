@@ -61,6 +61,7 @@ model User {
   sessions               Session[]
   userLocations          UserLocation[]
   manualEntries          ManualEntry[]
+  employeeCheckIns       EmployeeCheckIn[]
 }
 
 model BlockedEmail {
@@ -203,6 +204,7 @@ model Location {
   manualEntries   ManualEntry[]
   teamMembers     TeamMember[]  @relation("TeamMemberLocations")
   userLocations   UserLocation[]
+  employeeCheckIns EmployeeCheckIn[]
 }
 
 model UserLocation {
@@ -260,4 +262,24 @@ model ManualEntry {
 
   @@index([barberId, date])
   @@index([locationId])
+}
+
+model EmployeeCheckIn {
+  id           String   @id @default(cuid())
+  barberId     String
+  locationId   String
+  checkInAt    DateTime @default(now())
+  date         DateTime @db.Date
+  status       String   @default("ON_TIME")
+  delayMinutes Int      @default(0)
+  note         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  barber   User     @relation(fields: [barberId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([barberId, date])
+  @@index([barberId, date])
+  @@index([locationId, date])
 }
