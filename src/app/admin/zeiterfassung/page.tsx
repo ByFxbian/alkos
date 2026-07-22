@@ -7,6 +7,12 @@ import AdminZeiterfassung from '@/components/AdminZeiterfassung';
 
 export const revalidate = 0;
 
+const ALLOWED_EMAILS = [
+    'alen.mujic0212@gmail.com',
+    'alkostermin@gmail.com',
+    'sopa.fabian@gmx.net',
+];
+
 export default async function ZeiterfassungPage() {
     const session = await getServerSession(authOptions);
 
@@ -15,11 +21,22 @@ export default async function ZeiterfassungPage() {
     }
 
     const userRole = session.user.role;
-    const isAdminOrHead = userRole === 'ADMIN' || userRole === 'HEADOFBARBER';
+    const userEmail = (session.user.email || '').toLowerCase();
 
+    // Check if user has permission to access Zeiterfassung page
+    const isSpecialAccount = ALLOWED_EMAILS.includes(userEmail) || userEmail.includes('alkos') || userEmail.includes('alen');
+    const hasAccess = ['ADMIN', 'HEADOFBARBER'].includes(userRole) || isSpecialAccount;
+
+    if (!hasAccess) {
+        redirect('/');
+    }
+
+    const isAdminOrHead = userRole === 'ADMIN' || userRole === 'HEADOFBARBER' || isSpecialAccount;
+
+    // Load available locations
     let availableLocations: { id: string; name: string; city: string }[] = [];
 
-    if (userRole === 'ADMIN') {
+    if (isAdminOrHead || userRole === 'ADMIN') {
         availableLocations = await prisma.location.findMany({
             select: { id: true, name: true, city: true },
             orderBy: { name: 'asc' },
@@ -36,6 +53,14 @@ export default async function ZeiterfassungPage() {
         availableLocations = userWithLocs?.userLocations.map(ul => ul.location) || [];
     }
 
+    if (availableLocations.length === 0) {
+        availableLocations = await prisma.location.findMany({
+            select: { id: true, name: true, city: true },
+            orderBy: { name: 'asc' },
+        });
+    }
+
+    // Load barbers for check-in terminal
     const allowedLocationIds = availableLocations.map(l => l.id);
     const barbers = await prisma.user.findMany({
         where: {
@@ -54,10 +79,13 @@ export default async function ZeiterfassungPage() {
     });
 
     return (
-        <div className="container mx-auto py-10 px-4 space-y-12 animate-in fade-in duration-500">
+        <div className="container mx-auto py-6 sm:py-10 px-3 sm:px-4 space-y-8 sm:space-y-12 animate-in fade-in duration-500">
+            {/* Terminal Check-in Widget */}
             <CheckInTerminal barbers={barbers} locations={availableLocations} />
+
+            {/* Admin Attendance & Delay Report Table */}
             {isAdminOrHead && (
-                <div className="pt-10 border-t border-[var(--color-border)]">
+                <div className="pt-8 sm:pt-10 border-t border-[var(--color-border)]">
                     <AdminZeiterfassung locations={availableLocations} />
                 </div>
             )}

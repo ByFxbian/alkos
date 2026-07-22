@@ -149,6 +149,9 @@ export default function Navbar({ locationSlug }: NavbarProps) {
                       <Link href="/admin/kalender" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Terminkalender</Link>
                   )}
                   {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
+                      <Link href="/admin/zeiterfassung" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Zeiterfassung</Link>
+                  )}
+                  {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
                       <Link href="/admin/friseure" className="block px-4 py-2 text-sm hover:bg-gold-500 hover:text-black">Nutzer verwalten</Link>
                   )}
                   {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
@@ -259,6 +262,9 @@ export default function Navbar({ locationSlug }: NavbarProps) {
                                              
                                              {(session.user?.role === 'ADMIN' || session.user?.role === 'HEADOFBARBER') && (
                                                  <>
+                                                     <Link href="/admin/zeiterfassung" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                                         ⏰ <span>Zeiterfassung</span>
+                                                     </Link>
 
                                                     <Link href="/admin/friseure" className="p-3 bg-[var(--color-surface-2)] rounded-lg text-sm font-bold flex flex-col items-center gap-2 hover:bg-gold-500 hover:text-black transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
                                                         👥 <span>Nutzer</span>

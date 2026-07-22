@@ -69,6 +69,7 @@ export default function AdminZeiterfassung({ locations }: AdminZeiterfassungProp
         fetchCheckIns();
     }, [selectedLocationId, selectedMonth]);
 
+    // Calculate KPI Stats
     const totalCheckIns = checkIns.length;
     const lateCheckIns = checkIns.filter(c => c.status === 'LATE');
     const onTimeCheckIns = checkIns.filter(c => c.status === 'ON_TIME');
@@ -80,16 +81,17 @@ export default function AdminZeiterfassung({ locations }: AdminZeiterfassungProp
     };
 
     return (
-        <div className="space-y-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
+        <div className="space-y-6 sm:space-y-8">
+            {/* Action Header & Filters */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
                 <div>
-                    <h2 className="text-2xl font-extrabold text-[var(--color-text)]">Zeiterfassung & Pünktlichkeit</h2>
-                    <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--color-text)]">Zeiterfassung & Pünktlichkeit</h2>
+                    <p className="text-[11px] sm:text-xs text-[var(--color-text-muted)] mt-0.5 sm:mt-1">
                         Protokoll der Mitarbeiter Morgen-Check-ins und Verspätungen.
                     </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 sm:gap-3">
                     <select
                         value={selectedLocationId}
                         onChange={e => setSelectedLocationId(e.target.value)}
@@ -110,13 +112,14 @@ export default function AdminZeiterfassung({ locations }: AdminZeiterfassungProp
 
                     <button
                         onClick={handlePdfExport}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-gold-500 text-black font-extrabold text-xs uppercase tracking-wider rounded-xl hover:bg-gold-400 transition-all shadow-md"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gold-500 text-black font-extrabold text-xs uppercase tracking-wider rounded-xl hover:bg-gold-400 transition-all shadow-md"
                     >
                         📄 PDF Export
                     </button>
                 </div>
             </div>
 
+            {/* Print Header (Only visible on PDF print) */}
             <div className="hidden print:block text-center border-b pb-6 mb-6">
                 <h1 className="text-2xl font-black tracking-tight text-black">ALKOS BARBERSHOP — ZEITERFASSUNG & PÜNKTLICHKEIT</h1>
                 <p className="text-xs text-neutral-600 mt-1">
@@ -124,50 +127,52 @@ export default function AdminZeiterfassung({ locations }: AdminZeiterfassungProp
                 </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-5 rounded-2xl shadow-sm">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-text-muted)] block">Gesamt Check-ins</span>
-                    <span className="text-3xl font-black text-[var(--color-text)] mt-1 block">{totalCheckIns}</span>
+            {/* KPI Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-3.5 sm:p-5 rounded-2xl shadow-sm">
+                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-[var(--color-text-muted)] block">Gesamt Check-ins</span>
+                    <span className="text-2xl sm:text-3xl font-black text-[var(--color-text)] mt-1 block">{totalCheckIns}</span>
                 </div>
 
-                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-5 rounded-2xl shadow-sm">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-text-muted)] block">Pünktlich Quote</span>
-                    <span className="text-3xl font-black text-emerald-400 mt-1 block">{onTimeRate}%</span>
+                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-3.5 sm:p-5 rounded-2xl shadow-sm">
+                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-[var(--color-text-muted)] block">Pünktlich Quote</span>
+                    <span className="text-2xl sm:text-3xl font-black text-emerald-400 mt-1 block">{onTimeRate}%</span>
                 </div>
 
-                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-5 rounded-2xl shadow-sm">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-text-muted)] block">Verspätungen</span>
-                    <span className="text-3xl font-black text-amber-400 mt-1 block">{lateCheckIns.length}</span>
+                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-3.5 sm:p-5 rounded-2xl shadow-sm">
+                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-[var(--color-text-muted)] block">Verspätungen</span>
+                    <span className="text-2xl sm:text-3xl font-black text-amber-400 mt-1 block">{lateCheckIns.length}</span>
                 </div>
 
-                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-5 rounded-2xl shadow-sm">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-text-muted)] block">Verspätung Gesamt</span>
-                    <span className="text-3xl font-black text-red-400 mt-1 block">{totalDelayMinutes} <span className="text-xs font-normal">Min.</span></span>
+                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-3.5 sm:p-5 rounded-2xl shadow-sm">
+                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-[var(--color-text-muted)] block">Verspätung Gesamt</span>
+                    <span className="text-2xl sm:text-3xl font-black text-red-400 mt-1 block">{totalDelayMinutes} <span className="text-xs font-normal">Min.</span></span>
                 </div>
             </div>
 
+            {/* Table Section */}
             <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-xl overflow-hidden print:border-none print:shadow-none">
                 {isLoading ? (
-                    <div className="p-12 text-center text-xs text-[var(--color-text-muted)] animate-pulse">
+                    <div className="p-8 sm:p-12 text-center text-xs text-[var(--color-text-muted)] animate-pulse">
                         Lade Zeiterfassungsdaten...
                     </div>
                 ) : checkIns.length === 0 ? (
-                    <div className="p-12 text-center text-xs text-[var(--color-text-muted)]">
+                    <div className="p-8 sm:p-12 text-center text-xs text-[var(--color-text-muted)]">
                         Keine Check-in Protokolle für den ausgewählten Zeitraum gefunden.
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full text-left border-collapse min-w-[600px]">
                             <thead>
                                 <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-2)] text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-bold">
-                                    <th className="p-4">Datum & Zeit</th>
-                                    <th className="p-4">Mitarbeiter</th>
-                                    <th className="p-4">Standort</th>
-                                    <th className="p-4">Soll-Schicht</th>
-                                    <th className="p-4 text-right">Status / Verspätung</th>
+                                    <th className="p-3.5 sm:p-4">Datum & Zeit</th>
+                                    <th className="p-3.5 sm:p-4">Mitarbeiter</th>
+                                    <th className="p-3.5 sm:p-4">Standort</th>
+                                    <th className="p-3.5 sm:p-4">Soll-Schicht</th>
+                                    <th className="p-3.5 sm:p-4 text-right">Status / Verspätung</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-[var(--color-border)] text-sm">
+                            <tbody className="divide-y divide-[var(--color-border)] text-xs sm:text-sm">
                                 {checkIns.map(c => {
                                     const checkInDate = new Date(c.checkInAt);
                                     const timeStr = checkInDate.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
@@ -175,14 +180,14 @@ export default function AdminZeiterfassung({ locations }: AdminZeiterfassungProp
 
                                     return (
                                         <tr key={c.id} className="hover:bg-[var(--color-surface-2)]/50 transition-colors">
-                                            <td className="p-4 font-mono text-xs text-[var(--color-text)]">
+                                            <td className="p-3.5 sm:p-4 font-mono text-xs text-[var(--color-text)]">
                                                 <span className="font-bold">{dateStr}</span>
                                                 <span className="block text-[11px] text-[var(--color-text-muted)]">{timeStr} Uhr</span>
                                             </td>
 
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface-3)] shrink-0 print:hidden">
+                                            <td className="p-3.5 sm:p-4">
+                                                <div className="flex items-center gap-2.5 sm:gap-3">
+                                                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface-3)] shrink-0 print:hidden">
                                                         {c.barberImage ? (
                                                             <Image src={c.barberImage} alt={c.barberName} width={32} height={32} className="object-cover w-full h-full" />
                                                         ) : (
@@ -195,21 +200,21 @@ export default function AdminZeiterfassung({ locations }: AdminZeiterfassungProp
                                                 </div>
                                             </td>
 
-                                            <td className="p-4 text-xs text-[var(--color-text-muted)] font-medium">
+                                            <td className="p-3.5 sm:p-4 text-xs text-[var(--color-text-muted)] font-medium">
                                                 {c.locationName} ({c.locationCity})
                                             </td>
 
-                                            <td className="p-4 font-mono text-xs text-[var(--color-text)]">
+                                            <td className="p-3.5 sm:p-4 font-mono text-xs text-[var(--color-text)]">
                                                 {c.plannedStart !== 'Keine Schicht' ? `${c.plannedStart} Uhr` : <span className="text-[var(--color-text-muted)] font-normal italic">Keine Schicht</span>}
                                             </td>
 
-                                            <td className="p-4 text-right font-mono text-xs">
+                                            <td className="p-3.5 sm:p-4 text-right font-mono text-xs">
                                                 {c.status === 'LATE' ? (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500/10 text-amber-500 font-bold rounded-lg border border-amber-500/20">
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-amber-500/10 text-amber-500 font-bold rounded-lg border border-amber-500/20">
                                                         ⚠️ Verspätet (+{c.delayMinutes} Min)
                                                     </span>
                                                 ) : (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 text-emerald-400 font-bold rounded-lg border border-emerald-500/20">
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-emerald-500/10 text-emerald-400 font-bold rounded-lg border border-emerald-500/20">
                                                         ✓ Pünktlich
                                                     </span>
                                                 )}
