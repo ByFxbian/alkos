@@ -27,13 +27,19 @@ export default function CheckInTerminal({ barbers, locations, defaultLocationId 
     const [selectedLocationId, setSelectedLocationId] = useState(defaultLocationId || (locations[0]?.id || ''));
     const [selectedBarber, setSelectedBarber] = useState<Barber | null>(null);
     const [pin, setPin] = useState('');
+    const [actionType, setActionType] = useState<'check-in' | 'check-out'>('check-in');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // Track today's check-in status map for barber list badges
+    const [todayStatusMap, setTodayStatusMap] = useState<Record<string, { checkInAt?: string; checkOutAt?: string; isAuto?: boolean }>>({});
+
     const [resultMessage, setResultMessage] = useState<{
         type: 'success' | 'warning' | 'error';
         text: string;
         barberName?: string;
         barberImage?: string | null;
         checkInAt?: string;
+        checkOutAt?: string;
     } | null>(null);
 
     const [currentTime, setCurrentTime] = useState<string>('');
@@ -48,6 +54,31 @@ export default function CheckInTerminal({ barbers, locations, defaultLocationId 
         return () => clearInterval(timer);
     }, []);
 
+    const fetchTodayStatus = async () => {
+        try {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const res = await fetch(`/api/admin/check-in?startDate=${todayStr}&endDate=${todayStr}&locationId=${selectedLocationId}`);
+            if (res.ok) {
+                const data = await res.json();
+                const map: Record<string, { checkInAt?: string; checkOutAt?: string; isAuto?: boolean }> = {};
+                (data.checkIns || []).forEach((c: any) => {
+                    map[c.barberId] = {
+                        checkInAt: c.checkInAt,
+                        checkOutAt: c.checkOutAt,
+                        isAuto: c.isAutoCheckOut,
+                    };
+                });
+                setTodayStatusMap(map);
+            }
+        } catch (e) {
+            console.error('Error fetching today status:', e);
+        }
+    };
+
+    useEffect(() => {
+        fetchTodayStatus();
+    }, [selectedLocationId]);
+
     const handlePinDigit = (digit: string) => {
         if (pin.length < 6) {
             setPin(prev => prev + digit);
@@ -58,9 +89,10 @@ export default function CheckInTerminal({ barbers, locations, defaultLocationId 
         setPin(prev => prev.slice(0, -1));
     };
 
-    const handleCheckIn = async (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
+    const handleCheckInOut = async (overrideAction?: 'check-in' | 'check-out') => {
         if (!pin || pin.length < 4) return;
+
+        const targetAction = overrideAction || actionType;
 
         setIsSubmitting(true);
         setResultMessage(null);
@@ -72,6 +104,7 @@ export default function CheckInTerminal({ barbers, locations, defaultLocationId 
                 body: JSON.stringify({
                     pin,
                     locationId: selectedLocationId,
+                    action: targetAction,
                 }),
             });
 
@@ -80,18 +113,28 @@ export default function CheckInTerminal({ barbers, locations, defaultLocationId 
             if (!res.ok) {
                 setResultMessage({
                     type: 'error',
-                    text: data.error || 'Fehler beim Check-in.',
+                    text: data.error || 'Fehler beim Stempeln.',
                 });
-            } else if (data.alreadyCheckedIn) {
+            } else if (data.alreadyCheckedIn && data.canCheckOut && targetAction !== 'check-out') {
+                // Was already checked in, prompt user to check out
+                setActionType('check-out');
+                setResultMessage({
+                    type: 'warning',
+                    text: `${data.message} Möchtest du dich jetzt auschecken?`,
+                    barberName: data.barberName,
+                    barberImage: data.barberImage,
+                    checkInAt: data.checkInAt,
+                });
+            } else if (data.alreadyCheckedOut) {
                 setResultMessage({
                     type: 'warning',
                     text: data.message,
                     barberName: data.barberName,
                     barberImage: data.barberImage,
-                    checkInAt: data.checkInAt,
                 });
                 setPin('');
                 setSelectedBarber(null);
+                setActionType('check-in');
             } else {
                 setResultMessage({
                     type: data.status === 'LATE' ? 'warning' : 'success',
@@ -99,12 +142,15 @@ export default function CheckInTerminal({ barbers, locations, defaultLocationId 
                     barberName: data.barberName,
                     barberImage: data.barberImage,
                     checkInAt: data.checkInAt,
+                    checkOutAt: data.checkOutAt,
                 });
                 setPin('');
                 setSelectedBarber(null);
+                setActionType('check-in');
+                fetchTodayStatus();
             }
         } catch (error) {
-            console.error('Check-in error:', error);
+            console.error('Check-in/out error:', error);
             setResultMessage({
                 type: 'error',
                 text: 'Netzwerkfehler. Bitte versuche es erneut.',
@@ -123,10 +169,10 @@ export default function CheckInTerminal({ barbers, locations, defaultLocationId 
                         Salon Stempeluhr
                     </span>
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[var(--color-text)]">
-                        Morgen Check-in
+                        Arbeitszeit Stempeluhr
                     </h2>
                     <p className="text-[11px] sm:text-xs text-[var(--color-text-muted)] mt-0.5 sm:mt-1">
-                        Wähle deinen Namen oder tippe deinen PIN ein.
+                        Einchecken bei Ankunft & Auschecken bei Feierabend.
                     </p>
                 </div>
 
@@ -189,26 +235,40 @@ export default function CheckInTerminal({ barbers, locations, defaultLocationId 
                             <p className="text-xs sm:text-sm font-medium leading-tight">{resultMessage.text}</p>
                         </div>
 
-                        <button
-                            onClick={() => setResultMessage(null)}
-                            className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg border border-current hover:bg-white/10 transition-colors shrink-0"
-                        >
-                            Schließen
-                        </button>
+                        {resultMessage.type === 'warning' && pin.length >= 4 && actionType === 'check-out' ? (
+                            <button
+                                onClick={() => handleCheckInOut('check-out')}
+                                className="text-xs font-bold uppercase tracking-wider px-3 py-2 bg-amber-500 text-black rounded-lg hover:bg-amber-400 transition-colors shrink-0"
+                            >
+                                Jetzt Auschecken
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => setResultMessage(null)}
+                                className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg border border-current hover:bg-white/10 transition-colors shrink-0"
+                            >
+                                Schließen
+                            </button>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Check-In Grid & Keypad */}
+            {/* Check-In/Out Grid & Keypad */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
-                {/* Left: Barbers list */}
+                {/* Left: Barbers list with today's status badges */}
                 <div className="lg:col-span-7 space-y-3 sm:space-y-4">
-                    <h3 className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[var(--color-text-muted)]">
-                        Mitarbeiter auswählen
+                    <h3 className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[var(--color-text-muted)] flex items-center justify-between">
+                        <span>Mitarbeiter auswählen</span>
+                        <span className="text-[9px] font-normal normal-case opacity-75">Status heute</span>
                     </h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                         {barbers.map(barber => {
                             const isSelected = selectedBarber?.id === barber.id;
+                            const status = todayStatusMap[barber.id];
+                            const isCheckedIn = status?.checkInAt && !status?.checkOutAt;
+                            const isCheckedOut = !!status?.checkOutAt;
+
                             return (
                                 <button
                                     key={barber.id}
@@ -216,8 +276,13 @@ export default function CheckInTerminal({ barbers, locations, defaultLocationId 
                                         setSelectedBarber(barber);
                                         setPin('');
                                         setResultMessage(null);
+                                        if (isCheckedIn) {
+                                            setActionType('check-out');
+                                        } else {
+                                            setActionType('check-in');
+                                        }
                                     }}
-                                    className={`p-3 sm:p-4 rounded-xl border flex flex-col items-center gap-2 sm:gap-3 text-center transition-all ${
+                                    className={`p-3 sm:p-4 rounded-xl border flex flex-col items-center gap-2 sm:gap-2.5 text-center transition-all relative ${
                                         isSelected
                                             ? 'bg-gold-500 text-black border-gold-500 scale-105 shadow-xl font-bold'
                                             : 'bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text)] hover:border-gold-500/50'
@@ -238,6 +303,23 @@ export default function CheckInTerminal({ barbers, locations, defaultLocationId 
                                         )}
                                     </div>
                                     <span className="text-xs sm:text-sm font-semibold truncate w-full">{barber.name || 'Unbekannt'}</span>
+                                    
+                                    {/* Status Badge */}
+                                    {isCheckedIn && (
+                                        <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${isSelected ? 'bg-black text-gold-500' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
+                                            🟢 Eingecheckt
+                                        </span>
+                                    )}
+                                    {isCheckedOut && (
+                                        <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full ${isSelected ? 'bg-black text-white' : 'bg-neutral-500/20 text-neutral-400 border border-neutral-500/30'}`}>
+                                            {status.isAuto ? '⚠️ Auto-Out' : '🔴 Ausgecheckt'}
+                                        </span>
+                                    )}
+                                    {!isCheckedIn && !isCheckedOut && (
+                                        <span className={`text-[9px] font-normal px-2 py-0.5 opacity-60`}>
+                                            ⚪ Nicht da
+                                        </span>
+                                    )}
                                 </button>
                             );
                         })}
@@ -245,14 +327,40 @@ export default function CheckInTerminal({ barbers, locations, defaultLocationId 
                 </div>
 
                 {/* Right: Keypad / PIN Entry */}
-                <div className="lg:col-span-5 bg-[var(--color-surface)] border border-[var(--color-border)] p-4 sm:p-6 rounded-2xl shadow-xl flex flex-col items-center justify-center space-y-4 sm:space-y-6 w-full">
-                    <div className="text-center">
+                <div className="lg:col-span-5 bg-[var(--color-surface)] border border-[var(--color-border)] p-4 sm:p-6 rounded-2xl shadow-xl flex flex-col items-center justify-center space-y-4 sm:space-y-5 w-full">
+                    <div className="text-center w-full">
                         <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[var(--color-text-muted)] block">
                             PIN-Eingabe
                         </span>
-                        <p className="text-xs sm:text-sm font-bold text-[var(--color-text)] mt-1 truncate max-w-[260px]">
+                        <p className="text-xs sm:text-sm font-bold text-[var(--color-text)] mt-0.5 truncate max-w-[260px] mx-auto">
                             {selectedBarber ? selectedBarber.name : 'Wähle deinen Namen oder tippe den PIN'}
                         </p>
+
+                        {/* Action Selector: Einchecken / Auschecken */}
+                        <div className="flex bg-[var(--color-surface-2)] p-1 rounded-xl border border-[var(--color-border)] mt-3 max-w-[260px] mx-auto">
+                            <button
+                                type="button"
+                                onClick={() => setActionType('check-in')}
+                                className={`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all ${
+                                    actionType === 'check-in'
+                                        ? 'bg-gold-500 text-black shadow-md'
+                                        : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                                }`}
+                            >
+                                📥 Einchecken
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActionType('check-out')}
+                                className={`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all ${
+                                    actionType === 'check-out'
+                                        ? 'bg-gold-500 text-black shadow-md'
+                                        : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                                }`}
+                            >
+                                📤 Auschecken
+                            </button>
+                        </div>
                     </div>
 
                     {/* PIN Dots Display */}
@@ -294,11 +402,19 @@ export default function CheckInTerminal({ barbers, locations, defaultLocationId 
                     </div>
 
                     <button
-                        onClick={() => handleCheckIn()}
+                        onClick={() => handleCheckInOut()}
                         disabled={pin.length < 4 || isSubmitting}
-                        className="w-full max-w-[280px] py-3.5 sm:py-4 bg-gold-500 text-black font-extrabold rounded-xl hover:bg-gold-400 transition-all shadow-lg hover:shadow-gold-500/20 disabled:opacity-40 disabled:cursor-not-allowed uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2"
+                        className={`w-full max-w-[280px] py-3.5 sm:py-4 text-black font-extrabold rounded-xl transition-all shadow-lg hover:shadow-gold-500/20 disabled:opacity-40 disabled:cursor-not-allowed uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2 ${
+                            actionType === 'check-out'
+                                ? 'bg-amber-500 hover:bg-amber-400'
+                                : 'bg-gold-500 hover:bg-gold-400'
+                        }`}
                     >
-                        {isSubmitting ? 'Prüfe PIN...' : 'Jetzt Einchecken'}
+                        {isSubmitting
+                            ? 'Prüfe...'
+                            : actionType === 'check-out'
+                            ? '📤 Jetzt Auschecken'
+                            : '📥 Jetzt Einchecken'}
                     </button>
                 </div>
             </div>

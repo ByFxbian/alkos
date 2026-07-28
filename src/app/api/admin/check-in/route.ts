@@ -4,20 +4,114 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 import bcrypt from 'bcrypt';
-import { toZonedTime } from 'date-fns-tz';
-import { startOfDay, format } from 'date-fns';
+import { toZonedTime, fromZonedTime } from 'date-fns-tz';
+import { format } from 'date-fns';
 
 const timeZone = 'Europe/Vienna';
 
+async function processAutoCheckOuts() {
+    try {
+        const now = new Date();
+        const viennaNow = toZonedTime(now, timeZone);
+
+        // Find all check-ins without a checkOutAt
+        const openCheckIns = await prisma.employeeCheckIn.findMany({
+            where: { checkOutAt: null },
+            include: {
+                location: true,
+            },
+        });
+
+        for (const record of openCheckIns) {
+            const dateStr = format(record.date, 'yyyy-MM-dd');
+            const dayOfWeek = record.date.getDay();
+
+            // 1. Check shift for this date & barber
+            const shift = await prisma.barberShift.findFirst({
+                where: {
+                    barberId: record.barberId,
+                    date: record.date,
+                },
+            });
+
+            let closingTimeStr = shift?.endTime || null;
+
+            // 2. If no shift, check location availability for this location & dayOfWeek
+            if (!closingTimeStr) {
+                const avail = await prisma.availability.findFirst({
+                    where: {
+                        locationId: record.locationId,
+                        dayOfWeek: dayOfWeek,
+                        barberId: null,
+                    },
+                });
+                closingTimeStr = avail?.endTime || '19:00';
+            }
+
+            // Construct closing date/time in Vienna timezone
+            const closingTimeVienna = fromZonedTime(`${dateStr}T${closingTimeStr}:00`, timeZone);
+            
+            // Cutoff = closingTime + 60 minutes (1 hour after salon/shift close)
+            const cutoffVienna = new Date(closingTimeVienna.getTime() + 60 * 60 * 1000);
+
+            if (viennaNow > cutoffVienna) {
+                // Auto check out! Set checkOutAt to cutoffVienna and isAutoCheckOut to true
+                await prisma.employeeCheckIn.update({
+                    where: { id: record.id },
+                    data: {
+                        checkOutAt: cutoffVienna,
+                        isAutoCheckOut: true,
+                        note: `Automatisch ausgecheckt (Ladenschluss ${closingTimeStr} Uhr überschritten)`,
+                    },
+                });
+            }
+        }
+    } catch (err) {
+        console.error('Error processing auto check-outs:', err);
+    }
+}
+
+async function getExpectedTimes(barberId: string, locationId: string, date: Date) {
+    const dayOfWeek = date.getDay();
+
+    // 1. Shift
+    const shift = await prisma.barberShift.findFirst({
+        where: { barberId, date },
+    });
+
+    if (shift && shift.startTime && shift.endTime) {
+        return { startTime: shift.startTime, endTime: shift.endTime, label: 'Schicht' };
+    }
+
+    // 2. Location Opening Hours
+    const avail = await prisma.availability.findFirst({
+        where: {
+            locationId,
+            dayOfWeek,
+            barberId: null,
+        },
+    });
+
+    if (avail && avail.startTime && avail.endTime) {
+        return { startTime: avail.startTime, endTime: avail.endTime, label: 'Öffnungszeiten' };
+    }
+
+    // 3. Fallback
+    return { startTime: '09:00', endTime: '19:00', label: 'Standard' };
+}
+
 export async function POST(req: Request) {
     try {
+        // First run auto check-out processor to clean up past open check-ins
+        await processAutoCheckOuts();
+
         const ip = getClientIp(req);
         const rl = checkRateLimit(`checkin-pin:${ip}`, { limit: 15, windowMs: 60_000 });
         if (!rl.ok) {
             return NextResponse.json({ error: 'Zu viele Versuche. Bitte warte kurz.' }, { status: 429 });
         }
 
-        const { pin, locationId } = await req.json();
+        const { pin, locationId, action } = await req.json();
 
         if (!pin || typeof pin !== 'string' || pin.length < 4) {
             return NextResponse.json({ error: 'Bitte gib deinen gültigen PIN ein (mind. 4 Stellen).' }, { status: 400 });
@@ -28,6 +122,7 @@ export async function POST(req: Request) {
         const todayDateStr = format(viennaNow, 'yyyy-MM-dd');
         const todayDate = new Date(`${todayDateStr}T00:00:00.000Z`);
 
+        // Find barber matching the PIN
         const barbersWithPin = await prisma.user.findMany({
             where: {
                 role: { in: ['BARBER', 'HEADOFBARBER', 'ADMIN'] },
@@ -67,6 +162,7 @@ export async function POST(req: Request) {
             targetLocationId = firstLoc?.id || '';
         }
 
+        // Check if there is an existing check-in today
         const existingCheckIn = await prisma.employeeCheckIn.findUnique({
             where: {
                 barberId_date: {
@@ -79,44 +175,91 @@ export async function POST(req: Request) {
             },
         });
 
-        if (existingCheckIn) {
+        // HANDLE CHECK-OUT REQUEST
+        if (action === 'check-out') {
+            if (!existingCheckIn) {
+                return NextResponse.json({ error: 'Du hast dich heute noch nicht eingecheckt.' }, { status: 400 });
+            }
+
+            if (existingCheckIn.checkOutAt) {
+                const checkOutVienna = toZonedTime(existingCheckIn.checkOutAt, timeZone);
+                return NextResponse.json({
+                    alreadyCheckedOut: true,
+                    barberName: matchedBarber.name || 'Mitarbeiter',
+                    barberImage: matchedBarber.image,
+                    checkOutAt: existingCheckIn.checkOutAt.toISOString(),
+                    message: `Bereits heute um ${format(checkOutVienna, 'HH:mm')} Uhr ausgecheckt.`,
+                });
+            }
+
+            // Perform check-out
+            const updatedCheckIn = await prisma.employeeCheckIn.update({
+                where: { id: existingCheckIn.id },
+                data: {
+                    checkOutAt: now,
+                    isAutoCheckOut: false,
+                },
+                include: { location: { select: { name: true } } },
+            });
+
+            const checkOutVienna = toZonedTime(updatedCheckIn.checkOutAt!, timeZone);
+
             return NextResponse.json({
-                alreadyCheckedIn: true,
+                success: true,
+                action: 'check-out',
                 barberName: matchedBarber.name || 'Mitarbeiter',
                 barberImage: matchedBarber.image,
-                checkInAt: existingCheckIn.checkInAt.toISOString(),
-                status: existingCheckIn.status,
-                delayMinutes: existingCheckIn.delayMinutes,
-                locationName: existingCheckIn.location.name,
-                message: `Bereits heute um ${format(toZonedTime(existingCheckIn.checkInAt, timeZone), 'HH:mm')} Uhr eingecheckt.`,
+                checkInAt: updatedCheckIn.checkInAt.toISOString(),
+                checkOutAt: updatedCheckIn.checkOutAt!.toISOString(),
+                isAutoCheckOut: false,
+                locationName: updatedCheckIn.location.name,
+                message: `Erfolgreich um ${format(checkOutVienna, 'HH:mm')} Uhr ausgecheckt. Schönen Feierabend!`,
             });
         }
 
-        const todayShift = await prisma.barberShift.findFirst({
-            where: {
+        // HANDLE CHECK-IN REQUEST OR PIN SUBMISSION
+        if (existingCheckIn) {
+            const checkInVienna = toZonedTime(existingCheckIn.checkInAt, timeZone);
+            const checkOutVienna = existingCheckIn.checkOutAt ? toZonedTime(existingCheckIn.checkOutAt, timeZone) : null;
+
+            return NextResponse.json({
+                alreadyCheckedIn: true,
+                canCheckOut: !existingCheckIn.checkOutAt,
+                isAlreadyCheckedOut: !!existingCheckIn.checkOutAt,
                 barberId: matchedBarber.id,
-                date: todayDate,
-            },
-        });
+                barberName: matchedBarber.name || 'Mitarbeiter',
+                barberImage: matchedBarber.image,
+                checkInAt: existingCheckIn.checkInAt.toISOString(),
+                checkOutAt: existingCheckIn.checkOutAt ? existingCheckIn.checkOutAt.toISOString() : null,
+                isAutoCheckOut: existingCheckIn.isAutoCheckOut,
+                status: existingCheckIn.status,
+                delayMinutes: existingCheckIn.delayMinutes,
+                locationName: existingCheckIn.location.name,
+                message: existingCheckIn.checkOutAt
+                    ? `Heute eingecheckt um ${format(checkInVienna, 'HH:mm')} Uhr & ausgecheckt um ${format(checkOutVienna!, 'HH:mm')} Uhr.`
+                    : `Bereits heute um ${format(checkInVienna, 'HH:mm')} Uhr eingecheckt.`,
+            });
+        }
+
+        // Calculate expected start time & punctuality based on BarberShift or Location Availability
+        const expectedTimes = await getExpectedTimes(matchedBarber.id, targetLocationId, todayDate);
+        const [shiftHour, shiftMinute] = expectedTimes.startTime.split(':').map(Number);
+        
+        const expectedStartVienna = fromZonedTime(`${todayDateStr}T${expectedTimes.startTime}:00`, timeZone);
+
+        const diffMs = viennaNow.getTime() - expectedStartVienna.getTime();
+        const diffMinutes = Math.round(diffMs / 60000);
 
         let status = 'ON_TIME';
         let delayMinutes = 0;
 
-        if (todayShift && todayShift.startTime) {
-            const [shiftHour, shiftMinute] = todayShift.startTime.split(':').map(Number);
-            const shiftStartVienna = new Date(viennaNow);
-            shiftStartVienna.setHours(shiftHour, shiftMinute, 0, 0);
-
-            const diffMs = viennaNow.getTime() - shiftStartVienna.getTime();
-            const diffMinutes = Math.round(diffMs / 60000);
-
-            if (diffMinutes > 2) {
-                status = 'LATE';
-                delayMinutes = diffMinutes;
-            } else {
-                status = 'ON_TIME';
-                delayMinutes = 0;
-            }
+        // Grace period of 2 minutes
+        if (diffMinutes > 2) {
+            status = 'LATE';
+            delayMinutes = diffMinutes;
+        } else {
+            status = 'ON_TIME';
+            delayMinutes = 0;
         }
 
         const checkInRecord = await prisma.employeeCheckIn.create({
@@ -135,24 +278,30 @@ export async function POST(req: Request) {
 
         return NextResponse.json({
             success: true,
+            action: 'check-in',
+            barberId: matchedBarber.id,
             barberName: matchedBarber.name || 'Mitarbeiter',
             barberImage: matchedBarber.image,
             checkInAt: checkInRecord.checkInAt.toISOString(),
             status: checkInRecord.status,
             delayMinutes: checkInRecord.delayMinutes,
             locationName: checkInRecord.location.name,
+            canCheckOut: true,
             message: status === 'LATE'
-                ? `Verspätet um ${delayMinutes} Min. eingecheckt (${format(viennaNow, 'HH:mm')} Uhr).`
-                : `Pünktlich eingecheckt um ${format(viennaNow, 'HH:mm')} Uhr. Guten Morgen!`,
+                ? `Verspätet um ${delayMinutes} Min. eingecheckt (${format(viennaNow, 'HH:mm')} Uhr, Soll: ${expectedTimes.startTime} Uhr).`
+                : `Pünktlich eingecheckt um ${format(viennaNow, 'HH:mm')} Uhr (Soll: ${expectedTimes.startTime} Uhr). Guten Morgen!`,
         });
     } catch (error) {
-        console.error('Error recording employee check-in:', error);
-        return NextResponse.json({ error: 'Fehler beim Check-in.' }, { status: 500 });
+        console.error('Error recording employee check-in/out:', error);
+        return NextResponse.json({ error: 'Fehler beim Check-in/out.' }, { status: 500 });
     }
 }
 
 export async function GET(req: Request) {
     try {
+        // Run auto check-out processor first
+        await processAutoCheckOuts();
+
         const session = await getServerSession(authOptions);
         if (!session || !['ADMIN', 'HEADOFBARBER'].includes(session.user.role)) {
             return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
@@ -199,15 +348,18 @@ export async function GET(req: Request) {
             select: { barberId: true, date: true, startTime: true, endTime: true },
         });
 
-        const shiftMap = new Map<string, string>();
+        const shiftMap = new Map<string, { startTime: string; endTime: string }>();
         shifts.forEach(s => {
             const dateKey = format(s.date, 'yyyy-MM-dd');
-            shiftMap.set(`${s.barberId}_${dateKey}`, s.startTime);
+            shiftMap.set(`${s.barberId}_${dateKey}`, { startTime: s.startTime, endTime: s.endTime });
         });
 
         const formattedCheckIns = checkIns.map(c => {
             const dateKey = format(c.date, 'yyyy-MM-dd');
-            const plannedStart = shiftMap.get(`${c.barberId}_${dateKey}`) || 'Keine Schicht';
+            const shiftInfo = shiftMap.get(`${c.barberId}_${dateKey}`);
+            const plannedStart = shiftInfo ? shiftInfo.startTime : null;
+            const plannedEnd = shiftInfo ? shiftInfo.endTime : null;
+
             return {
                 id: c.id,
                 barberId: c.barber.id,
@@ -219,7 +371,10 @@ export async function GET(req: Request) {
                 locationCity: c.location.city,
                 date: format(c.date, 'yyyy-MM-dd'),
                 checkInAt: c.checkInAt.toISOString(),
+                checkOutAt: c.checkOutAt ? c.checkOutAt.toISOString() : null,
+                isAutoCheckOut: c.isAutoCheckOut,
                 plannedStart: plannedStart,
+                plannedEnd: plannedEnd,
                 status: c.status,
                 delayMinutes: c.delayMinutes,
                 note: c.note,

@@ -14,7 +14,10 @@ interface CheckInRecord {
     locationCity: string;
     date: string;
     checkInAt: string;
-    plannedStart: string;
+    checkOutAt: string | null;
+    isAutoCheckOut: boolean;
+    plannedStart: string | null;
+    plannedEnd: string | null;
     status: string;
     delayMinutes: number;
     note: string | null;
@@ -72,12 +75,22 @@ export default function AdminZeiterfassung({ locations }: AdminZeiterfassungProp
     // Calculate KPI Stats
     const totalCheckIns = checkIns.length;
     const lateCheckIns = checkIns.filter(c => c.status === 'LATE');
-    const onTimeCheckIns = checkIns.filter(c => c.status === 'ON_TIME');
+    const autoCheckOuts = checkIns.filter(c => c.isAutoCheckOut);
     const totalDelayMinutes = checkIns.reduce((acc, c) => acc + (c.delayMinutes || 0), 0);
-    const onTimeRate = totalCheckIns > 0 ? Math.round((onTimeCheckIns.length / totalCheckIns) * 100) : 100;
+    const onTimeRate = totalCheckIns > 0 ? Math.round(((totalCheckIns - lateCheckIns.length) / totalCheckIns) * 100) : 100;
 
     const handlePdfExport = () => {
         window.print();
+    };
+
+    const formatDuration = (checkInIso: string, checkOutIso: string | null) => {
+        if (!checkOutIso) return 'Noch aktiv';
+        const start = new Date(checkInIso).getTime();
+        const end = new Date(checkOutIso).getTime();
+        const diffMins = Math.max(0, Math.round((end - start) / 60000));
+        const hours = Math.floor(diffMins / 60);
+        const mins = diffMins % 60;
+        return `${hours} Std. ${mins} Min.`;
     };
 
     return (
@@ -87,7 +100,7 @@ export default function AdminZeiterfassung({ locations }: AdminZeiterfassungProp
                 <div>
                     <h2 className="text-xl sm:text-2xl font-extrabold text-[var(--color-text)]">Zeiterfassung & Pünktlichkeit</h2>
                     <p className="text-[11px] sm:text-xs text-[var(--color-text-muted)] mt-0.5 sm:mt-1">
-                        Protokoll der Mitarbeiter Morgen-Check-ins und Verspätungen.
+                        Übersicht aller Morgen-Check-ins, Auscheck-Zeiten und Verspätungen.
                     </p>
                 </div>
 
@@ -141,12 +154,12 @@ export default function AdminZeiterfassung({ locations }: AdminZeiterfassungProp
 
                 <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-3.5 sm:p-5 rounded-2xl shadow-sm">
                     <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-[var(--color-text-muted)] block">Verspätungen</span>
-                    <span className="text-2xl sm:text-3xl font-black text-amber-400 mt-1 block">{lateCheckIns.length}</span>
+                    <span className="text-2xl sm:text-3xl font-black text-amber-400 mt-1 block">{lateCheckIns.length} <span className="text-xs font-normal">({totalDelayMinutes} Min)</span></span>
                 </div>
 
                 <div className="bg-[var(--color-surface)] border border-[var(--color-border)] p-3.5 sm:p-5 rounded-2xl shadow-sm">
-                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-[var(--color-text-muted)] block">Verspätung Gesamt</span>
-                    <span className="text-2xl sm:text-3xl font-black text-red-400 mt-1 block">{totalDelayMinutes} <span className="text-xs font-normal">Min.</span></span>
+                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-[var(--color-text-muted)] block">Auto-Auscheck (Vergessen)</span>
+                    <span className="text-2xl sm:text-3xl font-black text-red-400 mt-1 block">{autoCheckOuts.length}</span>
                 </div>
             </div>
 
@@ -162,27 +175,31 @@ export default function AdminZeiterfassung({ locations }: AdminZeiterfassungProp
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse min-w-[600px]">
+                        <table className="w-full text-left border-collapse min-w-[700px]">
                             <thead>
                                 <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-2)] text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] font-bold">
-                                    <th className="p-3.5 sm:p-4">Datum & Zeit</th>
+                                    <th className="p-3.5 sm:p-4">Datum</th>
                                     <th className="p-3.5 sm:p-4">Mitarbeiter</th>
                                     <th className="p-3.5 sm:p-4">Standort</th>
                                     <th className="p-3.5 sm:p-4">Soll-Schicht</th>
-                                    <th className="p-3.5 sm:p-4 text-right">Status / Verspätung</th>
+                                    <th className="p-3.5 sm:p-4">Check-In</th>
+                                    <th className="p-3.5 sm:p-4">Check-Out</th>
+                                    <th className="p-3.5 sm:p-4 text-right">Arbeitszeit</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--color-border)] text-xs sm:text-sm">
                                 {checkIns.map(c => {
                                     const checkInDate = new Date(c.checkInAt);
-                                    const timeStr = checkInDate.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
+                                    const checkInTimeStr = checkInDate.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' });
                                     const dateStr = checkInDate.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                                    const checkOutDate = c.checkOutAt ? new Date(c.checkOutAt) : null;
+                                    const checkOutTimeStr = checkOutDate ? checkOutDate.toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' }) : null;
 
                                     return (
                                         <tr key={c.id} className="hover:bg-[var(--color-surface-2)]/50 transition-colors">
-                                            <td className="p-3.5 sm:p-4 font-mono text-xs text-[var(--color-text)]">
-                                                <span className="font-bold">{dateStr}</span>
-                                                <span className="block text-[11px] text-[var(--color-text-muted)]">{timeStr} Uhr</span>
+                                            <td className="p-3.5 sm:p-4 font-mono text-xs font-bold text-[var(--color-text)]">
+                                                {dateStr}
                                             </td>
 
                                             <td className="p-3.5 sm:p-4">
@@ -205,19 +222,52 @@ export default function AdminZeiterfassung({ locations }: AdminZeiterfassungProp
                                             </td>
 
                                             <td className="p-3.5 sm:p-4 font-mono text-xs text-[var(--color-text)]">
-                                                {c.plannedStart !== 'Keine Schicht' ? `${c.plannedStart} Uhr` : <span className="text-[var(--color-text-muted)] font-normal italic">Keine Schicht</span>}
+                                                {c.plannedStart ? (
+                                                    <span>{c.plannedStart} - {c.plannedEnd || '?'} Uhr</span>
+                                                ) : (
+                                                    <span className="text-[var(--color-text-muted)] font-normal italic">Öffnungszeiten</span>
+                                                )}
                                             </td>
 
-                                            <td className="p-3.5 sm:p-4 text-right font-mono text-xs">
+                                            {/* Check-In Status */}
+                                            <td className="p-3.5 sm:p-4 font-mono text-xs">
+                                                <div className="font-bold text-[var(--color-text)]">{checkInTimeStr} Uhr</div>
                                                 {c.status === 'LATE' ? (
-                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-amber-500/10 text-amber-500 font-bold rounded-lg border border-amber-500/20">
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-500">
                                                         ⚠️ Verspätet (+{c.delayMinutes} Min)
                                                     </span>
                                                 ) : (
-                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-emerald-500/10 text-emerald-400 font-bold rounded-lg border border-emerald-500/20">
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400">
                                                         ✓ Pünktlich
                                                     </span>
                                                 )}
+                                            </td>
+
+                                            {/* Check-Out Status */}
+                                            <td className="p-3.5 sm:p-4 font-mono text-xs">
+                                                {checkOutTimeStr ? (
+                                                    <div>
+                                                        <div className="font-bold text-[var(--color-text)]">{checkOutTimeStr} Uhr</div>
+                                                        {c.isAutoCheckOut ? (
+                                                            <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-red-400" title={c.note || 'Automatisch ausgecheckt'}>
+                                                                ⚠️ Auto-Auscheck (Vergessen)
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400">
+                                                                ✓ Regulär ausgecheckt
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 animate-pulse">
+                                                        ⚪ Noch eingecheckt
+                                                    </span>
+                                                )}
+                                            </td>
+
+                                            {/* Total Worked Hours */}
+                                            <td className="p-3.5 sm:p-4 text-right font-mono text-xs font-bold text-[var(--color-text)]">
+                                                {formatDuration(c.checkInAt, c.checkOutAt)}
                                             </td>
                                         </tr>
                                     );
