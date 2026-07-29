@@ -12,7 +12,6 @@ const timeZone = 'Europe/Vienna';
 async function processAutoCheckOuts() {
     try {
         const now = new Date();
-        const viennaNow = toZonedTime(now, timeZone);
 
         // Find all check-ins without a checkOutAt
         const openCheckIns = await prisma.employeeCheckIn.findMany({
@@ -23,8 +22,9 @@ async function processAutoCheckOuts() {
         });
 
         for (const record of openCheckIns) {
-            const dateStr = format(record.date, 'yyyy-MM-dd');
-            const dayOfWeek = record.date.getDay();
+            const checkInVienna = toZonedTime(record.checkInAt, timeZone);
+            const dateStr = format(checkInVienna, 'yyyy-MM-dd');
+            const dayOfWeek = checkInVienna.getDay();
 
             // 1. Check shift for this date & barber
             const shift = await prisma.barberShift.findFirst({
@@ -49,17 +49,17 @@ async function processAutoCheckOuts() {
             }
 
             // Construct closing date/time in Vienna timezone
-            const closingTimeVienna = fromZonedTime(`${dateStr}T${closingTimeStr}:00`, timeZone);
+            const closingTimeViennaUtc = fromZonedTime(`${dateStr}T${closingTimeStr}:00`, timeZone);
             
             // Cutoff = closingTime + 60 minutes (1 hour after salon/shift close)
-            const cutoffVienna = new Date(closingTimeVienna.getTime() + 60 * 60 * 1000);
+            const cutoffUtc = new Date(closingTimeViennaUtc.getTime() + 60 * 60 * 1000);
 
-            if (viennaNow > cutoffVienna) {
-                // Auto check out! Set checkOutAt to cutoffVienna and isAutoCheckOut to true
+            if (now.getTime() > cutoffUtc.getTime()) {
+                // Auto check out! Set checkOutAt to cutoffUtc and isAutoCheckOut to true
                 await prisma.employeeCheckIn.update({
                     where: { id: record.id },
                     data: {
-                        checkOutAt: cutoffVienna,
+                        checkOutAt: cutoffUtc,
                         isAutoCheckOut: true,
                         note: `Automatisch ausgecheckt (Ladenschluss ${closingTimeStr} Uhr überschritten)`,
                     },
@@ -71,8 +71,8 @@ async function processAutoCheckOuts() {
     }
 }
 
-async function getExpectedTimes(barberId: string, locationId: string, date: Date) {
-    const dayOfWeek = date.getDay();
+async function getExpectedTimes(barberId: string, locationId: string, date: Date, viennaNow: Date) {
+    const dayOfWeek = viennaNow.getDay();
 
     // 1. Shift
     const shift = await prisma.barberShift.findFirst({
@@ -97,7 +97,7 @@ async function getExpectedTimes(barberId: string, locationId: string, date: Date
     }
 
     // 3. Fallback
-    return { startTime: '09:00', endTime: '19:00', label: 'Standard' };
+    return { startTime: '10:00', endTime: '19:00', label: 'Standard' };
 }
 
 export async function POST(req: Request) {
@@ -242,12 +242,11 @@ export async function POST(req: Request) {
         }
 
         // Calculate expected start time & punctuality based on BarberShift or Location Availability
-        const expectedTimes = await getExpectedTimes(matchedBarber.id, targetLocationId, todayDate);
-        const [shiftHour, shiftMinute] = expectedTimes.startTime.split(':').map(Number);
+        const expectedTimes = await getExpectedTimes(matchedBarber.id, targetLocationId, todayDate, viennaNow);
         
-        const expectedStartVienna = fromZonedTime(`${todayDateStr}T${expectedTimes.startTime}:00`, timeZone);
+        const expectedStartUtc = fromZonedTime(`${todayDateStr}T${expectedTimes.startTime}:00`, timeZone);
 
-        const diffMs = viennaNow.getTime() - expectedStartVienna.getTime();
+        const diffMs = now.getTime() - expectedStartUtc.getTime();
         const diffMinutes = Math.round(diffMs / 60000);
 
         let status = 'ON_TIME';
@@ -354,11 +353,29 @@ export async function GET(req: Request) {
             shiftMap.set(`${s.barberId}_${dateKey}`, { startTime: s.startTime, endTime: s.endTime });
         });
 
+        // Also fetch availabilities for locations to map default opening hours when no shift is set
+        const locationAvailabilities = await prisma.availability.findMany({
+            where: { barberId: null },
+            select: { locationId: true, dayOfWeek: true, startTime: true, endTime: true },
+        });
+
+        const availMap = new Map<string, { startTime: string; endTime: string }>();
+        locationAvailabilities.forEach(a => {
+            if (a.locationId) {
+                availMap.set(`${a.locationId}_${a.dayOfWeek}`, { startTime: a.startTime, endTime: a.endTime });
+            }
+        });
+
         const formattedCheckIns = checkIns.map(c => {
             const dateKey = format(c.date, 'yyyy-MM-dd');
             const shiftInfo = shiftMap.get(`${c.barberId}_${dateKey}`);
-            const plannedStart = shiftInfo ? shiftInfo.startTime : null;
-            const plannedEnd = shiftInfo ? shiftInfo.endTime : null;
+            
+            const checkInVienna = toZonedTime(c.checkInAt, timeZone);
+            const dayOfWeek = checkInVienna.getDay();
+            const defaultAvail = availMap.get(`${c.locationId}_${dayOfWeek}`);
+
+            const plannedStart = shiftInfo?.startTime || defaultAvail?.startTime || '10:00';
+            const plannedEnd = shiftInfo?.endTime || defaultAvail?.endTime || '19:00';
 
             return {
                 id: c.id,
