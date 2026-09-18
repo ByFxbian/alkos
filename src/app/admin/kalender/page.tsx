@@ -55,21 +55,12 @@ export default async function KalenderAdminPage() {
   }
 
 
-  const allLocationAvailabilities = await prisma.availability.findMany({
+  const allAvailabilities = await prisma.availability.findMany({
     where: {
-      barberId: null,
       locationId: { in: availableLocations.map(l => l.id) },
     },
     orderBy: { dayOfWeek: 'asc' },
   });
-
-  // Group by locationId
-  const availabilitiesByLocation: Record<string, typeof allLocationAvailabilities> = {};
-  for (const a of allLocationAvailabilities) {
-    const locId = a.locationId || 'unknown';
-    if (!availabilitiesByLocation[locId]) availabilitiesByLocation[locId] = [];
-    availabilitiesByLocation[locId].push(a);
-  }
 
   const today = new Date();
   today.setHours(0,0,0,0);
@@ -151,14 +142,18 @@ export default async function KalenderAdminPage() {
       {isAdminOrHead && (
       <div>
         <div className="mb-8">
-            <h1 className="text-4xl font-bold tracking-tight text-[var(--color-text)]">Standort-Öffnungszeiten</h1>
+            <h1 className="text-4xl font-bold tracking-tight text-[var(--color-text)]">Öffnungs- & Arbeitszeiten</h1>
             <p className="mt-2 text-[var(--color-text-muted)]">
-                Definiere die Öffnungszeiten pro Standort. Gilt für alle Barber die dem Standort zugewiesen sind.
+                Definiere die regulären Öffnungszeiten pro Standort oder individuelle Arbeitszeiten pro Mitarbeiter.
             </p>
         </div>
         
         <div className="bg-[var(--color-surface-2)] p-6 rounded-xl border border-[var(--color-border)] shadow-sm">
-             <AvailabilityForm currentAvailabilities={availabilitiesByLocation} availableLocations={availableLocations} />
+             <AvailabilityForm 
+                allAvailabilities={allAvailabilities} 
+                availableLocations={availableLocations} 
+                allBarbers={allBarbers}
+             />
         </div>
       </div>
       )}

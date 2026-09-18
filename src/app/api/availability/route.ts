@@ -18,9 +18,10 @@ const timeZone = 'Europe/Vienna';
 /**
  * Get available time slots for a barber at a location on a given date.
  * 
- * Uses location opening hours (Availability with barberId=null) and checks
- * for BarberShift overrides on specific dates, then filters out booked
- * appointments and blocked times.
+ * 1. Checks for BarberShift override on specific date.
+ * 2. Checks for barber-specific weekly Availability.
+ * 3. Falls back to location opening hours (Availability with barberId=null).
+ * Then filters out booked appointments and blocked times.
  */
 async function getSlotsForBarber(barberId: string, date: string, serviceDuration: number, locationId?: string) {
     const requestedDate = new Date(date + 'T00:00:00');
@@ -29,7 +30,7 @@ async function getSlotsForBarber(barberId: string, date: string, serviceDuration
     let startTime: string | undefined;
     let endTime: string | undefined;
 
-
+    // Layer 1: Check for a BarberShift override for this barber on this specific date
     if (locationId) {
         const shift = await prisma.barberShift.findUnique({
             where: {
@@ -42,32 +43,54 @@ async function getSlotsForBarber(barberId: string, date: string, serviceDuration
 
         if (shift) {
             if (shift.locationId === locationId) {
-
                 startTime = shift.startTime;
                 endTime = shift.endTime;
             } else {
-
                 return [];
             }
         }
     }
 
-
+    // Layer 2: Check barber-specific weekly Availability, else fall back to location opening hours
     if (!startTime || !endTime) {
         if (!locationId) return [];
 
-        const locationHours = await prisma.availability.findFirst({
+        const barberAvailsCount = await prisma.availability.count({
             where: {
+                barberId: barberId,
                 locationId: locationId,
-                dayOfWeek: dayOfWeek,
-                barberId: null, // Location-level hours
             },
         });
 
-        if (!locationHours) return [];
+        if (barberAvailsCount > 0) {
+            const barberSchedule = await prisma.availability.findFirst({
+                where: {
+                    barberId: barberId,
+                    locationId: locationId,
+                    dayOfWeek: dayOfWeek,
+                },
+            });
 
-        startTime = locationHours.startTime;
-        endTime = locationHours.endTime;
+            if (!barberSchedule) {
+                return [];
+            }
+
+            startTime = barberSchedule.startTime;
+            endTime = barberSchedule.endTime;
+        } else {
+            const locationHours = await prisma.availability.findFirst({
+                where: {
+                    locationId: locationId,
+                    dayOfWeek: dayOfWeek,
+                    barberId: null, // Location-level hours
+                },
+            });
+
+            if (!locationHours) return [];
+
+            startTime = locationHours.startTime;
+            endTime = locationHours.endTime;
+        }
     }
 
     const availabilityStartInVienna = fromZonedTime(`${date}T${startTime}:00`, timeZone);
@@ -106,7 +129,7 @@ async function getSlotsForBarber(barberId: string, date: string, serviceDuration
         currentTime.setMinutes(currentTime.getMinutes() + 20);
     }
 
-    const nowInVienna = toZonedTime(new Date(), timeZone)
+    const nowInVienna = toZonedTime(new Date(), timeZone);
 
     return slots.filter(slotStartTime => {
         if (slotStartTime < nowInVienna) return false;
@@ -155,7 +178,6 @@ export async function GET(req: Request) {
 
             const requestedDate = new Date(date + 'T00:00:00');
 
-
             const [permanentBarbers, shiftBarbers] = await Promise.all([
                 prisma.user.findMany({
                     where: {
@@ -173,7 +195,6 @@ export async function GET(req: Request) {
                     select: { barberId: true }
                 })
             ]);
-
 
             const overriddenBarbers = await prisma.barberShift.findMany({
                 where: {

@@ -69,6 +69,14 @@ export async function GET(req: Request) {
     });
     const openDays = new Set(locationHours.map(h => h.dayOfWeek));
 
+    const barberHours = await prisma.availability.findMany({
+        where: { locationId, barberId },
+        select: { dayOfWeek: true },
+    });
+    const barberOpenDays = barberHours.length > 0
+        ? new Set(barberHours.map(h => h.dayOfWeek))
+        : openDays;
+
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -118,7 +126,7 @@ export async function GET(req: Request) {
         }
 
 
-        if (isPermanent && openDays.has(dayOfWeek)) {
+        if (isPermanent && barberOpenDays.has(dayOfWeek)) {
 
             const dayStart = new Date(d);
             dayStart.setHours(0, 0, 0, 0);

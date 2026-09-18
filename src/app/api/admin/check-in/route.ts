@@ -83,7 +83,20 @@ async function getExpectedTimes(barberId: string, locationId: string, date: Date
         return { startTime: shift.startTime, endTime: shift.endTime, label: 'Schicht' };
     }
 
-    // 2. Location Opening Hours
+    // 2. Barber-specific Availability
+    const barberAvail = await prisma.availability.findFirst({
+        where: {
+            locationId,
+            dayOfWeek,
+            barberId,
+        },
+    });
+
+    if (barberAvail && barberAvail.startTime && barberAvail.endTime) {
+        return { startTime: barberAvail.startTime, endTime: barberAvail.endTime, label: 'Arbeitszeit' };
+    }
+
+    // 3. Location Opening Hours
     const avail = await prisma.availability.findFirst({
         where: {
             locationId,
@@ -96,7 +109,7 @@ async function getExpectedTimes(barberId: string, locationId: string, date: Date
         return { startTime: avail.startTime, endTime: avail.endTime, label: 'Öffnungszeiten' };
     }
 
-    // 3. Fallback
+    // 4. Fallback
     return { startTime: '10:00', endTime: '19:00', label: 'Standard' };
 }
 

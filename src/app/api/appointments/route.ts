@@ -7,6 +7,8 @@ import ConfirmationEmail from '@/emails/ConfirmationEmail';
 import { logger } from '@/lib/logger';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 import { PrismaClientKnownRequestError } from '@/generated/prisma/runtime/library';
+import { fromZonedTime, toZonedTime } from 'date-fns-tz';
+import { format } from 'date-fns';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -69,11 +71,55 @@ export async function POST(req: Request) {
       let assignedBarberId: string | null = null;
 
       for (const barber of potentialBarbers) {
-        const dayOfWeek = appointmentStartTime.getDay();
-        const availability = await prisma.availability.findFirst({
-          where: { barberId: barber.id, dayOfWeek },
+        const viennaStart = toZonedTime(appointmentStartTime, 'Europe/Vienna');
+        const dayOfWeek = viennaStart.getDay();
+        const dateStr = format(viennaStart, 'yyyy-MM-dd');
+        const requestedDate = new Date(`${dateStr}T00:00:00.000Z`);
+
+        const shift = await prisma.barberShift.findUnique({
+          where: {
+            barberId_date: {
+              barberId: barber.id,
+              date: requestedDate,
+            },
+          },
         });
-        if (!availability) continue;
+
+        let startTimeStr = shift?.startTime;
+        let endTimeStr = shift?.endTime;
+
+        if (shift && shift.locationId !== locationId) {
+          continue;
+        }
+
+        if (!startTimeStr || !endTimeStr) {
+          const barberAvailsCount = await prisma.availability.count({
+            where: { barberId: barber.id, locationId },
+          });
+
+          if (barberAvailsCount > 0) {
+            const barberSchedule = await prisma.availability.findFirst({
+              where: { barberId: barber.id, locationId, dayOfWeek },
+            });
+            if (!barberSchedule) continue;
+            startTimeStr = barberSchedule.startTime;
+            endTimeStr = barberSchedule.endTime;
+          } else {
+            const locSchedule = await prisma.availability.findFirst({
+              where: { locationId, dayOfWeek, barberId: null },
+            });
+            if (!locSchedule) continue;
+            startTimeStr = locSchedule.startTime;
+            endTimeStr = locSchedule.endTime;
+          }
+        }
+
+        const availStart = fromZonedTime(`${dateStr}T${startTimeStr}:00`, 'Europe/Vienna');
+        const availEnd = fromZonedTime(`${dateStr}T${endTimeStr}:00`, 'Europe/Vienna');
+
+        if (appointmentStartTime < availStart || appointmentEndTime > availEnd) {
+          continue;
+        }
 
         const [hasConflict, hasBlock] = await Promise.all([
           prisma.appointment.findFirst({
@@ -102,6 +148,62 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Kein Barber mehr verfügbar für diese Zeit.' }, { status: 409 });
       }
       barberId = assignedBarberId;
+    } else {
+      const viennaStart = toZonedTime(appointmentStartTime, 'Europe/Vienna');
+      const dayOfWeek = viennaStart.getDay();
+      const dateStr = format(viennaStart, 'yyyy-MM-dd');
+      const requestedDate = new Date(`${dateStr}T00:00:00.000Z`);
+
+      const shift = await prisma.barberShift.findUnique({
+        where: {
+          barberId_date: {
+            barberId: barberId,
+            date: requestedDate,
+          },
+        },
+      });
+
+      let startTimeStr = shift?.startTime;
+      let endTimeStr = shift?.endTime;
+
+      if (shift && locationId && shift.locationId !== locationId) {
+        return NextResponse.json({ error: 'Der ausgewählte Barber ist an diesem Tag an einem anderen Standort.' }, { status: 400 });
+      }
+
+      if (!startTimeStr || !endTimeStr) {
+        const barberAvailsCount = await prisma.availability.count({
+          where: { barberId: barberId, ...(locationId ? { locationId } : {}) },
+        });
+
+        if (barberAvailsCount > 0) {
+          const barberSchedule = await prisma.availability.findFirst({
+            where: { barberId: barberId, dayOfWeek, ...(locationId ? { locationId } : {}) },
+          });
+          if (!barberSchedule) {
+            return NextResponse.json({ error: 'Der ausgewählte Barber arbeitet an diesem Tag nicht.' }, { status: 400 });
+          }
+          startTimeStr = barberSchedule.startTime;
+          endTimeStr = barberSchedule.endTime;
+        } else if (locationId) {
+          const locSchedule = await prisma.availability.findFirst({
+            where: { locationId, dayOfWeek, barberId: null },
+          });
+          if (!locSchedule) {
+            return NextResponse.json({ error: 'Der Standort hat an diesem Tag geschlossen.' }, { status: 400 });
+          }
+          startTimeStr = locSchedule.startTime;
+          endTimeStr = locSchedule.endTime;
+        }
+      }
+
+      if (startTimeStr && endTimeStr) {
+        const availStart = fromZonedTime(`${dateStr}T${startTimeStr}:00`, 'Europe/Vienna');
+        const availEnd = fromZonedTime(`${dateStr}T${endTimeStr}:00`, 'Europe/Vienna');
+
+        if (appointmentStartTime < availStart || appointmentEndTime > availEnd) {
+          return NextResponse.json({ error: 'Der Termin liegt außerhalb der Arbeitszeiten des Barbers.' }, { status: 400 });
+        }
+      }
     }
 
     const now = new Date();

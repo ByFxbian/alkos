@@ -17,8 +17,9 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { locationId, schedule } = body as {
+    const { locationId, schedule, barberId } = body as {
       locationId: string;
+      barberId?: string | null;
       schedule: Record<string, { startTime: string; endTime: string; isActive: boolean }>;
     };
 
@@ -26,16 +27,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Location ID fehlt' }, { status: 400 });
     }
 
-    logger.info("API Route /api/availability/update POST: Saving location hours.", { locationId, scheduleKeys: Object.keys(schedule) });
+    const targetBarberId = barberId && barberId !== 'all' ? barberId : null;
+
+    logger.info("API Route /api/availability/update POST: Saving hours.", { locationId, targetBarberId, scheduleKeys: Object.keys(schedule) });
 
     await prisma.$transaction(async (tx) => {
       const deleted = await tx.availability.deleteMany({
         where: {
           locationId: locationId,
-          barberId: null,
+          barberId: targetBarberId,
         },
       });
-      logger.info("API Route /api/availability/update POST: Deleted old location hours.", { locationId, count: deleted.count });
+      logger.info("API Route /api/availability/update POST: Deleted old hours.", { locationId, targetBarberId, count: deleted.count });
 
       const newAvailabilities = [];
       for (const dayIdStr in schedule) {
@@ -48,7 +51,7 @@ export async function POST(req: Request) {
             startTime,
             endTime,
             locationId,
-            barberId: null,
+            barberId: targetBarberId,
           });
         }
       }
@@ -57,11 +60,11 @@ export async function POST(req: Request) {
         await tx.availability.createMany({
           data: newAvailabilities,
         });
-        logger.info("API Route /api/availability/update POST: Created new location hours.", { locationId, count: newAvailabilities.length });
+        logger.info("API Route /api/availability/update POST: Created new hours.", { locationId, targetBarberId, count: newAvailabilities.length });
       }
     });
 
-    response = NextResponse.json({ message: 'Öffnungszeiten aktualisiert' }, { status: 200 });
+    response = NextResponse.json({ message: 'Arbeitszeiten erfolgreich aktualisiert' }, { status: 200 });
   } catch (error) {
     logger.error('API Route /api/availability/update POST - Update availability error:', { userId: session?.user?.id, error });
     console.error('Update availability error:', error);

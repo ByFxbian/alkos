@@ -4,6 +4,10 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 import { PrismaClientKnownRequestError } from '@/generated/prisma/runtime/library';
+import { Resend } from 'resend';
+import CancellationEmail from '@/emails/CancellationEmail';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function DELETE(
   req: NextRequest,
@@ -26,11 +30,15 @@ export async function DELETE(
     } else {
       const appointment = await prisma.appointment.findUnique({
         where: { id: appointmentId },
-        select: { barberId: true, locationId: true }
+        include: {
+          customer: true,
+          service: true,
+          location: true,
+        },
       });
       if (!appointment) {
-            logger.warn("API Route /api/admin/appointments/[id] DELETE: Appointment not found during auth check.", { appointmentId, userId: session.user.id });
-            response = NextResponse.json({ error: 'Zu löschender Termin nicht gefunden.' }, { status: 404 });
+        logger.warn("API Route /api/admin/appointments/[id] DELETE: Appointment not found during auth check.", { appointmentId, userId: session.user.id });
+        response = NextResponse.json({ error: 'Zu löschender Termin nicht gefunden.' }, { status: 404 });
       } else {
         const isAdminOrHead = ['ADMIN', 'HEADOFBARBER'].includes(session.user.role);
         const isOwnAppointment = session.user.role === 'BARBER' && appointment.barberId === session.user.id;
@@ -57,6 +65,30 @@ export async function DELETE(
           response = NextResponse.json({ error: 'Zugriff verweigert' }, { status: 403 });
         } else {
           logger.info("API Route /api/admin/appointments/[id] DELETE: User authorized for deletion.", { userId: session.user.id, role: session.user.role, appointmentId });
+
+          // Send cancellation email if customer has a valid email (not walkin placeholder)
+          if (appointment.customer?.email && !appointment.customer.email.includes('walkin@')) {
+            try {
+              await resend.emails.send({
+                from: 'ALKOS <contact@alkosbarber.at>',
+                to: appointment.customer.email,
+                subject: 'Dein Termin wurde storniert',
+                react: CancellationEmail({
+                  customerName: appointment.customer.name || '',
+                  serviceName: appointment.service?.name || 'Haarschnitt',
+                  startTime: appointment.startTime,
+                  host: 'ALKOS',
+                  locationName: appointment.location?.name,
+                  locationAddress: appointment.location?.address,
+                }),
+              });
+              logger.info("API Route /api/admin/appointments/[id] DELETE: Cancellation email sent.", { to: appointment.customer.email, appointmentId });
+            } catch (emailError) {
+              logger.error('API Route /api/admin/appointments/[id] DELETE: Failed to send cancellation email:', { appointmentId, error: emailError });
+              console.error('Fehler beim Senden der Stornierungs-E-Mail durch Admin:', emailError);
+            }
+          }
+
           await prisma.$transaction(async (tx) => {
             const deletedTokens = await tx.stampToken.deleteMany({
               where: { appointmentId: appointmentId },
