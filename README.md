@@ -1,6 +1,6 @@
 # alkosbarber.at
 
-Production website for **Alkos Barber** (Vienna).
+Production website for **AlkosBarber** (Vienna).
 Built with a focus on **speed, SEO, and clean UX**.
 
 ## Tech
